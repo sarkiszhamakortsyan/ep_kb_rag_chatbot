@@ -8,19 +8,19 @@ As a Lead Engineer, we expect you to focus on system architecture, API design, a
 <h2>DELIVERABLES</h2>
 * A single public GitHub repository (or gist URL) containing your complete solution.<br />
 * A backend service (e.g., C#/.NET Core, Python, or Node.js) implementing the document ingestion, RAG pipeline, and API endpoints.<br />
-* A frontend UI (e.g., React, Next.js, or Vite in TypeScript) demonstrating the chat workflow and displaying source citations.<p>
-* A docker-compose.yml file (or equivalent automated script) that spins up the entire stack seamlessly.<p>
+* A frontend UI (e.g., React, Next.js, or Vite in TypeScript) demonstrating the chat workflow and displaying source citations.<br />
+* A docker-compose.yml file (or equivalent automated script) that spins up the entire stack seamlessly.<br />
 * A README.md explaining your architectural decisions, API design, trade-offs, and instructions on how to run and test the system.<p>
 
 **MANDATORY:** An export of your AI assistant conversation logs (e.g., Cursor chat history, Copilot export, or Claude transcripts) committed to the repository.
 
 <h2>SUGGESTED TOOLS</h2>
 
-**Frontend:** React, Next.js, or Vite + TailwindCSS
-**Backend:** ASP.NET Core (C#), FastAPI/Flask (Python), or Express/NestJS (Node.js)
-**Vector Store:** ChromaDB, pgvector (via Docker), or a simple in-memory cosine similarity implementation
-**AI/RAG:** Microsoft Semantic Kernel, LangChain, LlamaIndex, or raw SDKs
-**LLM:** OpenAI API, Anthropic API (Bring Your Own Key), Groq API, or local Ollama
+**Frontend:** React, Next.js, or Vite + TailwindCSS<br />
+**Backend:** ASP.NET Core (C#), FastAPI/Flask (Python), or Express/NestJS (Node.js)<br />
+**Vector Store:** ChromaDB, pgvector (via Docker), or a simple in-memory cosine similarity implementation<br />
+**AI/RAG:** Microsoft Semantic Kernel, LangChain, LlamaIndex, or raw SDKs<br />
+**LLM:** OpenAI API, Anthropic API (Bring Your Own Key), Groq API, or local Ollama<p>
 
 <h2>ON AI ASSISTANTS & FOLLOW-UP</h2>
 
