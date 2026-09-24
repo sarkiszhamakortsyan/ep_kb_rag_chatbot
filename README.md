@@ -29,13 +29,13 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 **MANDATORY:** You must commit your AI assistant conversation logs to the repository and add a brief note in the README describing which tools were used and for what parts of the codebase. Be prepared to walk us through any block of code you submit. We will ask deep-dive questions on your architectural choices, API design, and trade-offs during the technical interview.
 
 <h2>Plan</h2>
-- [ ] Get better understanding of the task
-- [ ] Read information about every unknown term
-- [ ] Research which coding languages are the best to be used for the task
-- [ ] Check the "SUGGESTED TOOLS" and choose the best approaches
-- [ ] Check how to use local Ollama and Anthropic API together
-- [x] Choose AI assistant - Claude
-- [ ] Create a plan step by step
-- [ ] Create documentation
-- [ ] Proceed with the plan
+- [ ] Get better understanding of the task<br />
+- [ ] Read information about every unknown term<br />
+- [ ] Research which coding languages are the best to be used for the task<br />
+- [ ] Check the "SUGGESTED TOOLS" and choose the best approaches<br />
+- [ ] Check how to use local Ollama and Anthropic API together<br />
+- [x] Choose AI assistant - **Claude**<br />
+- [ ] Create a plan step by step<br />
+- [ ] Create documentation<br />
+- [ ] Proceed with the plan<br />
 - [ ] 
