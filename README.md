@@ -6,8 +6,8 @@ Your task is to build a full-stack application consisting of a backend API and a
 As a Lead Engineer, we expect you to focus on system architecture, API design, and operational readiness. You are free to choose the backend language you are most comfortable with (we recommend **C# / .NET** or **Python** based on your background). The solution should be easy to run locally (e.g., via Docker Compose), well-structured, and include basic tests. You may use any external LLM provider (e.g., OpenAI, Anthropic, Groq) by allowing the reviewer to supply their own API key via environment variables, or use a local model via Ollama. Do not include any paid API keys in your submission.
 
 <h2>DELIVERABLES</h2>
-* A single public GitHub repository (or gist URL) containing your complete solution.\
-* A backend service (e.g., C#/.NET Core, Python, or Node.js) implementing the document ingestion, RAG pipeline, and API endpoints.\
+* A single public GitHub repository (or gist URL) containing your complete solution.<br />
+* A backend service (e.g., C#/.NET Core, Python, or Node.js) implementing the document ingestion, RAG pipeline, and API endpoints.<br />
 * A frontend UI (e.g., React, Next.js, or Vite in TypeScript) demonstrating the chat workflow and displaying source citations.<p>
 * A docker-compose.yml file (or equivalent automated script) that spins up the entire stack seamlessly.<p>
 * A README.md explaining your architectural decisions, API design, trade-offs, and instructions on how to run and test the system.<p>
