@@ -136,12 +136,12 @@ Changes in this phase:
 - `backend/Dockerfile` (multi-stage, uv, non-root user).
 - `frontend/Dockerfile`: builds the app, then serves it with nginx. nginx also proxies `/api` to the backend, so the browser never has CORS issues.
 - `docker-compose.yml`:
-  - Services: `backend`, `frontend`, and `ollama` (under the `ollama` profile).
+  - Services: `backend`, `frontend`, and `ollama` (planned under an `ollama` profile; **implemented without a profile**, see the Phase 7 result above).
   - `ollama-init` is a one-shot service that pulls the two models.
   - Named volumes for the Ollama models and the vector index.
   - Healthchecks and `depends_on` conditions, and settings read from `.env`.
 - Two run modes documented:
-  - `docker compose --profile ollama up`: fully local
+  - `docker compose up`: fully local (Ollama always runs)
   - `docker compose up` with `LLM_PROVIDER=anthropic`: Claude, with embeddings still from Ollama until the in-process embedding option from idea #7 exists. The limitation is documented.
 - **Done when**: a fresh clone plus `cp .env.example .env` plus the compose command gives a working chat at `http://localhost:8080`.
 

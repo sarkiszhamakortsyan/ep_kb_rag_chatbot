@@ -99,7 +99,7 @@ There are two different Claude credentials, and they have different rules:
 | Frontend | Vite + React + TypeScript + TailwindCSS, SSE streaming, nginx container |
 | Local LLM | Ollama `gemma3:4b` (alt. `qwen3:4b`, `think=false`), configurable |
 | Embeddings | Ollama `embeddinggemma` (alt. `nomic-embed-text`), always local |
-| Claude | `ANTHROPIC_API_KEY` BYOK via Messages API (`claude-sonnet-5` default). Optional personal-use Agent SDK provider for subscription credit |
+| Claude | `ANTHROPIC_API_KEY` BYOK via Messages API (default later changed from `claude-sonnet-5` to `claude-opus-5`, see the Phase 2 addendum). Optional personal-use Agent SDK provider for subscription credit |
 | Provider switch | `LLM_PROVIDER` env var behind an `LLMProvider` interface |
 
 ### Sources
