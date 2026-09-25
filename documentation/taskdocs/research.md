@@ -121,4 +121,4 @@ Idea #7 ("work only with Claude, stop using Ollama") changes one earlier assumpt
 - **CPU performance on the dev VM is much lower than expected.** The VM's virtual CPU is "QEMU Virtual CPU version 2.5+" with no AVX flags, so llama.cpp falls back to slow scalar code. Measured with `gemma3:4b`: about 2.5 tokens/s generation and 4–13 tokens/s prompt processing. A RAG prompt of about 1,500 tokens would take minutes. Options:
   1. expose the host CPU to the VM (e.g. `cpu: host` in Proxmox/libvirt), which is expected to be 5–10× faster
   2. use a smaller model (`gemma3:1b`, `qwen3:1.7b`) and fewer or shorter chunks
-  3. use Claude for generation and keep Ollama only for embeddings (embedding one query takes about 0.1 s even here)
+  3. use Claude for generation and keep Ollama only for embeddings (embeddings are also slow on this CPU, about 0.7–1 s per query and about 6 s per chunk at index build, but the index is cached)

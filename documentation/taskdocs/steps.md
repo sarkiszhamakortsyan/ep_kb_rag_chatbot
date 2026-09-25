@@ -49,7 +49,7 @@ Based on the decisions in `research.md`, `storage.md` and `ideas.md`:
 - `providers/embeddings/`: `base.py`, `registry.py`, `ollama.py` (with the embeddinggemma query/document prefixes).
 - **Done when**: unit tests with fake providers pass, and the registry rejects disabled or unknown providers with a clear error.
 
-### Phase 3: Ingestion, chunking & vector store
+### Phase 3: Ingestion, chunking & vector store ✅ (2026-09-25: recall@5 = 0.97, hit rate = 1.00, MIN_SCORE = 0.35 kept, see `storage.md`)
 - `rag/chunking.py`: splits on headings first, then into windows of about 400 tokens with about 60 tokens of overlap. Each chunk keeps `doc_id`, `title`, `section`, `lang`.
 - `stores/vector/`:
   - `base.py`: the `VectorStore` interface (`add`, `search`, `count`)

@@ -1,10 +1,13 @@
 """Application settings, loaded from environment variables (and `.env` for local runs)."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+from app.rag.chunking import ChunkingConfig
 
 LLMProviderName = Literal["ollama", "anthropic"]
 EmbeddingProviderName = Literal["ollama"]
@@ -40,6 +43,12 @@ class Settings(BaseSettings):
     # Server-side fallback when the model's safety classifiers decline a request.
     anthropic_refusal_fallback: bool = True
 
+    # Knowledge base and index cache (relative to the backend directory)
+    kb_dir: Path = Path("data/kb")
+    index_dir: Path = Path("data/index")
+    chunk_max_words: int = Field(default=300, ge=50)
+    chunk_overlap_words: int = Field(default=45, ge=0)
+
     # Retrieval
     top_k: int = Field(default=5, ge=1, le=20)
     min_score: float = Field(default=0.35, ge=-1.0, le=1.0)
@@ -69,6 +78,11 @@ class Settings(BaseSettings):
                 f"{self.enabled_llm_providers}"
             )
         return self
+
+    def chunking(self) -> ChunkingConfig:
+        return ChunkingConfig(
+            max_words=self.chunk_max_words, overlap_words=self.chunk_overlap_words
+        )
 
 
 @lru_cache

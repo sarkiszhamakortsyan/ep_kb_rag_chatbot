@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–2 are done: KB + eval set, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–3 are done: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
 
 ## Commands
 
@@ -14,6 +14,8 @@ Backend (Python 3.12, managed by `uv`, run from `backend/`):
 - Single test: `uv run pytest tests/unit/test_smoke.py::test_package_imports`
 - Lint / format: `uv run ruff check` and `uv run ruff format` (`--check` in CI)
 - Type check: `uv run mypy`
+- Build/refresh the vector index: `uv run python -m app.rag.ingest [--force]` (cached in `data/index/`, rebuilt automatically when docs, chunking or the embedding model change)
+- Retrieval benchmark: `uv run python -m app.evaluation.retrieval [--k 5]`, or `uv run pytest -m eval -s` (needs Ollama)
 
 Frontend (Node 22, run from `frontend/`): `npm ci`, `npm run dev` (proxies `/api` to `localhost:8000`), `npm run build`, `npm run lint`, `npm run typecheck`.
 
