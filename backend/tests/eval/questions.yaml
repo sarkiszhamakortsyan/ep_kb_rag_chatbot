@@ -1,0 +1,137 @@
+# Evaluation set for retrieval quality, refusal behaviour and latency.
+# Used by pytest (-m eval) and, later, by the hidden "Tests" admin tab (ideas.md #6).
+#
+# Fields:
+#   expected_doc_ids  documents that must appear among the retrieved citations
+#   answerable        false = the KB does not contain the answer; the bot must refuse politely
+#   key_facts         strings a correct answer should contain (for optional answer checks)
+#   lang              language of the question (multi-language support, ideas.md #4)
+
+version: 1
+questions:
+  # --- Single-document questions ---------------------------------------------
+  - id: q01
+    question: Which plans support SCIM user provisioning?
+    expected_doc_ids: [kb-001]
+    answerable: true
+    lang: en
+    key_facts: ["Enterprise"]
+
+  - id: q02
+    question: A customer's SAML logins fail with error SSO-408. What is the likely cause?
+    expected_doc_ids: [kb-001]
+    answerable: true
+    lang: en
+    key_facts: ["clock skew", "3 minutes"]
+
+  - id: q03
+    question: How many API requests per minute can a Business workspace make?
+    expected_doc_ids: [kb-002]
+    answerable: true
+    lang: en
+    key_facts: ["600"]
+
+  - id: q04
+    question: What should a client do when it receives an HTTP 429 response?
+    expected_doc_ids: [kb-002]
+    answerable: true
+    lang: en
+    key_facts: ["Retry-After", "exponential backoff"]
+
+  - id: q05
+    question: How long are audit logs kept on the Enterprise plan?
+    expected_doc_ids: [kb-003]
+    answerable: true
+    lang: en
+    key_facts: ["7 years"]
+
+  - id: q06
+    question: What happens to customer data after the contract is terminated?
+    expected_doc_ids: [kb-003]
+    answerable: true
+    lang: en
+    key_facts: ["30-day grace period", "60 days"]
+
+  - id: q07
+    question: How do we verify that a webhook request really comes from OmniCorp?
+    expected_doc_ids: [kb-004]
+    answerable: true
+    lang: en
+    key_facts: ["HMAC-SHA256", "X-Omni-Signature", "5 minutes"]
+
+  - id: q08
+    question: Why was our webhook endpoint automatically disabled?
+    expected_doc_ids: [kb-004]
+    answerable: true
+    lang: en
+    key_facts: ["3 consecutive events"]
+
+  - id: q09
+    question: What is the first-response time for a P1 ticket for an Enterprise customer?
+    expected_doc_ids: [kb-005]
+    answerable: true
+    lang: en
+    key_facts: ["15 minutes"]
+
+  - id: q10
+    question: The customer had 98.7% uptime last month on the Business plan. What service credit do they get?
+    expected_doc_ids: [kb-005]
+    answerable: true
+    lang: en
+    key_facts: ["25%"]
+
+  # --- Multi-document questions (answer needs more than one source) -----------
+  - id: q11
+    question: Does the Salesforce connector consume our API rate limit, and what can we do if the initial sync is very large?
+    expected_doc_ids: [kb-004, kb-002]
+    answerable: true
+    lang: en
+    key_facts: ["200", "temporary"]
+
+  - id: q12
+    question: All administrators are locked out after enabling SSO enforcement. What should the customer do and how fast will support respond on the Enterprise tier?
+    expected_doc_ids: [kb-001, kb-005]
+    answerable: true
+    lang: en
+    key_facts: ["P1", "15 minutes"]
+
+  - id: q13
+    question: A customer accidentally deleted data two months ago. Can it be restored and how do they request it?
+    expected_doc_ids: [kb-003, kb-005]
+    answerable: true
+    lang: en
+    key_facts: ["35 days", "P2"]
+
+  - id: q14
+    question: What happens when a user is deprovisioned through SCIM, and does the customer get notified via webhook?
+    expected_doc_ids: [kb-001, kb-004]
+    answerable: true
+    lang: en
+    key_facts: ["5 minutes", "user.deprovisioned"]
+
+  # --- Other language (multilingual retrieval over English docs) --------------
+  - id: q15
+    question: Wie lange werden Backups aufbewahrt und in welchen Regionen werden die Daten gespeichert?
+    expected_doc_ids: [kb-003]
+    answerable: true
+    lang: de
+    key_facts: ["35", "Frankfurt"]
+
+  # --- Not covered by the knowledge base: must refuse / hand off -------------
+  - id: q16
+    question: What is the price per seat of the Business plan?
+    expected_doc_ids: []
+    answerable: false
+    lang: en
+
+  - id: q17
+    question: Does OmniCorp integrate with on-premise LDAP directories?
+    expected_doc_ids: []
+    answerable: false
+    lang: en
+
+  - id: q18
+    question: How do I enable offline mode in the OmniCorp mobile app?
+    expected_doc_ids: []
+    answerable: false
+    lang: en

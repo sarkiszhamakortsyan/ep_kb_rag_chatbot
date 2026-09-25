@@ -1,0 +1,15 @@
+{
+  "k": 6,
+  "questions": 18,
+  "mean_recall": 0.967,
+  "hit_rate": 1.0,
+  "min_score": 0.35,
+  "refusal_accuracy_at_min_score": 0.889,
+  "min_answerable_top_score": 0.416,
+  "max_unanswerable_top_score": 0.516,
+  "retrieval_latency": {
+    "p50_ms": 1108.39943999963,
+    "p95_ms": 3308.174592002615,
+    "max_ms": 3308.174592002615
+  }
+}

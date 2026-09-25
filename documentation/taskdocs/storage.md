@@ -49,3 +49,25 @@
 5. **Support Tiers, SLAs & Escalation Process** (P1–P4 definitions, response times, when to hand off to a human)
 
 These deliberately overlap a little (e.g. rate limits appear in both the API and the webhooks docs), so that retrieval has to rank sources and the answers can cite more than one document.
+
+### Addendum (2026-09-25): operational data for future ideas (`ideas.md`)
+
+The vector store holds **derived** data only, and it can always be rebuilt from `data/kb/`. The future stats, costs, response-history and runtime-settings features need **source-of-truth** data that must survive restarts. That will live in a separate **SQLite** database (a single file on a Docker volume, no extra container). It will be accessed through repository interfaces (`EventStore`, `HistoryRepository`), so it can move to Postgres later. If pgvector is ever adopted, the same Postgres instance can hold both.
+- **In the MVP**: only the `EventStore` interface, with a log-only implementation.
+- **Not in the MVP**: the SQLite database, schema, and migrations. They are added with the first idea that needs them.
+- **Also stays compatible**: the index cache key includes the embedding model name, so switching embedding providers (idea #7) automatically triggers a clean re-index.
+
+### Results (2026-09-25, Phase 3 implemented)
+
+- **Chunking**: the 5 articles give **49 chunks** (32–147 words each). Every section fits in one window, so the chunk boundaries follow the headings exactly. The section breadcrumb (e.g. `Configuring SAML 2.0 › Certificate rotation`) is embedded together with the text and shown in citations.
+- **Cache format**: `data/index/vectors.npy` + `chunks.json` + `manifest.json`. The manifest holds the fingerprint (docs + chunking parameters + embedding model + format version) and is written last. The index is built in a temporary directory and swapped in, so a crash never leaves a half-written index that looks valid. Loading the cache takes **~6 ms**. The first build takes **~5 minutes** on the dev VM (slow, AVX-less CPU; see `research.md`), which is why the cache is essential here.
+- **Retrieval quality** (`embeddinggemma`, k=5, 15 answerable questions): **mean recall 0.97, hit rate 1.00**. The only miss is q13: the support-process document (kb-005) was not in the top 5 for a restore question. This could be improved later with hybrid (BM25 + vector) retrieval.
+- **MIN_SCORE calibration** (cosine similarity of the best chunk):
+
+  | Question type | Top score |
+  |---|---|
+  | Answerable (15) | 0.416 – 0.746 (median 0.63) |
+  | Clearly off-topic (weather, jokes, football) | 0.03 – 0.18 |
+  | Near-topic but not in the KB (pricing, LDAP, mobile offline mode) | 0.32 – 0.52 |
+
+  **MIN_SCORE stays at 0.35.** It rejects off-topic questions without an LLM call and keeps a margin below the weakest answerable question. Near-topic unanswerable questions overlap with answerable scores, so **no threshold can separate them**. The Phase 4 prompt must make the LLM refuse when the retrieved context doesn't contain the answer, and the Phase 4/8 evaluation measures that.

@@ -107,3 +107,18 @@ There are two different Claude credentials, and they have different rules:
 - [Best Ollama models 2026 (Morph)](https://www.morphllm.com/best-ollama-models), [Ollama models for CPU-only computers](https://www.nextaipulse.com/ollama-models-for-cpu-only-computers), [Best Ollama models for RAG (LMSA)](https://lmsa.app/blog/the-ultimate-guide-to-the-best-ollama-models-for-rag-in-2026/)
 - [Best Ollama embedding models 2026 (Morph)](https://www.morphllm.com/ollama-embedding-models), [Ollama embeddings docs](https://docs.ollama.com/capabilities/embeddings)
 - [Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)
+
+### Addendum (2026-09-25): impact of `ideas.md`
+
+Idea #7 ("work only with Claude, stop using Ollama") changes one earlier assumption. Embeddings are *by default* produced by Ollama, but they sit behind their own `EmbeddingProvider` interface, so a non-Ollama option (in-process `embeddinggemma` via sentence-transformers, or Voyage AI) can be added later. The Ollama container becomes an optional Docker Compose profile. LLM providers must also return **token usage**, which the future costs tab needs. See `ideas.md` → "Future-readiness design".
+
+### Addendum (2026-09-25): findings from implementation (Phase 2)
+
+- **Claude default model is now `claude-opus-5`** (instead of `claude-sonnet-5`), following Anthropic's current guidance to default to Opus 5 unless a model is chosen explicitly. `ANTHROPIC_MODEL` still switches it (e.g. `claude-sonnet-5` is cheaper, `claude-haiku-4-5` is the cheapest).
+- **The Anthropic provider sends no `temperature`.** Opus 5 and Sonnet 5 reject sampling parameters. Answer style is controlled by the prompt, and latency and cost by the optional `ANTHROPIC_EFFORT`.
+- **Refusal fallback is on by default.** Opus 5 can decline some requests through its safety classifiers (HTTP 200, `stop_reason: "refusal"`). The request uses `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`), which re-runs a declined request on Anthropic's recommended fallback model. It can be switched off with `ANTHROPIC_REFUSAL_FALLBACK=false`.
+- **Prompt caching**: the system prompt is marked `cache_control: ephemeral`, and cache hits are reported in `usage.cache_read_input_tokens` (relevant for the costs tab, ideas.md #2).
+- **CPU performance on the dev VM is much lower than expected.** The VM's virtual CPU is "QEMU Virtual CPU version 2.5+" with no AVX flags, so llama.cpp falls back to slow scalar code. Measured with `gemma3:4b`: about 2.5 tokens/s generation and 4–13 tokens/s prompt processing. A RAG prompt of about 1,500 tokens would take minutes. Options:
+  1. expose the host CPU to the VM (e.g. `cpu: host` in Proxmox/libvirt), which is expected to be 5–10× faster
+  2. use a smaller model (`gemma3:1b`, `qwen3:1.7b`) and fewer or shorter chunks
+  3. use Claude for generation and keep Ollama only for embeddings (embeddings are also slow on this CPU, about 0.7–1 s per query and about 6 s per chunk at index build, but the index is cached)

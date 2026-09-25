@@ -35,8 +35,8 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <b>- [x] Check the "SUGGESTED TOOLS" and choose the best approaches</b><br />
 <b>- [x] Check how to use local Ollama and Anthropic API together</b><br />
 <b>- [x] Choose AI assistant - Claude</b><br />
-<b>- [ ] Make sure you log all the communication with the AI Assistant</b><br />
-- [ ] Create a plan step by step<br />
+<b>- [x] Make sure you log all the communication with the AI Assistant</b> (automatic export to `documentation/ai-logs/`)<br />
+<b>- [x] Create a plan step by step</b><br />
 - [ ] Create a hidden menu with statistics<br />
 - [ ] Create documentation<br />
 - [ ] Check if its possible to have hidden menu with casts. Check for a method / AI suggestions how to optimize them<br />
@@ -44,5 +44,5 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [ ] Option to Question / Answer in different language<br />
 - [ ] Add response history<br />
 - [ ] If the client insists to have the answer (if there is no in documentation) choose what to do - like forward to human, or disregard in polite way<br />
-- [ ] Unit, speed, and performance test<br />
+<b>- [x] Unit, speed, and performance test</b> (see `documentation/evaluation.md`)<br />
 - [ ] Proceed with the plan<br />
