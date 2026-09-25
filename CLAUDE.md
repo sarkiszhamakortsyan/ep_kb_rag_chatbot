@@ -1,0 +1,30 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project status
+
+This repository is in the **planning phase**: there is no application code, build system, or test suite yet. It contains only `README.md` (the assignment brief and a progress checklist) and task documents under `documentation/taskdocs/`. When code is added, update this file with the build, run, lint, and test commands (including how to run a single test).
+
+## What is being built
+
+A prototype **Enterprise Knowledge Base RAG chatbot** for "OmniCorp Solutions" Customer Success Managers. It answers natural-language questions **strictly from internal documentation** and returns **citations** to the source documents.
+
+Required pieces (from `README.md`):
+- **Backend API**: ingests 3–5 mock enterprise KB articles (which also need to be written), chunks them, stores embeddings in a local or in-memory vector store, and exposes a chat endpoint. The candidate languages are Python and Node.js; C#/.NET is also allowed.
+- **Frontend**: a web chat UI (React, Next.js, or Vite + TypeScript, optionally with Tailwind) that shows answers and the specific document citations used.
+- **LLM**: a local Ollama model, or bring-your-own-key via environment variables (Anthropic/OpenAI/Groq). Never commit real API keys.
+- **`docker-compose.yml`** that starts the whole stack locally.
+- Basic tests, plus a README section on architecture decisions, API design, trade-offs, and how to run and test the system.
+- **Mandatory:** export the AI assistant conversation logs (Claude transcripts) into the repo, and add a README note on which tools were used for which parts.
+
+The unchecked items in the README "Plan" list are planned features. They include a hidden statistics menu, multi-language Q&A, response history, polite handling or human handoff when the documentation has no answer, and unit, speed, and performance tests.
+
+## Task-doc workflow
+
+Work is driven by the markdown task files in `documentation/taskdocs/`, executed in the order given in `steps.md`:
+1. `goal.md`: the overall goal.
+2. `research.md`: choose the backend language (Python vs Node.js) and the frontend stack, pick the best Ollama model, and work out how to support Claude. **Findings get written back into this same file**, with the reasoning for and against each option.
+3. `storage.md`: choose the vector store approach (local vs in-memory). **Findings get written back into this same file.**
+
+When you complete a task doc, append the research and decisions to that file instead of creating a new one. Update the README checklist as items are finished.

@@ -31,9 +31,9 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <h2>Plan</h2>
 <b>- [x] Get better understanding of the task</b><br />
 <b>- [x] Read information about every unknown term</b><br />
-- [ ] Research which coding languages are the best to be used for the task<br />
-- [ ] Check the "SUGGESTED TOOLS" and choose the best approaches<br />
-- [ ] Check how to use local Ollama and Anthropic API together<br />
+<b>- [x] Research which coding languages are the best to be used for the task</b><br />
+<b>- [x] Check the "SUGGESTED TOOLS" and choose the best approaches</b><br />
+<b>- [x] Check how to use local Ollama and Anthropic API together</b><br />
 <b>- [x] Choose AI assistant - Claude</b><br />
 <b>- [ ] Make sure you log all the communication with the AI Assistant</b><br />
 - [ ] Create a plan step by step<br />
