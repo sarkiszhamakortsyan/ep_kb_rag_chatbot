@@ -55,10 +55,16 @@ class Settings(BaseSettings):
     top_k: int = Field(default=6, ge=1, le=20)
     min_score: float = Field(default=0.35, ge=-1.0, le=1.0)
 
+    # API
+    # Browser origins allowed to call the API directly (the Vite dev server). In Docker the
+    # frontend is served from the same origin via nginx, so no CORS is needed there.
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    log_level: str = "INFO"
+
     # Admin area (future hidden tabs); disabled when empty
     admin_token: SecretStr | None = None
 
-    @field_validator("enabled_llm_providers", mode="before")
+    @field_validator("enabled_llm_providers", "cors_origins", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
         if isinstance(value, str):

@@ -77,7 +77,17 @@ Final run: median 4.8 s per answer, first token after about 2–3 s, about 1,300
   - pipeline unit tests (with a fake LLM) pass for these cases: answer with citations, low-score refusal, citation mapping, and a `[n]` marker that matches no source
   - a manual run with Ollama answers the eval questions sensibly
 
-### Phase 5: API
+### Phase 5: API ✅ (2026-09-25)
+
+Verified in Docker through nginx:
+- `/health` reports `starting` while the index loads in the background, and `/chat` returns 503 `not_ready` until then
+- the index was built on the volume (about 5 minutes) and loaded from cache in seconds after a restart
+- `/chat` and `/chat/stream` work with Claude (about 5 s per answer, first token after about 2.3 s)
+- the logs are JSON with a request id
+
+Bugs found and fixed:
+1. writing the index across filesystems failed on the Docker volume (EXDEV)
+2. configuration errors at startup were retried forever
 - FastAPI app with CORS limited to the frontend's origin, plus structured JSON logging with a request id.
 - Endpoints:
   - `GET /api/v1/health`: liveness, plus readiness (index loaded, provider reachable)

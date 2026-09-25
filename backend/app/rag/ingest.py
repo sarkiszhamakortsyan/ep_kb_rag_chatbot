@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import shutil
 import sys
 import time
@@ -24,6 +25,7 @@ from app.stores.vector.memory import InMemoryVectorStore
 logger = logging.getLogger(__name__)
 
 MANIFEST_FILE = "manifest.json"
+STAGING_DIR = ".building"
 # Bump when the chunk/index format changes in a way the fingerprint cannot see.
 INDEX_FORMAT_VERSION = 1
 
@@ -121,11 +123,13 @@ def _save(
     embedder: EmbeddingProvider,
     documents: int,
 ) -> None:
-    # Write into a temporary directory and swap it in, so a crash never leaves a half-written
-    # index that looks valid. The manifest is written last.
-    tmp = index_dir.with_name(index_dir.name + ".tmp")
-    shutil.rmtree(tmp, ignore_errors=True)
-    store.save(tmp)
+    # Build in a staging folder *inside* index_dir (in Docker, index_dir is a mounted volume;
+    # renaming from outside it would cross filesystems). Then invalidate the old manifest,
+    # move the data files in, and publish the new manifest last, so a crash at any point
+    # leaves no manifest pointing at half-written data.
+    staging = index_dir / STAGING_DIR
+    shutil.rmtree(staging, ignore_errors=True)
+    store.save(staging)
     manifest = {
         "fingerprint": key,
         "embedding_model": f"{embedder.name}:{embedder.model}",
@@ -133,17 +137,13 @@ def _save(
         "chunks": store.count(),
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    (tmp / MANIFEST_FILE).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    index_dir.mkdir(parents=True, exist_ok=True)
-    # Replace the contents rather than the directory itself: in Docker it is a mounted volume.
-    for item in index_dir.iterdir():
-        if item.is_dir():
-            shutil.rmtree(item)
-        else:
-            item.unlink()
-    for item in tmp.iterdir():
-        item.rename(index_dir / item.name)
-    tmp.rmdir()
+    (staging / MANIFEST_FILE).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (index_dir / MANIFEST_FILE).unlink(missing_ok=True)
+    for item in staging.iterdir():
+        if item.name != MANIFEST_FILE:
+            os.replace(item, index_dir / item.name)
+    os.replace(staging / MANIFEST_FILE, index_dir / MANIFEST_FILE)
+    staging.rmdir()
 
 
 def _report(

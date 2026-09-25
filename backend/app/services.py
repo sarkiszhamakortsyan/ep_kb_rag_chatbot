@@ -1,10 +1,15 @@
 """Builds the object graph (providers, index, pipeline) from settings. Used by the API
 startup and the CLIs, so all entry points are wired the same way."""
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from app.core.config import Settings
+from app.providers.embeddings import registry as embedding_registry
+from app.providers.embeddings.base import EmbeddingProvider
 from app.providers.embeddings.registry import EmbeddingRegistry, build_embedding_registry
+from app.providers.llm import registry as llm_registry
+from app.providers.llm.base import LLMProvider
 from app.providers.llm.registry import LLMRegistry, build_llm_registry
 from app.rag.ingest import IndexReport, build_or_load_index
 from app.rag.pipeline import RagPipeline
@@ -27,9 +32,18 @@ class Services:
         await self.embeddings.aclose()
 
 
-async def create_services(settings: Settings, events: EventStore | None = None) -> Services:
-    embeddings = build_embedding_registry(settings)
-    llms = build_llm_registry(settings)
+async def create_services(
+    settings: Settings,
+    events: EventStore | None = None,
+    *,
+    llm_factories: Mapping[str, Callable[[Settings], LLMProvider]] | None = None,
+    embedding_factories: Mapping[str, Callable[[Settings], EmbeddingProvider]] | None = None,
+) -> Services:
+    """`*_factories` override how providers are created (tests use fakes)."""
+    embeddings = build_embedding_registry(
+        settings, embedding_factories or embedding_registry.DEFAULT_FACTORIES
+    )
+    llms = build_llm_registry(settings, llm_factories or llm_registry.DEFAULT_FACTORIES)
     try:
         embedder = embeddings.get()
         store, report = await build_or_load_index(

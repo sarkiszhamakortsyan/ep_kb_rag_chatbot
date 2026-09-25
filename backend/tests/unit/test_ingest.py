@@ -1,4 +1,5 @@
 import json
+import os
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -86,6 +87,25 @@ async def test_force_rebuilds(kb: Path, tmp_path: Path) -> None:
     await build_or_load_index(kb, index, CountingEmbedder())
     _, report = await build_or_load_index(kb, index, CountingEmbedder(), force=True)
     assert report.rebuilt
+
+
+async def test_index_is_written_within_the_index_dir(
+    kb: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # In Docker the index dir is a mounted volume: renames from outside it fail (EXDEV).
+    index = tmp_path / "index"
+    moves: list[tuple[Path, Path]] = []
+    real_replace = os.replace
+
+    def recording_replace(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        moves.append((Path(src), Path(dst)))
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", recording_replace)
+    await build_or_load_index(kb, index, CountingEmbedder())
+    assert moves and all(index in src.parents and dst.parent == index for src, dst in moves)
+    assert moves[-1][1].name == MANIFEST_FILE  # manifest published last
+    assert sorted(p.name for p in index.iterdir()) == ["chunks.json", MANIFEST_FILE, "vectors.npy"]
 
 
 def test_duplicate_ids_are_rejected(kb: Path) -> None:
