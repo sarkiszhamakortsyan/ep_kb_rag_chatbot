@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–1 are done, and the Docker Compose stack runs (backend health endpoint + frontend placeholder). Keep this file's commands up to date as phases add them.
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–2 are done: KB + eval set, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
 
 ## Commands
 

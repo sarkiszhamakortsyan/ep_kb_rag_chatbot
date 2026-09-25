@@ -27,10 +27,18 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_chat_model: str = "gemma3:4b"
     ollama_embed_model: str = "embeddinggemma"
+    ollama_num_ctx: int = Field(default=4096, ge=512)
+    ollama_keep_alive: str = "30m"
+    # None = don't send `think`; set false for thinking models (e.g. qwen3) to cut CPU latency.
+    ollama_think: bool | None = None
 
     # Anthropic (bring your own key)
     anthropic_api_key: SecretStr | None = None
-    anthropic_model: str = "claude-sonnet-5"
+    anthropic_model: str = "claude-opus-5"
+    # None = API default (high). "low"/"medium" cut latency and cost for simple Q&A.
+    anthropic_effort: Literal["low", "medium", "high", "xhigh", "max"] | None = None
+    # Server-side fallback when the model's safety classifiers decline a request.
+    anthropic_refusal_fallback: bool = True
 
     # Retrieval
     top_k: int = Field(default=5, ge=1, le=20)
@@ -46,7 +54,9 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
-    @field_validator("anthropic_api_key", "admin_token", mode="before")
+    @field_validator(
+        "anthropic_api_key", "admin_token", "ollama_think", "anthropic_effort", mode="before"
+    )
     @classmethod
     def _empty_to_none(cls, value: object) -> object:
         return None if value == "" else value

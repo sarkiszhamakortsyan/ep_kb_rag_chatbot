@@ -39,7 +39,7 @@ Based on the decisions in `research.md`, `storage.md` and `ideas.md`:
 - Write `backend/tests/eval/questions.yaml`: about 15 questions, each with the expected `doc_id`s, plus about 3 questions the docs can't answer (these must be refused).
 - **Done when**: the articles and the eval set have been reviewed by the user.
 
-### Phase 2: Configuration & provider interfaces
+### Phase 2: Configuration & provider interfaces ✅ (2026-09-25)
 - `core/config.py` (pydantic-settings) with these settings: `LLM_PROVIDER`, `ENABLED_LLM_PROVIDERS`, `EMBEDDING_PROVIDER`, `OLLAMA_BASE_URL`, `OLLAMA_CHAT_MODEL`, `OLLAMA_EMBED_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `TOP_K`, `MIN_SCORE`, `ADMIN_TOKEN`.
 - `providers/llm/`:
   - `base.py`: the `LLMProvider` interface. It streams tokens and returns `usage` at the end.
