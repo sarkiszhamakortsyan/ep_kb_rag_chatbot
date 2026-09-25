@@ -98,7 +98,16 @@ Bugs found and fixed:
 - Input limits: maximum message length, and graceful 4xx/5xx errors when a provider is down or a key is missing.
 - **Done when**: API tests using `TestClient` and fake providers pass for the chat, stream, validation-error and provider-down cases.
 
-### Phase 6: Frontend
+### Phase 6: Frontend ✅ (2026-09-25)
+
+Verified in a real (headless Chromium) browser against the Docker stack:
+- a streamed answer with citation chips, where clicking a chip highlights its source card
+- a refusal shown in amber
+- a German question answered in German
+- "New conversation" clears the chat, and `/admin` loads the placeholder
+- no console errors
+
+Frontend checks: 14 Vitest tests, eslint and `tsc` are clean.
 - A Vite + React + TS + Tailwind app. `src/api/` holds a typed client whose types mirror the Pydantic schemas, plus an SSE stream reader.
 - `features/chat/`:
   - message list and input box, with streamed answers

@@ -43,3 +43,9 @@ def test_prompt_templates_are_loaded_from_files() -> None:
     assert "Answer only from the sources" in system
     assert "do not include any citation" in system
     assert "Internal SME Request" in load_prompt("no_answer")
+
+
+def test_snippet_strips_markdown() -> None:
+    text = "- **HTTP 429 `RATE_LIMITED`**: retry later.\n\n| Plan | Limit |\n|---|---|\n| A | 60 |"
+    citation = build_citations("[1]", [result(1, text=text)])[0]
+    assert citation.snippet == "HTTP 429 RATE_LIMITED: retry later. Plan · Limit; A · 60"

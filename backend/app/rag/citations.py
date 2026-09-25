@@ -54,8 +54,25 @@ def to_citation(number: int, result: SearchResult, snippet_chars: int = 280) -> 
     )
 
 
+_MARKDOWN = [
+    (re.compile(r"^\s*\|?\s*:?-{3,}.*$", re.MULTILINE), ""),  # table separator rows
+    (re.compile(r"^\s*(?:[-*+]|\d+\.)\s+", re.MULTILINE), ""),  # list markers
+    (re.compile(r"\*\*|__|`"), ""),  # bold and code markers
+    (re.compile(r"^[ \t]*\|[ \t]*", re.MULTILINE), ""),  # table row start
+    (re.compile(r"[ \t]*\|[ \t]*$", re.MULTILINE), ";"),  # table row end
+    (re.compile(r"[ \t]*\|[ \t]*"), " · "),  # table cell separators
+]
+
+
+def _plain(text: str) -> str:
+    """Snippets are shown as plain text, so strip the common Markdown syntax."""
+    for pattern, replacement in _MARKDOWN:
+        text = pattern.sub(replacement, text)
+    return text.strip().rstrip(";")
+
+
 def _snippet(text: str, limit: int) -> str:
-    flat = " ".join(text.split())
+    flat = " ".join(_plain(text).split())
     if len(flat) <= limit:
         return flat
     return flat[:limit].rsplit(" ", 1)[0] + "…"
