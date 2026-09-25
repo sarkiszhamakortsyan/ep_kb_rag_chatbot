@@ -4,7 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is in the **planning phase**: there is no application code, build system, or test suite yet. It contains only `README.md` (the assignment brief and a progress checklist) and task documents under `documentation/taskdocs/`. When code is added, update this file with the build, run, lint, and test commands (including how to run a single test).
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phase 0 (skeleton and tooling) is done. The backend has tooling but no features yet, and the frontend is not scaffolded yet (Phase 6). Keep this file's commands up to date as phases add them.
+
+## Commands
+
+Backend (Python 3.12, managed by `uv`, run from `backend/`):
+- Install/sync deps: `uv sync`
+- Tests: `uv run pytest` (runs only unit tests by default; `-m integration` needs Ollama, `-m eval` runs the benchmark)
+- Single test: `uv run pytest tests/unit/test_smoke.py::test_package_imports`
+- Lint / format: `uv run ruff check` and `uv run ruff format` (`--check` in CI)
+- Type check: `uv run mypy`
+
+Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ignored, so never commit real keys.
+
+## Layout
+
+- `backend/app/`: `api/v1` (routes), `core` (config, security), `rag` (ingest, chunking, retrieval, pipeline), `prompts` (template files), `providers/llm` + `providers/embeddings` (interfaces and registries), `stores/vector` + `stores/events`, `evaluation` (benchmark shared by tests and the future admin tab).
+- `backend/data/kb/`: the mock KB articles (Markdown). `backend/data/index/` is the generated index cache (git-ignored).
+- `backend/tests/`: `unit/`, `integration/`, `eval/questions.yaml`.
+- `frontend/`: Vite + React + TS + Tailwind (Phase 6).
+- `documentation/ai-logs/`: exported Claude transcripts (a mandatory deliverable).
 
 ## What is being built
 
@@ -26,5 +45,6 @@ Work is driven by the markdown task files in `documentation/taskdocs/`, executed
 1. `goal.md`: the overall goal.
 2. `research.md`: choose the backend language (Python vs Node.js) and the frontend stack, pick the best Ollama model, and work out how to support Claude. **Findings get written back into this same file**, with the reasoning for and against each option.
 3. `storage.md`: choose the vector store approach (local vs in-memory). **Findings get written back into this same file.**
+4. `ideas.md`: future features (stats, costs, history, multi-language, test tab, provider toggle). **Do not implement them unless asked**, but every piece of code must keep the seams listed in its "Future-readiness design" section: `ChatResult` with usage/timings, `/api/v1` + an `options` object, separate `LLMProvider`/`EmbeddingProvider` registries, the `EventStore` hook, and prompts as template files. Mark an idea done in `ideas.md` only after it is implemented.
 
 When you complete a task doc, append the research and decisions to that file instead of creating a new one. Update the README checklist as items are finished.
