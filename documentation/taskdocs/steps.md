@@ -59,7 +59,7 @@ Based on the decisions in `research.md`, `storage.md` and `ideas.md`:
   - unit tests cover chunk boundaries and metadata, cosine top-k ordering, and cache reuse vs. invalidation
   - retrieval hit-rate on the eval set is ≥ 80% (expected doc in the top k) with the real Ollama embeddings
 
-### Phase 4: RAG pipeline & prompts
+### Phase 4: RAG pipeline & prompts 🔍 (code and unit tests done 2026-09-25; waiting for the Claude end-to-end evaluation. The local Ollama run timed out after 300 s on the AVX-less VM)
 - `prompts/system.md`: professional, concise answers, using **only** the provided context. Sources are cited as `[n]`. The answer is in the language of the question. If the context doesn't contain the answer, it says so politely and suggests escalating to a human (Support/SME).
 - `rag/pipeline.py`: embed the question → retrieve top-k → if the best score is below `MIN_SCORE`, refuse without calling the LLM (saves cost and prevents hallucination) → build the prompt → generate → map the `[n]` markers to citations. It returns a `ChatResult` with `answer`, `citations`, `language`, `provider`, `model`, `usage`, `timings`, `top_score`, `refused`.
 - `stores/events/`: the `EventStore` interface plus a log-only implementation, called once per turn.

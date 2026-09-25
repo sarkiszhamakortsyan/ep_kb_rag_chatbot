@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     ollama_keep_alive: str = "30m"
     # None = don't send `think`; set false for thinking models (e.g. qwen3) to cut CPU latency.
     ollama_think: bool | None = None
+    # Max wait for the first token / between tokens (prompt processing is slow on CPU)
+    ollama_timeout_s: float = Field(default=300.0, gt=0)
 
     # Anthropic (bring your own key)
     anthropic_api_key: SecretStr | None = None

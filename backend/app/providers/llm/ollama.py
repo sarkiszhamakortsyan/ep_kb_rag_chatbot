@@ -15,8 +15,6 @@ from app.providers.llm.base import (
     Usage,
 )
 
-# Local CPU inference is slow; a whole answer may take minutes.
-_TIMEOUT = httpx.Timeout(connect=5.0, read=300.0, write=30.0, pool=5.0)
 _DEFAULT_MAX_OUTPUT_TOKENS = 1024
 
 
@@ -33,6 +31,7 @@ class OllamaLLMProvider(LLMProvider):
         num_ctx: int = 4096,
         keep_alive: str = "30m",
         think: bool | None = None,
+        timeout_s: float = 300.0,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.model = model
@@ -40,7 +39,13 @@ class OllamaLLMProvider(LLMProvider):
         self._keep_alive = keep_alive
         # Only sent when set: models without a thinking mode reject the parameter.
         self._think = think
-        self._client = client or httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT)
+        # The read timeout covers prompt processing before the first token, which can take
+        # minutes for a RAG prompt on a slow CPU.
+        self._timeout_s = timeout_s
+        self._client = client or httpx.AsyncClient(
+            base_url=base_url,
+            timeout=httpx.Timeout(connect=5.0, read=timeout_s, write=30.0, pool=5.0),
+        )
 
     def _payload(
         self, system: str, messages: Sequence[ChatMessage], options: GenerationOptions
@@ -92,8 +97,13 @@ class OllamaLLMProvider(LLMProvider):
                             model=self.model,
                         )
                         return
+        except httpx.TimeoutException as exc:
+            raise ProviderUnavailableError(
+                f"Ollama did not respond within {self._timeout_s:.0f} s (model too slow for this "
+                "hardware? raise OLLAMA_TIMEOUT_S or use a smaller model)"
+            ) from exc
         except httpx.TransportError as exc:
-            raise ProviderUnavailableError(f"Ollama is unreachable: {exc}") from exc
+            raise ProviderUnavailableError(f"Ollama is unreachable: {exc!r}") from exc
         raise ProviderUnavailableError("Ollama closed the stream before finishing")
 
     async def aclose(self) -> None:

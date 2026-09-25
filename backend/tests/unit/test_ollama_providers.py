@@ -101,6 +101,15 @@ async def test_chat_connection_failure_is_unavailable() -> None:
         await provider.generate("s", [ChatMessage("user", "q")])
 
 
+async def test_chat_timeout_is_explained() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("timed out")
+
+    provider = OllamaLLMProvider("http://ollama", "gemma3:4b", timeout_s=42, client=client(handler))
+    with pytest.raises(ProviderUnavailableError, match="within 42 s"):
+        await provider.generate("s", [ChatMessage("user", "q")])
+
+
 async def test_chat_stream_cut_off_is_unavailable() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, content=ndjson({"message": {"content": "Hel"}, "done": False}))

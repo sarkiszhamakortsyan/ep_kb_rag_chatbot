@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–3 are done: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–3 are done, and Phase 4 (pipeline: `app/rag/pipeline.py`, prompts in `app/prompts/*.md`, wiring in `app/services.py`) is awaiting its end-to-end evaluation. Done so far: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
 
 ## Commands
 
@@ -15,6 +15,7 @@ Backend (Python 3.12, managed by `uv`, run from `backend/`):
 - Lint / format: `uv run ruff check` and `uv run ruff format` (`--check` in CI)
 - Type check: `uv run mypy`
 - Build/refresh the vector index: `uv run python -m app.rag.ingest [--force]` (cached in `data/index/`, rebuilt automatically when docs, chunking or the embedding model change)
+- Answer benchmark (full pipeline, real LLM, costs tokens with Claude): `uv run python -m app.evaluation.answers [--provider anthropic] [--ids q01,q16] [--show]`
 - Retrieval benchmark: `uv run python -m app.evaluation.retrieval [--k 5]`, or `uv run pytest -m eval -s` (needs Ollama)
 
 Frontend (Node 22, run from `frontend/`): `npm ci`, `npm run dev` (proxies `/api` to `localhost:8000`), `npm run build`, `npm run lint`, `npm run typecheck`.

@@ -17,6 +17,7 @@ def _ollama(settings: Settings) -> LLMProvider:
         num_ctx=settings.ollama_num_ctx,
         keep_alive=settings.ollama_keep_alive,
         think=settings.ollama_think,
+        timeout_s=settings.ollama_timeout_s,
     )
 
 
