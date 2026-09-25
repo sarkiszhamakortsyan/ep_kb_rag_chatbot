@@ -30,7 +30,7 @@ Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ign
 - `backend/data/kb/`: the mock KB articles (Markdown). `backend/data/index/` is the generated index cache (git-ignored).
 - `backend/tests/`: `unit/`, `integration/`, `eval/questions.yaml`.
 - `frontend/`: Vite + React + TS + Tailwind (Phase 6).
-- `documentation/ai-logs/`: exported Claude transcripts (a mandatory deliverable).
+- `documentation/ai-logs/`: Claude Code sessions as Markdown (a mandatory deliverable). They are regenerated automatically after every assistant turn by the Stop/SessionEnd hooks in `.claude/settings.json`, which run `scripts/export_ai_logs.py --hook` (redacts secrets). Manual full export: `python3 scripts/export_ai_logs.py --all`. Commit the updated logs together with each phase.
 
 ## What is being built
 
