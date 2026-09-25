@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phase 0 (skeleton and tooling) is done. The backend has tooling but no features yet, and the frontend is not scaffolded yet (Phase 6). Keep this file's commands up to date as phases add them.
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–1 are done, and the Docker Compose stack runs (backend health endpoint + frontend placeholder). Keep this file's commands up to date as phases add them.
 
 ## Commands
 
@@ -14,6 +14,10 @@ Backend (Python 3.12, managed by `uv`, run from `backend/`):
 - Single test: `uv run pytest tests/unit/test_smoke.py::test_package_imports`
 - Lint / format: `uv run ruff check` and `uv run ruff format` (`--check` in CI)
 - Type check: `uv run mypy`
+
+Frontend (Node 22, run from `frontend/`): `npm ci`, `npm run dev` (proxies `/api` to `localhost:8000`), `npm run build`, `npm run lint`, `npm run typecheck`.
+
+Full stack (repo root): `docker compose up -d --build`, then open http://localhost:8080. Ollama starts via `COMPOSE_PROFILES=ollama` in `.env`, and `ollama-init` pulls the models on first run. Ollama is published on `127.0.0.1:11434` for host-side dev and integration tests. Run the backend locally with `uv run uvicorn app.main:api --reload` (from `backend/`).
 
 Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ignored, so never commit real keys.
 

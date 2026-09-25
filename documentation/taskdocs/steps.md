@@ -33,7 +33,7 @@ Based on the decisions in `research.md`, `storage.md` and `ideas.md`:
 - Update `CLAUDE.md` with the build, lint and test commands.
 - **Done when**: `uv run pytest` runs (0 tests OK), `uv run ruff check` passes, `.env` is git-ignored.
 
-### Phase 1: Mock knowledge base 🔍 (written 2026-09-25, awaiting user review)
+### Phase 1: Mock knowledge base ✅ (2026-09-25)
 - Write the 5 OmniCorp Markdown articles proposed in `storage.md`. Each has front matter (`id`, `title`, `product`, `lang`, `updated`) and `##`/`###` sections.
 - The topics overlap a little, so that some answers need citations from more than one document.
 - Write `backend/tests/eval/questions.yaml`: about 15 questions, each with the expected `doc_id`s, plus about 3 questions the docs can't answer (these must be refused).
@@ -90,7 +90,7 @@ Based on the decisions in `research.md`, `storage.md` and `ideas.md`:
   - `npm run build`, `npm run lint` and `npm test` pass
   - chatting against the local backend works end to end in the browser
 
-### Phase 7: Docker Compose
+### Phase 7: Docker Compose (partly done early, 2026-09-25: the stack with ollama/ollama-init/backend/frontend, the backend `/api/v1/health` and the frontend scaffold run and were verified. Remaining: final polish and fresh-clone check)
 - `backend/Dockerfile` (multi-stage, uv, non-root user).
 - `frontend/Dockerfile`: builds the app, then serves it with nginx. nginx also proxies `/api` to the backend, so the browser never has CORS issues.
 - `docker-compose.yml`:
