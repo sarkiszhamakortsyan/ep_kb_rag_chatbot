@@ -107,3 +107,7 @@ There are two different Claude credentials, and they have different rules:
 - [Best Ollama models 2026 (Morph)](https://www.morphllm.com/best-ollama-models), [Ollama models for CPU-only computers](https://www.nextaipulse.com/ollama-models-for-cpu-only-computers), [Best Ollama models for RAG (LMSA)](https://lmsa.app/blog/the-ultimate-guide-to-the-best-ollama-models-for-rag-in-2026/)
 - [Best Ollama embedding models 2026 (Morph)](https://www.morphllm.com/ollama-embedding-models), [Ollama embeddings docs](https://docs.ollama.com/capabilities/embeddings)
 - [Use the Claude Agent SDK with your Claude plan](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan), [Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)
+
+### Addendum (2026-09-25): impact of `ideas.md`
+
+Idea #7 ("work only with Claude, stop using Ollama") changes one earlier assumption. Embeddings are *by default* produced by Ollama, but they sit behind their own `EmbeddingProvider` interface, so a non-Ollama option (in-process `embeddinggemma` via sentence-transformers, or Voyage AI) can be added later. The Ollama container becomes an optional Docker Compose profile. LLM providers must also return **token usage**, which the future costs tab needs. See `ideas.md` → "Future-readiness design".

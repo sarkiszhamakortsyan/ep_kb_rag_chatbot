@@ -49,3 +49,10 @@
 5. **Support Tiers, SLAs & Escalation Process** (P1–P4 definitions, response times, when to hand off to a human)
 
 These deliberately overlap a little (e.g. rate limits appear in both the API and the webhooks docs), so that retrieval has to rank sources and the answers can cite more than one document.
+
+### Addendum (2026-09-25): operational data for future ideas (`ideas.md`)
+
+The vector store holds **derived** data only, and it can always be rebuilt from `data/kb/`. The future stats, costs, response-history and runtime-settings features need **source-of-truth** data that must survive restarts. That will live in a separate **SQLite** database (a single file on a Docker volume, no extra container). It will be accessed through repository interfaces (`EventStore`, `HistoryRepository`), so it can move to Postgres later. If pgvector is ever adopted, the same Postgres instance can hold both.
+- **In the MVP**: only the `EventStore` interface, with a log-only implementation.
+- **Not in the MVP**: the SQLite database, schema, and migrations. They are added with the first idea that needs them.
+- **Also stays compatible**: the index cache key includes the embedding model name, so switching embedding providers (idea #7) automatically triggers a clean re-index.
