@@ -35,6 +35,7 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [ ] Check the "SUGGESTED TOOLS" and choose the best approaches<br />
 - [ ] Check how to use local Ollama and Anthropic API together<br />
 <b>- [x] Choose AI assistant - Claude</b><br />
+<b>- [ ] Make sure you log all the communication with the AI Assistant</b><br />
 - [ ] Create a plan step by step<br />
 - [ ] Create a hidden menu with statistics<br />
 - [ ] Create documentation<br />
