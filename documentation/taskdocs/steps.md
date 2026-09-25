@@ -59,7 +59,17 @@ Based on the decisions in `research.md`, `storage.md` and `ideas.md`:
   - unit tests cover chunk boundaries and metadata, cosine top-k ordering, and cache reuse vs. invalidation
   - retrieval hit-rate on the eval set is ≥ 80% (expected doc in the top k) with the real Ollama embeddings
 
-### Phase 4: RAG pipeline & prompts 🔍 (code and unit tests done 2026-09-25; waiting for the Claude end-to-end evaluation. The local Ollama run timed out after 300 s on the AVX-less VM)
+### Phase 4: RAG pipeline & prompts ✅ (2026-09-25)
+
+**Evaluation with Claude** (`claude-opus-5`, `uv run python -m app.evaluation.answers --provider anthropic`):
+
+| Run | Change | Passed | Notes |
+|---|---|---|---|
+| 1 | first prompt, TOP_K=5 | 13/18 | 4 English questions answered in German or Portuguese; LDAP refusal padded with cited "context"; q12 missing the P1 response time |
+| 2 | stricter language rule and no "related info" in refusals | 17/18 | all answers in the question's language; 3/3 refusals |
+| 3 | TOP_K=6 | **18/18** | the response-time table was ranked 6th for the two-document question q12 |
+
+Final run: median 4.8 s per answer, first token after about 2–3 s, about 1,300 input and 270 output tokens per answer. Prompt caching reads about 40% of the input tokens from the cache. The local Ollama run timed out after 300 s on the AVX-less VM, so it must be re-run after the VM CPU change.
 - `prompts/system.md`: professional, concise answers, using **only** the provided context. Sources are cited as `[n]`. The answer is in the language of the question. If the context doesn't contain the answer, it says so politely and suggests escalating to a human (Support/SME).
 - `rag/pipeline.py`: embed the question → retrieve top-k → if the best score is below `MIN_SCORE`, refuse without calling the LLM (saves cost and prevents hallucination) → build the prompt → generate → map the `[n]` markers to citations. It returns a `ChatResult` with `answer`, `citations`, `language`, `provider`, `model`, `usage`, `timings`, `top_score`, `refused`.
 - `stores/events/`: the `EventStore` interface plus a log-only implementation, called once per turn.

@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     chunk_overlap_words: int = Field(default=45, ge=0)
 
     # Retrieval
-    top_k: int = Field(default=5, ge=1, le=20)
+    top_k: int = Field(default=6, ge=1, le=20)
     min_score: float = Field(default=0.35, ge=-1.0, le=1.0)
 
     # Admin area (future hidden tabs); disabled when empty

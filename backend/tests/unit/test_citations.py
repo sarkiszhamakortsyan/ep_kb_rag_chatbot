@@ -41,5 +41,5 @@ def test_user_message_numbers_sources_and_ends_with_question() -> None:
 def test_prompt_templates_are_loaded_from_files() -> None:
     system = load_prompt("system")
     assert "Answer only from the sources" in system
-    assert "Do not include any citation" in system
+    assert "do not include any citation" in system
     assert "Internal SME Request" in load_prompt("no_answer")
