@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–8 are done (testing and evaluation baseline in `documentation/evaluation.md`; CI in `.github/workflows/ci.yml`) ; chat UI and the Docker setup were verified from a fresh clone: the API is in `app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); Swagger at `/docs`. Pipeline: `app/rag/pipeline.py`, prompts in `app/prompts/*.md`, wiring in `app/services.py`; Claude eval 18/18. Done so far: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
+All phases (0–9) of the build plan in `documentation/taskdocs/steps.md` are done. The README documents the architecture, API, trade-offs, testing and AI usage; `documentation/evaluation.md` has the test and benchmark results (Claude 18/18, local `gemma3:4b` 14/18). Key entry points: the API app factory `backend/app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); the pipeline in `app/rag/pipeline.py`, with prompts in `app/prompts/*.md` and wiring in `app/services.py`; shared test fakes in `backend/tests/fakes.py`. CI: `.github/workflows/ci.yml`. New features come from `documentation/taskdocs/ideas.md`, one at a time. Keep this file's commands up to date.
 
 ## Commands
 
@@ -15,12 +15,12 @@ Backend (Python 3.12, managed by `uv`, run from `backend/`):
 - Lint / format: `uv run ruff check` and `uv run ruff format` (`--check` in CI)
 - Type check: `uv run mypy`
 - Build/refresh the vector index: `uv run python -m app.rag.ingest [--force]` (cached in `data/index/`, rebuilt automatically when docs, chunking or the embedding model change)
-- Answer benchmark (full pipeline, real LLM, costs tokens with Claude): `uv run python -m app.evaluation.answers [--provider anthropic] [--ids q01,q16] [--show]`
-- Retrieval benchmark: `uv run python -m app.evaluation.retrieval [--k 5]`, or `uv run pytest -m eval -s` (needs Ollama)
+- Answer benchmark (full pipeline, real LLM, costs tokens with Claude): `uv run python -m app.evaluation.answers [--provider anthropic|ollama] [--ids q01,q16] [--show] [--json out.json]`
+- Retrieval benchmark: `uv run python -m app.evaluation.retrieval [--k 6] [--json out.json]`, or `uv run pytest -m eval -s` (needs Ollama)
 
 Frontend (Node 22, run from `frontend/`): `npm ci`, `npm run dev` (proxies `/api` to `localhost:8000`), `npm run build`, `npm run lint`, `npm run typecheck`, `npm test` (Vitest; single file: `npx vitest run src/api/sse.test.ts`).
 
-Full stack (repo root): `docker compose up -d --build`, then open http://localhost:8080. Ollama always starts (it serves the embeddings), and `ollama-init` pulls the models on first run (~4 GB, about 10 minutes); the backend then builds the index in the background (about 5 minutes on the dev VM, cached in the `backend-index` volume). Ollama is published on `127.0.0.1:11434` for host-side dev and integration tests. Run the backend locally with `uv run uvicorn app.main:api --reload` (from `backend/`).
+Full stack (repo root): `docker compose up -d --build`, then open http://localhost:8080. Ollama always starts (it serves the embeddings), and `ollama-init` pulls the models on first run (~4 GB, about 10 minutes); the backend then builds the index in the background (about 16 s on the dev VM's host CPU, cached in the `backend-index` volume). Ollama is published on `127.0.0.1:11434` for host-side dev and integration tests. Run the backend locally with `uv run uvicorn app.main:api --reload` (from `backend/`).
 
 Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ignored, so never commit real keys.
 
@@ -28,7 +28,7 @@ Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ign
 
 - `backend/app/`: `api/v1` (routes), `core` (config, security), `rag` (ingest, chunking, retrieval, pipeline), `prompts` (template files), `providers/llm` + `providers/embeddings` (interfaces and registries), `stores/vector` + `stores/events`, `evaluation` (benchmark shared by tests and the future admin tab).
 - `backend/data/kb/`: the mock KB articles (Markdown). `backend/data/index/` is the generated index cache (git-ignored).
-- `backend/tests/`: `unit/`, `integration/`, `eval/questions.yaml`.
+- `backend/tests/`: `unit/`, `integration/`, `perf/`, `eval/` (`questions.yaml` + benchmark test).
 - `frontend/src/`: `api/` (typed client, SSE parser, types mirroring the Pydantic schemas), `features/chat/` (`useChat` state/streaming hook, answer bubble with citation chips, source cards), `features/admin/` (placeholder for the future hidden tabs), `test/` (setup and fixtures).
 - `documentation/ai-logs/`: Claude Code sessions as Markdown (a mandatory deliverable). They are regenerated automatically after every assistant turn by the Stop/SessionEnd hooks in `.claude/settings.json`, which run `scripts/export_ai_logs.py --hook` (redacts secrets). Manual full export: `python3 scripts/export_ai_logs.py --all`. Commit the updated logs together with each phase.
 

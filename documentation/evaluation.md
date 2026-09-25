@@ -1,6 +1,6 @@
 # Testing & evaluation baseline
 
-Measured on 2026-09-25 on the development VM (4 vCPU, 15 GB RAM, **no GPU, no AVX**; see "Hardware caveat" below). The raw summaries are in [`eval/`](eval/).
+Measured on 2026-09-25 on the development VM (4 vCPU, 15 GB RAM, no GPU). The Claude results were measured before, and the local-model results after, the VM was switched from an emulated CPU to the host CPU (i5-8300H with AVX2). Claude's latency is dominated by the API, not the CPU. The raw summaries are in [`eval/`](eval/).
 
 ## Test suites
 
@@ -10,7 +10,7 @@ Measured on 2026-09-25 on the development VM (4 vCPU, 15 GB RAM, **no GPU, no AV
 | Backend performance | `uv run pytest -m perf -s` | nothing | 5 | ✅ see "Speed" below |
 | Backend integration | `uv run pytest -m integration` | Ollama | 2 | ✅ |
 | Retrieval benchmark | `uv run pytest -m eval -s` or `uv run python -m app.evaluation.retrieval --k 6` | Ollama | 4 tests / 18 questions | ✅ |
-| Answer benchmark | `uv run python -m app.evaluation.answers --provider anthropic` | Ollama + `ANTHROPIC_API_KEY` (costs about $0.20 per run) | 18 questions | ✅ 18/18 |
+| Answer benchmark | `uv run python -m app.evaluation.answers --provider anthropic` (or `ollama`) | Ollama (+ `ANTHROPIC_API_KEY` for Claude, about $0.20 per run) | 18 questions | ✅ Claude 18/18, local 14/18 |
 | Frontend | `npm test` | nothing | 14 | ✅ |
 | Browser E2E (manual) | headless Chromium against `docker compose up` | full stack | 3 questions, reset, `/admin` | ✅ (Phases 6–7) |
 
@@ -37,6 +37,7 @@ The LLM-dependent benchmarks run locally, because CI has no model or API key.
 | Hit rate (at least one expected document retrieved) | **1.00** |
 | Top score: weakest answerable question / strongest unanswerable question | 0.416 / 0.516 |
 | Top score of clearly off-topic questions | 0.03–0.18 |
+| Retrieval latency, p50 / p95 (host CPU) | 60 ms / 73 ms |
 
 `MIN_SCORE = 0.35` rejects off-topic questions without an LLM call and never rejects an answerable one. Near-topic unanswerable questions (LDAP 0.52, mobile 0.45) can't be separated by similarity alone, so the prompt makes the model refuse them (next table).
 
@@ -78,13 +79,34 @@ Tokens per answer: about 1,360 input (38% served from the prompt cache) and abou
 | Loading the cached index (49 chunks) | 5 ms |
 | API with a fake model, 200 requests at concurrency 20 | **450 req/s**, p50 36 ms, p95 54 ms |
 
-### Local model (Ollama) on the dev VM: hardware caveat
+### Local model (Ollama, `gemma3:4b`), from [`eval/answers-baseline-ollama-gemma3-4b.json`](eval/answers-baseline-ollama-gemma3-4b.json)
 
-The VM exposes a "QEMU Virtual CPU" **without AVX**, so llama.cpp runs its slow fallback path:
-- `gemma3:4b` generates about **2.5 tokens/s** and reads the prompt at 4–13 tokens/s. A RAG prompt of about 1,500 tokens hit the 300-second timeout (`OLLAMA_TIMEOUT_S`).
-- `embeddinggemma` needs about 1 s per query and about 6 s per chunk at index build. The build happens once and is cached; the first build takes about 5 minutes.
+Measured after the VM was switched to the host CPU (Intel i5-8300H, 4 vCPU, AVX2/FMA, no GPU).
 
-These numbers are expected to improve several times over once the VM exposes the host CPU (`cpu: host`). The Ollama benchmarks will then be re-run and this file updated. Until then, Claude answers the questions and Ollama provides the embeddings.
+| Metric | Value |
+|---|---|
+| Passed | **14 / 18** (answer accuracy 0.80, key-fact coverage 0.88) |
+| Refusal accuracy | 2 / 3 |
+| Time to first token, p50 / p95 | 59 s / 80 s (about 1,300 prompt tokens read at about 23 tokens/s) |
+| Full answer, p50 / p95 | 79 s / 101 s (answers are short: about 64 output tokens) |
+| Raw speed (warm) | generation 5.4 tokens/s, prompt reading about 57 tokens/s (short prompts) |
+
+The failures:
+- **q07 and q11** are correct but miss one exact detail (the `X-Omni-Signature` header name; "1 request per 200 records").
+- **q12** is incomplete: it gives the hourly P1 updates but not the 15-minute first response.
+- **q17** states *"OmniCorp does not integrate with on-premise LDAP"*. The knowledge base doesn't say that, so it's an **unsupported claim**, the most serious error type for this product. Claude refused the same question correctly.
+
+**Conclusion:** use Claude when quality and latency matter; use the local model for privacy or offline use, preferably with a GPU and possibly a larger model.
+
+### Embeddings and index on the host CPU
+
+| Measurement | Before (QEMU vCPU, no AVX) | After (host CPU, AVX2) |
+|---|---|---|
+| Query embedding | about 1 s | **about 50 ms** |
+| Retrieval, p50 / p95 | 1.1 s / 3.3 s | **60 ms / 73 ms** |
+| Off-topic refusal (no LLM call) | 0.8 s | **about 50 ms** |
+| Full index build (49 chunks) | about 5 min | **16 s** |
+| `gemma3:4b` generation | 2.5 tokens/s (RAG prompts timed out) | 5.4 tokens/s (RAG answer about 80 s) |
 
 ## Reproducing
 

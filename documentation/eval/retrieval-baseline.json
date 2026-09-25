@@ -8,8 +8,8 @@
   "min_answerable_top_score": 0.416,
   "max_unanswerable_top_score": 0.516,
   "retrieval_latency": {
-    "p50_ms": 1108.39943999963,
-    "p95_ms": 3308.174592002615,
-    "max_ms": 3308.174592002615
+    "p50_ms": 60.07709799996519,
+    "p95_ms": 73.49565799995617,
+    "max_ms": 73.49565799995617
   }
 }

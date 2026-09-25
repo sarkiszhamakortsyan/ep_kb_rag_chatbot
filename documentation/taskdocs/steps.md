@@ -154,7 +154,11 @@ Changes in this phase:
 - Optional GitHub Actions workflow: lint + unit tests for the backend and frontend.
 - **Done when**: all unit tests are green in CI, and the eval baseline numbers are recorded in the README.
 
-### Phase 9: Documentation & AI-log export (mandatory deliverable)
+### Phase 9: Documentation & AI-log export (mandatory deliverable) ✅ (2026-09-25)
+
+The README was rewritten with: quick start, architecture (Mermaid), API with examples, decisions and trade-offs, testing and results (Claude 18/18, local `gemma3:4b` 14/18 after the VM CPU change), configuration, structure, limitations, and AI-assistant usage. The original brief and checklist are kept at the end.
+
+**Decision:** follow-up questions without context are documented as a known limitation, not implemented. Multi-turn context belongs to the response-history idea (#5).
 - README sections:
   - overview and architecture diagram (Mermaid)
   - API design, with request/response examples

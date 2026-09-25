@@ -122,3 +122,7 @@ Idea #7 ("work only with Claude, stop using Ollama") changes one earlier assumpt
   1. expose the host CPU to the VM (e.g. `cpu: host` in Proxmox/libvirt), which is expected to be 5–10× faster
   2. use a smaller model (`gemma3:1b`, `qwen3:1.7b`) and fewer or shorter chunks
   3. use Claude for generation and keep Ollama only for embeddings (embeddings are also slow on this CPU, about 0.7–1 s per query and about 6 s per chunk at index build, but the index is cached)
+
+### Addendum (2026-09-25): local model after the VM CPU change
+
+With the host CPU exposed (i5-8300H, AVX2), `gemma3:4b` answers RAG questions in about 80 s and passes 14/18 of the evaluation set, against 18/18 for `claude-opus-5`. It made one unsupported claim (LDAP). Embeddings are about 20× faster (50 ms per query, 16 s for the full index). The decision stands: Ollama is the zero-cost default and provides the embeddings; Claude is recommended for answer quality and speed. Details are in `documentation/evaluation.md`.
