@@ -304,7 +304,14 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 
 ## AI assistant usage
 
-The assignment asks which AI tools were used, and for which parts. The complete conversation logs are in **[`documentation/ai-logs/`](documentation/ai-logs/)**. They were exported automatically after every assistant turn by a Claude Code hook (`.claude/settings.json` → `scripts/export_ai_logs.py`, with secrets redacted).
+The assignment asks which AI tools were used, and for which parts.
+
+**The whole chat history is saved in the repository**, in **[`documentation/ai-logs/`](documentation/ai-logs/)**: one Markdown file per Claude Code session, with an index in its README.
+- **Included:** every prompt I wrote, verbatim and timestamped, and every reply from Claude in full, including the context summaries written when a long session was compacted.
+- **Shortened:** the tool calls Claude made (commands, file edits, their output) are kept but collapsed, with long ones cut at 1,500 characters.
+- **Removed:** secrets are redacted. Claude's internal reasoning isn't part of the log.
+
+A Claude Code hook (`.claude/settings.json` → `scripts/export_ai_logs.py`) regenerates the log after every assistant turn, so it never falls behind the conversation. The logs are committed with each phase. `python3 scripts/export_ai_logs.py --all` re-exports every session by hand.
 
 | Tool | Used for |
 |---|---|
