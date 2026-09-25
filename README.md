@@ -44,5 +44,5 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [ ] Option to Question / Answer in different language<br />
 - [ ] Add response history<br />
 - [ ] If the client insists to have the answer (if there is no in documentation) choose what to do - like forward to human, or disregard in polite way<br />
-- [ ] Unit, speed, and performance test<br />
+<b>- [x] Unit, speed, and performance test</b> (see `documentation/evaluation.md`)<br />
 - [ ] Proceed with the plan<br />

@@ -1,15 +1,18 @@
 """Retrieval-quality benchmark: does the right document come back, and how confidently?
 
 Used by `pytest -m eval` and (later) the hidden Tests admin tab (ideas.md #6).
-CLI: `uv run python -m app.evaluation.retrieval [--k 5]`
+CLI: `uv run python -m app.evaluation.retrieval [--k 6] [--json out.json]`
 """
 
 import asyncio
+import json
 import statistics
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 from app.evaluation.dataset import EvalQuestion, load_questions
+from app.evaluation.stats import latency_summary
 from app.rag.retrieval import Retriever
 
 
@@ -45,6 +48,22 @@ class RetrievalReport:
     def hit_rate(self) -> float:
         """Share of answerable questions with at least one expected doc in the top k."""
         return statistics.fmean(1.0 if r.recall > 0 else 0.0 for r in self.answerable)
+
+    def summary(self, min_score: float) -> dict[str, object]:
+        """Machine-readable metrics (CLI --json, future admin Tests tab)."""
+        return {
+            "k": self.k,
+            "questions": len(self.results),
+            "mean_recall": round(self.mean_recall, 3),
+            "hit_rate": round(self.hit_rate, 3),
+            "min_score": min_score,
+            "refusal_accuracy_at_min_score": round(self.refusal_accuracy(min_score), 3),
+            "min_answerable_top_score": round(min(r.top_score for r in self.answerable), 3),
+            "max_unanswerable_top_score": (
+                round(max(r.top_score for r in self.unanswerable), 3) if self.unanswerable else None
+            ),
+            "retrieval_latency": latency_summary(r.latency_ms for r in self.results),
+        }
 
     def refusal_accuracy(self, min_score: float) -> float:
         """With this threshold: answerable kept + unanswerable refused, over all questions."""
@@ -96,7 +115,7 @@ def format_report(report: RetrievalReport, min_score: float) -> str:
     return "\n".join(lines)
 
 
-async def _main(k: int | None) -> None:
+async def _main(k: int | None, json_path: str | None) -> None:
     from app.core.config import get_settings
     from app.providers.embeddings.registry import build_embedding_registry
     from app.rag.ingest import build_or_load_index
@@ -113,8 +132,16 @@ async def _main(k: int | None) -> None:
     finally:
         await registry.aclose()
     print(format_report(report, settings.min_score))
+    if json_path:
+        Path(json_path).write_text(json.dumps(report.summary(settings.min_score), indent=2))
+        print(f"summary written to {json_path}")
 
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    asyncio.run(_main(int(args[args.index("--k") + 1]) if "--k" in args else None))
+    asyncio.run(
+        _main(
+            int(args[args.index("--k") + 1]) if "--k" in args else None,
+            args[args.index("--json") + 1] if "--json" in args else None,
+        )
+    )

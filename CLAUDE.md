@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–7 are done (chat UI and the Docker setup, verified from a fresh clone): the API is in `app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); Swagger at `/docs`. Pipeline: `app/rag/pipeline.py`, prompts in `app/prompts/*.md`, wiring in `app/services.py`; Claude eval 18/18. Done so far: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–8 are done (testing and evaluation baseline in `documentation/evaluation.md`; CI in `.github/workflows/ci.yml`) ; chat UI and the Docker setup were verified from a fresh clone: the API is in `app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); Swagger at `/docs`. Pipeline: `app/rag/pipeline.py`, prompts in `app/prompts/*.md`, wiring in `app/services.py`; Claude eval 18/18. Done so far: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
 
 ## Commands
 
 Backend (Python 3.12, managed by `uv`, run from `backend/`):
 - Install/sync deps: `uv sync`
-- Tests: `uv run pytest` (runs only unit tests by default; `-m integration` needs Ollama, `-m eval` runs the benchmark)
+- Tests: `uv run pytest` (runs only the offline unit/API tests by default; `-m perf` speed tests, `-m integration` and `-m eval` need Ollama); coverage: `uv run pytest --cov`
 - Single test: `uv run pytest tests/unit/test_smoke.py::test_package_imports`
 - Lint / format: `uv run ruff check` and `uv run ruff format` (`--check` in CI)
 - Type check: `uv run mypy`

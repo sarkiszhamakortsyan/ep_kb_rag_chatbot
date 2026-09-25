@@ -145,7 +145,7 @@ Changes in this phase:
   - `docker compose up` with `LLM_PROVIDER=anthropic`: Claude, with embeddings still from Ollama until the in-process embedding option from idea #7 exists. The limitation is documented.
 - **Done when**: a fresh clone plus `cp .env.example .env` plus the compose command gives a working chat at `http://localhost:8080`.
 
-### Phase 8: Tests, evaluation & performance baseline
+### Phase 8: Tests, evaluation & performance baseline ✅ (2026-09-25; results in `documentation/evaluation.md`)
 - `app/evaluation/`: a runner that measures retrieval hit@k, the refusal accuracy on the unanswerable questions, and the latency (p50/p95 for retrieval, time to first token, total). The same module will later back the hidden tests tab.
 - pytest markers:
   - `unit`: the default, fast and offline

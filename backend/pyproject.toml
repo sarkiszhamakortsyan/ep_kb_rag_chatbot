@@ -19,6 +19,7 @@ dev = [
     "httpx2>=2.13.1",
     "mypy>=1.11",
     "pytest>=8.3",
+    "pytest-cov>=7.1.0",
     "ruff>=0.6",
     "types-pyyaml>=6.0.12.20260906",
 ]
@@ -29,11 +30,12 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-ra --strict-markers -m 'not integration and not eval'"
+addopts = "-ra --strict-markers -m 'not integration and not eval and not perf'"
 markers = [
     "unit: fast, offline tests (default)",
     "integration: needs a running Ollama instance",
     "eval: retrieval-quality and latency benchmark",
+    "perf: speed and performance tests (offline, timing thresholds)",
 ]
 
 [tool.ruff]
@@ -48,3 +50,11 @@ python_version = "3.12"
 packages = ["app"]
 ignore_missing_imports = true
 check_untyped_defs = true
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/evaluation/*"]  # CLI benchmarks, exercised by the eval runs
+
+[tool.coverage.report]
+show_missing = false
+skip_covered = true

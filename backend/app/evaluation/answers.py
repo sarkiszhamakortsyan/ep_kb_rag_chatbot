@@ -4,15 +4,19 @@ Checks per question: answerable ones are answered and cite an expected document,
 key facts appear in the answer; unanswerable ones are refused. Calls the real LLM, so it
 costs tokens with Claude.
 
-CLI: `uv run python -m app.evaluation.answers [--provider anthropic] [--ids q01,q16] [--show]`
+CLI: `uv run python -m app.evaluation.answers [--provider anthropic] [--ids q01,q16] [--show]
+     [--json out.json]`
 """
 
 import argparse
 import asyncio
+import json
 import statistics
 from dataclasses import dataclass
+from pathlib import Path
 
 from app.evaluation.dataset import EvalQuestion, load_questions
+from app.evaluation.stats import latency_summary
 from app.rag.pipeline import ChatOptions, ChatResult, RagPipeline
 
 
@@ -45,6 +49,40 @@ async def evaluate_answers(
     pipeline: RagPipeline, questions: list[EvalQuestion], options: ChatOptions | None = None
 ) -> list[AnswerCheck]:
     return [AnswerCheck(q, await pipeline.answer(q.question, options=options)) for q in questions]
+
+
+def summarize(checks: list[AnswerCheck]) -> dict[str, object]:
+    """Machine-readable metrics (CLI --json, future admin Tests tab)."""
+    answerable = [c for c in checks if c.question.answerable]
+    unanswerable = [c for c in checks if not c.question.answerable]
+    llm_turns = [c.result for c in checks if c.result.provider]
+    facts_total = sum(len(c.question.key_facts) for c in answerable)
+    return {
+        "questions": len(checks),
+        "passed": sum(c.passed for c in checks),
+        "answer_accuracy": round(sum(c.passed for c in answerable) / len(answerable), 3)
+        if answerable
+        else None,
+        "refusal_accuracy": round(sum(c.passed for c in unanswerable) / len(unanswerable), 3)
+        if unanswerable
+        else None,
+        "key_fact_coverage": round(sum(len(c.facts_found) for c in answerable) / facts_total, 3)
+        if facts_total
+        else None,
+        "failed_ids": [c.question.id for c in checks if not c.passed],
+        "model": llm_turns[0].model if llm_turns else None,
+        "total_latency": latency_summary(r.timings.total_ms for r in llm_turns),
+        "time_to_first_token": latency_summary(
+            r.timings.time_to_first_token_ms
+            for r in llm_turns
+            if r.timings.time_to_first_token_ms is not None
+        ),
+        "tokens": {
+            "input": sum(r.usage.input_tokens for r in llm_turns),
+            "cache_read": sum(r.usage.cache_read_input_tokens for r in llm_turns),
+            "output": sum(r.usage.output_tokens for r in llm_turns),
+        },
+    }
 
 
 def format_checks(checks: list[AnswerCheck], show_answers: bool = False) -> str:
@@ -90,7 +128,9 @@ def format_checks(checks: list[AnswerCheck], show_answers: bool = False) -> str:
     return "\n".join(lines)
 
 
-async def _main(provider: str | None, ids: set[str] | None, show: bool) -> None:
+async def _main(
+    provider: str | None, ids: set[str] | None, show: bool, json_path: str | None
+) -> None:
     from app.core.config import get_settings
     from app.services import create_services
 
@@ -103,6 +143,9 @@ async def _main(provider: str | None, ids: set[str] | None, show: bool) -> None:
     finally:
         await services.aclose()
     print(format_checks(checks, show))
+    if json_path:
+        Path(json_path).write_text(json.dumps(summarize(checks), indent=2))
+        print(f"summary written to {json_path}")
 
 
 if __name__ == "__main__":
@@ -110,5 +153,7 @@ if __name__ == "__main__":
     parser.add_argument("--provider", help="LLM provider (default: LLM_PROVIDER)")
     parser.add_argument("--ids", help="comma-separated question ids, e.g. q01,q16")
     parser.add_argument("--show", action="store_true", help="print the answers")
+    parser.add_argument("--json", help="write a metrics summary to this file")
     args = parser.parse_args()
-    asyncio.run(_main(args.provider, set(args.ids.split(",")) if args.ids else None, args.show))
+    ids = set(args.ids.split(",")) if args.ids else None
+    asyncio.run(_main(args.provider, ids, args.show, args.json))
