@@ -1,2 +1,6 @@
-1. The backend should ingest a small set of provided text documents (you should create 3-5 mock enterprise knowledge base articles), chunk them, store them in a local or in-memory vector store, and expose a chat endpoint.Make a research which approach will be better for our goal.
+# Task - Choose storage
+
+## Description
+
+1. Based on documentation/taskdocs/ the backend should ingest a small set of provided text documents (you should create 3-5 mock enterprise knowledge base articles), chunk them, store them in a local or in-memory vector store, and expose a chat endpoint. Make a research which approach will be better for our goal.
 2. Document in this file your findings with explonation why we should, or should not use the approach.
