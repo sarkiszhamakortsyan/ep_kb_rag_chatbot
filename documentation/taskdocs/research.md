@@ -1,3 +1,3 @@
 1. Make a research which of the following coding languages will be the best choice for the backend of the task (goal.md) - Python, or Node.js. 
-2. Make a research which of the following coding languages will be the best choice for the frontend of the task (goal.md) - React, Next.js, or Vite in TypeScript. 
+2. Make a research which of the following coding languages will be the best choice for the frontend of the task (goal.md) - React, Next.js, or Vite in TypeScript. Check also which one is better for this approach - TypeScript, or TailwindCSS
 3. Document in this file your findings with explonation why we should, or should not use the approach
