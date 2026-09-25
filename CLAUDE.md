@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–6 are done (the chat UI too): the API is in `app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); Swagger at `/docs`. Pipeline: `app/rag/pipeline.py`, prompts in `app/prompts/*.md`, wiring in `app/services.py`; Claude eval 18/18. Done so far: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
+Implementation follows the phased build plan in `documentation/taskdocs/steps.md` (each phase ends with a user review). Phases 0–7 are done (chat UI and the Docker setup, verified from a fresh clone): the API is in `app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); Swagger at `/docs`. Pipeline: `app/rag/pipeline.py`, prompts in `app/prompts/*.md`, wiring in `app/services.py`; Claude eval 18/18. Done so far: KB + eval set, chunking + in-memory vector store + index cache + retriever, the Docker Compose stack (backend health endpoint + frontend placeholder), settings, and the LLM/embedding provider interfaces with registries. Shared test fakes live in `backend/tests/fakes.py`. Keep this file's commands up to date as phases add them.
 
 ## Commands
 
@@ -20,7 +20,7 @@ Backend (Python 3.12, managed by `uv`, run from `backend/`):
 
 Frontend (Node 22, run from `frontend/`): `npm ci`, `npm run dev` (proxies `/api` to `localhost:8000`), `npm run build`, `npm run lint`, `npm run typecheck`, `npm test` (Vitest; single file: `npx vitest run src/api/sse.test.ts`).
 
-Full stack (repo root): `docker compose up -d --build`, then open http://localhost:8080. Ollama starts via `COMPOSE_PROFILES=ollama` in `.env`, and `ollama-init` pulls the models on first run. Ollama is published on `127.0.0.1:11434` for host-side dev and integration tests. Run the backend locally with `uv run uvicorn app.main:api --reload` (from `backend/`).
+Full stack (repo root): `docker compose up -d --build`, then open http://localhost:8080. Ollama always starts (it serves the embeddings), and `ollama-init` pulls the models on first run (~4 GB, about 10 minutes); the backend then builds the index in the background (about 5 minutes on the dev VM, cached in the `backend-index` volume). Ollama is published on `127.0.0.1:11434` for host-side dev and integration tests. Run the backend locally with `uv run uvicorn app.main:api --reload` (from `backend/`).
 
 Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ignored, so never commit real keys.
 

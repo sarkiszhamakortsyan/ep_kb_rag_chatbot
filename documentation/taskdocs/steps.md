@@ -119,7 +119,20 @@ Frontend checks: 14 Vitest tests, eslint and `tsc` are clean.
   - `npm run build`, `npm run lint` and `npm test` pass
   - chatting against the local backend works end to end in the browser
 
-### Phase 7: Docker Compose (partly done early, 2026-09-25: the stack with ollama/ollama-init/backend/frontend, the backend `/api/v1/health` and the frontend scaffold run and were verified. Remaining: final polish and fresh-clone check)
+### Phase 7: Docker Compose ✅ (2026-09-25)
+
+**Fresh-clone check** (a `git clone`, then `cp .env.example .env` with only the API key added, run under its own compose project with empty volumes):
+- `docker compose up -d --build` returned after 9.5 minutes (almost all of it the ~4 GB model download)
+- the index was built about 5 minutes later; meanwhile `/health` said `starting` and `/chat` returned 503 `not_ready`
+- the browser E2E test passed: cited answer, refusal, German answer, reset and `/admin`, with no console errors under the new CSP
+
+Changes in this phase:
+- pinned images
+- Ollama always runs (the optional profile was removed, because embeddings need it)
+- frontend healthcheck and `FRONTEND_PORT`
+- nginx security headers, gzip and asset caching
+
+**Known limitation:** a Claude-only setup still needs Ollama for embeddings (ideas.md #7).
 - `backend/Dockerfile` (multi-stage, uv, non-root user).
 - `frontend/Dockerfile`: builds the app, then serves it with nginx. nginx also proxies `/api` to the backend, so the browser never has CORS issues.
 - `docker-compose.yml`:
