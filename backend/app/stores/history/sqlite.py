@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.stores.events.base import EventStore
+from app.stores.history.stats import UsageStats, compute_stats
 
 if TYPE_CHECKING:
     from app.rag.pipeline import ChatResult
@@ -191,6 +192,14 @@ class SqliteHistory(EventStore):
 
     async def get_turn(self, message_id: str) -> Turn | None:
         return await asyncio.to_thread(self._get, message_id)
+
+    async def stats(self, date_from: date, date_to: date) -> UsageStats:
+        """Usage statistics for the inclusive UTC date range."""
+        return await asyncio.to_thread(self._stats, date_from, date_to)
+
+    def _stats(self, date_from: date, date_to: date) -> UsageStats:
+        with self._lock:
+            return compute_stats(self._connection(), date_from, date_to)
 
     def iter_turns(self, filters: HistoryFilter) -> Iterator[Turn]:
         """All matching turns, newest first (for CSV export; runs in the caller's thread)."""

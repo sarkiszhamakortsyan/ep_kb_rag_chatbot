@@ -8,7 +8,7 @@ Ideas that can be implement in addition in the Chatbot
 
 Mark every idea after you finish.
 
-- Create a hidden menu with statistics about the usage.
+- Create a hidden menu with statistics about the usage. ✅ (dev-features, phase 11)
 - Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them.
 - Method to write the response in professional language, clear and accurate. Provide more details only when requested.
 - Option to Question / Answer in different languages.
@@ -107,7 +107,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 - **History tab:** a table of turns (time, question, model, time taken, refused), a detail view with the full answer and its sources, and CSV export.
 - **Tests:** repository tests on a temporary SQLite file, admin auth tests (no token, wrong token, disabled), API tests, frontend tests for the tab.
 
-#### Phase 11: statistics (#1). Size: S
+#### Phase 11: statistics (#1). Size: S ✅ (2026-09-26)
 - `GET /api/v1/admin/stats?from=&to=`: questions per day, refusal rate (split by reason), answer time p50/p95 per model, share per model, most cited documents and sections, and a list of recently refused questions. That last list shows which documentation is missing, the most useful number for a knowledge-base owner.
 - **Stats tab:** a few KPI cards plus simple charts (one small chart library, or plain SVG).
 - Computed with SQL from the `turns` table, so no new data is needed.
@@ -178,4 +178,12 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
 - **Frontend:** `/admin` with token sign-in (session storage), History tab with search, filters, paging, detail panel and CSV export, and Ctrl+Shift+A from the chat.
 - **Tests:** backend 120 (18 new: store and admin API), frontend 21 (4 new).
 - **Checked end to end:** in Docker, with screenshots in light and dark mode.
+
+**Phase 11 ✅ (2026-09-26): statistics.**
+- **Backend:** `compute_stats` (`app/stores/history/stats.py`) builds the numbers with SQL over `turns`, including SQLite `json_each` over the stored citations. The endpoint is `GET /api/v1/admin/stats?from&to` (default the last 30 days, at most 366 days, `invalid_range` otherwise).
+- **Frontend:**
+  - The Statistics tab is now the first admin tab. Each tab has its own address (`/admin/stats`, `/admin/history`), so back/forward and bookmarks work.
+  - It shows the totals, a plain-SVG daily chart that measures its container so text keeps its size, a models table, the most cited documents and sections, and the documentation gaps, which open the answer details.
+- **Tests:** backend 124 (4 new), frontend 21 (the admin test now covers both tabs).
+- **Checked end to end:** with 11 mixed questions (Claude, local, early refusals), with screenshots on desktop, in dark mode and on mobile. A mobile overflow was found and fixed.
 

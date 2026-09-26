@@ -132,3 +132,38 @@ async def test_purges_turns_older_than_the_retention(tmp_path: Path, clock: Cloc
 async def test_a_storage_failure_does_not_break_the_chat(history: SqliteHistory) -> None:
     history.close()  # every write now fails
     await history.record(result("m1"))  # must not raise
+
+
+async def test_usage_stats(history: SqliteHistory, clock: Clock) -> None:
+    await history.record(result("a"))
+    await history.record(result("b", provider="anthropic"))
+    await history.record(result("c", "Price?", refused=True, provider=None))
+    clock.now = NOW + timedelta(days=2)
+    await history.record(result("d"))
+    clock.now = NOW + timedelta(days=40)  # outside the range below
+    await history.record(result("e"))
+
+    stats = await history.stats(date(2026, 9, 25), date(2026, 9, 28))
+
+    assert (stats.questions, stats.answered, stats.refused) == (4, 3, 1)
+    assert stats.conversations == 1
+    assert stats.refused_by_reason == {"no_citations": 1}
+    assert [(d.day, d.answered, d.refused) for d in stats.per_day] == [
+        ("2026-09-25", 0, 0),
+        ("2026-09-26", 2, 1),
+        ("2026-09-27", 0, 0),
+        ("2026-09-28", 1, 0),
+    ]
+    by_provider = {m.provider: m for m in stats.per_model}
+    assert by_provider["ollama"].questions == 2 and by_provider["ollama"].p50_ms == 1500
+    assert by_provider[None].refused == 1
+    assert stats.per_model[0].provider == "ollama"  # most questions first
+    assert [(s.doc_id, s.citations) for s in stats.top_documents] == [("kb-003", 3)]
+    assert stats.top_sections[0].section == "Backups"
+    assert [q.message_id for q in stats.recent_refused] == ["c"]
+
+
+async def test_usage_stats_on_an_empty_history(history: SqliteHistory) -> None:
+    stats = await history.stats(date(2026, 9, 26), date(2026, 9, 26))
+    assert stats.questions == 0 and stats.p50_ms is None
+    assert stats.top_documents == [] and len(stats.per_day) == 1

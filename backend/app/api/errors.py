@@ -38,6 +38,10 @@ class NotFoundError(Exception):
     """The requested record does not exist."""
 
 
+class InvalidRangeError(Exception):
+    """A date range that is reversed or too long."""
+
+
 def error_payload(exc: Exception) -> tuple[int, str, str]:
     """(status, code, message) for an exception. Shared by JSON responses and SSE error events."""
     if isinstance(exc, ServiceNotReadyError):
@@ -50,6 +54,8 @@ def error_payload(exc: Exception) -> tuple[int, str, str]:
         return 404, "history_disabled", str(exc)
     if isinstance(exc, NotFoundError):
         return 404, "not_found", str(exc)
+    if isinstance(exc, InvalidRangeError):
+        return 422, "invalid_range", str(exc)
     if isinstance(exc, UnknownProviderError | ProviderDisabledError):
         return 400, "invalid_provider", str(exc)
     if isinstance(exc, ProviderConfigError):
@@ -95,6 +101,7 @@ def install_error_handlers(app: FastAPI) -> None:
         UnauthorizedError,
         HistoryDisabledError,
         NotFoundError,
+        InvalidRangeError,
     ):
         app.add_exception_handler(error, domain_error)
     app.add_exception_handler(ProviderError, domain_error)

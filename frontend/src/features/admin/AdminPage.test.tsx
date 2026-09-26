@@ -38,6 +38,30 @@ const detail = {
   generation_ms: 2000,
 };
 
+const stats = {
+  date_from: "2026-08-28",
+  date_to: "2026-09-26",
+  questions: 4,
+  answered: 3,
+  refused: 1,
+  conversations: 2,
+  refused_by_reason: { low_score: 1 },
+  p50_ms: 3800,
+  per_day: [
+    { day: "2026-09-25", answered: 1, refused: 0 },
+    { day: "2026-09-26", answered: 2, refused: 1 },
+  ],
+  per_model: [
+    { provider: "anthropic", model: "claude-opus-5", questions: 3, refused: 0, p50_ms: 3800, p95_ms: 5200, ttft_p50_ms: 1400 },
+    { provider: null, model: null, questions: 1, refused: 1, p50_ms: 60, p95_ms: 60, ttft_p50_ms: null },
+  ],
+  top_documents: [{ doc_id: "kb-003", title: "Data policy", section: null, citations: 3 }],
+  top_sections: [{ doc_id: "kb-003", title: "Data policy", section: "Backups", citations: 2 }],
+  recent_refused: [
+    { created_at: "2026-09-26T12:00:00.000+00:00", message_id: "m1", question: "What does Enterprise cost?", reason: "low_score" },
+  ],
+};
+
 function mockAdminApi() {
   const fetchMock = vi.fn((url: string, init?: RequestInit) => {
     const auth = new Headers(init?.headers).get("Authorization");
@@ -45,6 +69,7 @@ function mockAdminApi() {
       return Promise.resolve(jsonResponse({ error: { code: "unauthorized", message: "no" } }, 401));
     }
     if (url.endsWith("/session")) return Promise.resolve(jsonResponse(session));
+    if (url.includes("/stats")) return Promise.resolve(jsonResponse(stats));
     if (url.includes("/history/m1")) return Promise.resolve(jsonResponse(detail));
     if (url.includes("/history")) {
       return Promise.resolve(jsonResponse({ items: [turn], total: 1, limit: 25, offset: 0 }));
@@ -55,7 +80,10 @@ function mockAdminApi() {
   return fetchMock;
 }
 
-afterEach(() => sessionStorage.clear());
+afterEach(() => {
+  sessionStorage.clear();
+  window.history.pushState(null, "", "/");
+});
 
 describe("AdminPage", () => {
   it("rejects a wrong token", async () => {
@@ -83,6 +111,15 @@ describe("AdminPage", () => {
     render(<AdminPage />);
     await user.type(screen.getByLabelText("Admin token"), `${TOKEN}{Enter}`);
 
+    // Statistics is the first tab.
+    expect(await screen.findByRole("heading", { name: "Usage statistics" })).toBeInTheDocument();
+    expect(await screen.findByText("75%")).toBeInTheDocument(); // answered share
+    expect(screen.getByText("What does Enterprise cost?")).toBeInTheDocument();
+    expect(screen.getByText("No model (refused early)")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Questions per day: 4 in 2 days" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "History" }));
+    expect(window.location.pathname).toBe("/admin/history");
     expect(await screen.findByRole("heading", { name: "Response history" })).toBeInTheDocument();
     expect(screen.getByText("Kept for 90 days.", { exact: false })).toBeInTheDocument();
     const row = await screen.findByRole("button", { name: "How long are backups kept?" });

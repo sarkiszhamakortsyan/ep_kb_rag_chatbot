@@ -156,3 +156,24 @@ def test_history_is_available_while_the_index_loads(tmp_path: Path) -> None:
     app = create_app(make_settings(tmp_path), never_ready, load_in_background=False)
     with TestClient(app) as client:
         assert client.get("/api/v1/admin/history", headers=AUTH).json()["total"] == 0
+
+
+# --- statistics -------------------------------------------------------------------------------
+
+
+def test_stats_endpoint(client: TestClient) -> None:
+    ask(client, "How long are backups kept?")
+    body = client.get("/api/v1/admin/stats", headers=AUTH).json()
+    assert body["questions"] == 1 and body["answered"] == 1
+    assert len(body["per_day"]) == 30  # default range: the last 30 days
+    assert body["per_day"][-1]["answered"] == 1
+    assert body["top_documents"][0]["doc_id"] == "kb-1"
+    assert body["per_model"][0]["provider"] == "ollama"
+
+
+def test_stats_rejects_bad_ranges(client: TestClient) -> None:
+    for query in ("from=2026-09-10&to=2026-09-01", "from=2024-01-01&to=2026-01-01"):
+        response = client.get(f"/api/v1/admin/stats?{query}", headers=AUTH)
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "invalid_range"
+    assert client.get("/api/v1/admin/stats").status_code == 401

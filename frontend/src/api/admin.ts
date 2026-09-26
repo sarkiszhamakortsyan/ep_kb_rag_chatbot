@@ -77,3 +77,35 @@ export const getTurn = async (token: string, messageId: string) =>
 /** The CSV file for the current filters (downloaded via a blob, since it needs the token). */
 export const exportHistory = async (token: string, params: HistoryQuery) =>
   (await adminFetch(token, `/history/export.csv${query({ ...params, limit: undefined, offset: undefined })}`)).blob();
+
+export type DayCount = { day: string; answered: number; refused: number };
+export type ModelStats = {
+  provider: string | null;
+  model: string | null;
+  questions: number;
+  refused: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  ttft_p50_ms: number | null;
+};
+export type SourceCount = { doc_id: string; title: string; section: string | null; citations: number };
+export type RefusedQuestion = { created_at: string; message_id: string; question: string; reason: string | null };
+
+export type UsageStats = {
+  date_from: string;
+  date_to: string;
+  questions: number;
+  answered: number;
+  refused: number;
+  conversations: number;
+  refused_by_reason: Record<string, number>;
+  p50_ms: number | null;
+  per_day: DayCount[];
+  per_model: ModelStats[];
+  top_documents: SourceCount[];
+  top_sections: SourceCount[];
+  recent_refused: RefusedQuestion[];
+};
+
+export const getStats = async (token: string, range: { from: string; to: string }) =>
+  (await (await adminFetch(token, `/stats${query(range)}`)).json()) as UsageStats;
