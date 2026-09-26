@@ -16,7 +16,7 @@ Mark every idea after you finish.
 - Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
 - Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README)
-- Option to use it over a CLI. (added 2026-09-26, from the README)
+- Option to use it over a CLI. (added 2026-09-26, from the README) ✅ (dev-features, phase 15)
 
 ---
 
@@ -132,7 +132,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 - `options.language = "auto" | "en" | "de" | …` adds one line to the prompt ("Answer in German"). `auto` stays the default and keeps today's behaviour. The header gets a language selector.
 - **Tests:** add a few eval questions per language and a detailed-mode check. The answer benchmark must stay at 18/18 on Claude and 17/18 on the local model.
 
-#### Phase 15: CLI (#9). Size: S
+#### Phase 15: CLI (#9). Size: S ✅ (2026-09-26)
 - `omnicorp-kb` is a small Python command installed with the backend package. It talks to the HTTP API, so it works against the Docker stack.
 - `omnicorp-kb ask "question" [--model anthropic|ollama] [--json]` streams the answer and then prints the sources. Plain `omnicorp-kb` opens an interactive session, where `/new` starts a new conversation and `/model` switches the model. Further commands: `omnicorp-kb health` and `omnicorp-kb providers`.
 - Colours are turned off automatically when output goes to a file. Exit codes: 0 answered, 2 not covered, 1 error, so scripts can use it.
@@ -219,4 +219,15 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
   - Claude: detailed 178 words against 97 concise; English question → French; German question → English.
   - `ministral-3:3b`: English question → German, cited, in 54 s.
 - **Limitation:** the low-score "not covered" template stays English.
+
+**Phase 15 ✅ (2026-09-26): command-line client.**
+- **Package:** `app/cli/`, run with `python -m app.cli`. The backend is not an installable package (`[tool.uv] package = false`), so there is no `omnicorp-kb` command; the module form works in the repo and in the container.
+  - `api.py`: an httpx client with a small Server-Sent Events reader and the API's error shape.
+  - `main.py`:
+    - `ask` streams the answer, then the sources, and supports `--model`, `--language`, `--detailed` and `--json`.
+    - Without arguments it starts an interactive session with `/model`, `/lang`, `/detail`, `/new` and `/quit`.
+    - `health` and `providers` show the system's status.
+- **Exit codes:** 0 answered, 2 not covered, 1 error. Colours only on a terminal (`NO_COLOR` respected).
+- **Tests:** backend 144 (6 new, using a mock transport: streaming output and options, exit codes, error paths, JSON, health and providers, an interactive script).
+- **Checked against the live stack:** from the host (Claude answer with sources, early refusal with exit 2, an interactive German answer) and inside the backend container.
 

@@ -257,6 +257,23 @@ The **Costs** tab (`/admin/costs`) estimates spending from the stored token coun
 - **Unchanged default:** without these options the system prompt is exactly `system.md`, so the benchmark results still apply. The extra sections are template files (`prompts/detail_detailed.md`, `prompts/answer_language.md`).
 - **Limitation:** the short "not covered" message for off-topic questions comes from a template, not the model, so it stays in English.
 
+### Command-line client
+
+The knowledge base can also be used from a terminal. The CLI calls the same HTTP API (default `http://localhost:8080`, or `--url` / `OMNICORP_KB_URL`), so it works with the Docker stack:
+
+```bash
+cd backend
+uv run python -m app.cli ask "How long are backups kept?" --model anthropic   # streams the answer, then the sources
+uv run python -m app.cli ask "…" --language de --detailed --json              # options; full JSON result
+uv run python -m app.cli                                                       # interactive: /model, /lang, /detail, /new, /quit
+uv run python -m app.cli health          # or: providers
+docker compose exec backend python -m app.cli --url http://localhost:8000 ask "…"   # without a local Python
+```
+
+- **Exit codes for scripts:** 0 answered, 2 not covered by the knowledge base, 1 error.
+- **Colours:** used only on a terminal, and never when `NO_COLOR` is set.
+- **Interactive mode:** it keeps the conversation id until `/new`.
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -374,6 +391,7 @@ backend/
     providers/      llm/ (Ollama, Anthropic), embeddings/ (Ollama), config-driven registries
     stores/         vector/ (in-memory numpy store), events/ (per-turn hook), history/ (SQLite, migrations, statistics)
     evaluation/     retrieval + answer benchmarks (CLI, pytest, and background runs for the Tests tab)
+    cli/            command-line client for the API (ask, interactive session, health, providers)
   data/kb/          5 mock OmniCorp articles (SSO, API limits, retention/GDPR, webhooks, support SLAs)
   tests/            unit/, integration/, eval/ (questions.yaml), perf/, fakes.py
 frontend/src/
@@ -482,4 +500,4 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
 - [ ] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
 - [ ] Check if we can build the hole Chatbot in an MCP server.
-- [ ] Option to use it over CLI.
+- [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
