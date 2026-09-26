@@ -44,7 +44,7 @@ class EvalRun:
     kind: EvalKind
     provider: str | None
     model: str | None
-    status: str  # running | done | failed | cancelled | interrupted
+    status: str  # running | cancelling | done | failed | cancelled | interrupted
     started_at: str
     total: int
     done: int = 0
@@ -69,8 +69,18 @@ class EvalRunner:
         self.current: EvalRun | None = None
 
     @property
+    def running(self) -> EvalRun | None:
+        """The run in progress. A cancelled or finished run no longer counts, even while its
+        task is still saving the final state (otherwise a second cancel or a new start would
+        race with it)."""
+        task_alive = self._task is not None and not self._task.done()
+        if task_alive and self.current and self.current.status == "running":
+            return self.current
+        return None
+
+    @property
     def busy(self) -> bool:
-        return self._task is not None and not self._task.done()
+        return self.running is not None
 
     async def start(self, kind: EvalKind, services: Services, provider: str | None) -> EvalRun:
         if self.busy:
@@ -97,15 +107,16 @@ class EvalRunner:
         return run
 
     def cancel(self, run_id: str) -> bool:
-        if self.busy and self.current and self.current.id == run_id:
-            assert self._task is not None
-            self._task.cancel()
-            return True
-        return False
+        run = self.running
+        if run is None or run.id != run_id:
+            return False
+        run.status = "cancelling"  # a second cancel is refused at once
+        assert self._task is not None
+        self._task.cancel()
+        return True
 
     async def close(self) -> None:
-        if self.busy:
-            assert self._task is not None
+        if self._task is not None and not self._task.done():
             self._task.cancel()
             await asyncio.gather(self._task, return_exceptions=True)
 

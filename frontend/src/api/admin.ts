@@ -209,7 +209,8 @@ export type EvalRun = {
   kind: EvalKind;
   provider: string | null;
   model: string | null;
-  status: "running" | "done" | "failed" | "cancelled" | "interrupted";
+  status:
+    "running" | "cancelling" | "done" | "failed" | "cancelled" | "interrupted";
   started_at: string;
   finished_at: string | null;
   total: number;

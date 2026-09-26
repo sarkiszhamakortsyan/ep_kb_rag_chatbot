@@ -18,6 +18,7 @@ import { Card, Empty } from "./ui";
 
 const STATUS_STYLE: Record<EvalRun["status"], string> = {
   running: "bg-brand-soft text-brand-ink",
+  cancelling: "bg-subtle text-ink-muted",
   done: "bg-success-soft text-success-ink",
   failed: "bg-danger-soft text-danger-ink",
   cancelled: "bg-subtle text-ink-muted",

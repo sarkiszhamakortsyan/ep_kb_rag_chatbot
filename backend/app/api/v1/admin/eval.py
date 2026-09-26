@@ -64,7 +64,7 @@ def _out(run: EvalRun) -> dict[str, Any]:
 async def list_runs(history: History, runner: Runner) -> Any:
     """Recent runs, newest first (without per-question results)."""
     runs = await history.list_eval_runs()
-    running = runner.current.id if runner.busy and runner.current else None
+    running = runner.running.id if runner.running else None
     return {"runs": [_out(r) for r in runs], "running": running}
 
 

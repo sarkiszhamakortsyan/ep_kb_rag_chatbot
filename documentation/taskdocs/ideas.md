@@ -260,3 +260,8 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
   - Claude-only with the Ollama container stopped: ready after 96 s including the download, cited answers, a German answer, a refusal, question embedding 50–60 ms.
   - Default mode: settings changed at runtime and kept after a restart, then restored to the original.
 
+**Fix (2026-09-26): cancel race in the benchmark runner.** CI failed once on the Phase 14 commit, in `test_only_one_benchmark_at_a_time_and_cancel`.
+- **Cause:** after a cancel, the run showed "cancelled" while its task was still saving, and during that moment the runner still counted as busy. A second cancel was accepted (202 instead of 404), and a new start could be refused.
+- **Fix:** `EvalRunner.running` counts only a run whose status is `running`, and cancelling sets a short-lived `cancelling` status. This was the same flaky failure seen once locally in Phase 16, which I had wrongly put down to a timeout.
+- **Checked:** the admin tests passed 10 times in a row.
+
