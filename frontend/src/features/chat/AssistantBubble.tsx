@@ -66,6 +66,15 @@ export function AssistantBubble({ message, onRetry, onMoreDetail }: Props) {
           </div>
         )}
 
+        {result?.standalone_question && (
+          <p className="mb-2 text-xs text-ink-faint">
+            Understood as:{" "}
+            <span className="text-ink-muted italic">
+              {result.standalone_question}
+            </span>
+          </p>
+        )}
+
         {streaming && !message.text && (
           <Progress sourceCount={message.sources.length} />
         )}

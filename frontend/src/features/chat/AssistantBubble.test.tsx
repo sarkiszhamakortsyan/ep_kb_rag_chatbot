@@ -105,4 +105,11 @@ describe("AssistantBubble", () => {
     await userEvent.click(screen.getByRole("button", { name: "Regenerate" }));
     expect(onRetry).toHaveBeenCalledWith("How long are backups kept?");
   });
+
+  it("shows how a follow-up was understood", () => {
+    const result = chatResponse({ standalone_question: "How long are backups kept on Enterprise?" });
+    render(<AssistantBubble message={message({ result })} onRetry={vi.fn()} />);
+    expect(screen.getByText("How long are backups kept on Enterprise?")).toBeInTheDocument();
+    expect(screen.getByText(/Understood as:/)).toBeInTheDocument();
+  });
 });

@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.core.pricing import PriceTable
-from app.stores.events.base import EventStore
+from app.stores.events.base import EventStore, Turns
 from app.stores.history.costs import CostReport, compute_costs
 from app.stores.history.stats import UsageStats, compute_stats
 
@@ -67,6 +67,7 @@ class Turn:
     ttft_ms: float | None
     generation_ms: float
     total_ms: float
+    standalone_question: str | None = None
 
 
 def _now() -> datetime:
@@ -144,8 +145,8 @@ class SqliteHistory(EventStore):
                         refused, refusal_reason, provider, model, language, stop_reason,
                         top_score, sources_used, input_tokens, output_tokens,
                         cache_read_tokens, cache_creation_tokens,
-                        embed_ms, search_ms, ttft_ms, generation_ms, total_ms
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        embed_ms, search_ms, ttft_ms, generation_ms, total_ms, standalone_question
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (
                         now.isoformat(timespec="milliseconds"),
                         result.conversation_id,
@@ -170,6 +171,7 @@ class SqliteHistory(EventStore):
                         result.timings.time_to_first_token_ms,
                         result.timings.generation_ms,
                         result.timings.total_ms,
+                        result.standalone_question,
                     ),
                 )
         if self._last_purge is None or now - self._last_purge > PURGE_INTERVAL:
@@ -197,6 +199,23 @@ class SqliteHistory(EventStore):
 
     async def get_turn(self, message_id: str) -> Turn | None:
         return await asyncio.to_thread(self._get, message_id)
+
+    async def recent_turns(self, conversation_id: str, limit: int) -> Turns:
+        """The last `limit` turns of a conversation, oldest first (for follow-up questions)."""
+        return await asyncio.to_thread(self._recent_turns, conversation_id, limit)
+
+    def _recent_turns(self, conversation_id: str, limit: int) -> Turns:
+        with self._lock:
+            rows = (
+                self._connection()
+                .execute(
+                    "SELECT question, answer FROM turns WHERE conversation_id = ? "
+                    "ORDER BY id DESC LIMIT ?",
+                    (conversation_id, limit),
+                )
+                .fetchall()
+            )
+        return [(r["question"], r["answer"]) for r in reversed(rows)]
 
     async def stats(self, date_from: date, date_to: date) -> UsageStats:
         """Usage statistics for the inclusive UTC date range."""

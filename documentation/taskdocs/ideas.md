@@ -12,7 +12,7 @@ Mark every idea after you finish.
 - Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them. ✅ (dev-features, phase 12)
 - Method to write the response in professional language, clear and accurate. Provide more details only when requested. ✅ (dev-features, phase 14)
 - Option to Question / Answer in different languages. ✅ (dev-features, phase 14)
-- Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
+- Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions in phase 18)
 - Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. ✅ (dev-features, phase 17)
 - Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README) ✅ (dev-features, phase 16)
@@ -155,7 +155,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
   2. **Voyage AI** (Anthropic's recommended embedding partner): a small image, but an extra paid API key and a full re-index.
 - **Recommendation:** option 1, keeping Ollama as an optional Compose profile for local generation. The Phase 3 rule already covers the switch: the fingerprint includes the embedding model, so the index rebuilds itself.
 
-#### Phase 18: follow-up questions (the rest of #5). Size: M
+#### Phase 18: follow-up questions (the rest of #5). Size: M ✅ (2026-09-26)
 - Turns now live in SQLite (phase 10), so the pipeline can rewrite a follow-up ("and on Enterprise?") into a stand-alone question using the last turns before retrieval. That takes one short extra LLM call; on the local model it adds about 15–20 s.
 - **Tests:** a small multi-turn eval set.
 
@@ -264,4 +264,27 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
 - **Cause:** after a cancel, the run showed "cancelled" while its task was still saving, and during that moment the runner still counted as busy. A second cancel was accepted (202 instead of 404), and a new start could be refused.
 - **Fix:** `EvalRunner.running` counts only a run whose status is `running`, and cancelling sets a short-lived `cancelling` status. This was the same flaky failure seen once locally in Phase 16, which I had wrongly put down to a timeout.
 - **Checked:** the admin tests passed 10 times in a row.
+
+**Phase 18 ✅ (2026-09-26): follow-up questions.**
+- **Memory:** `EventStore.recent_turns()` returns a conversation's last turns. `SqliteHistory` implements it, and `InMemoryConversations` (bounded) takes over when the history is off. `FanOutEventStore` asks each store in turn. Log-only stores and the benchmark runner return none, so benchmarks stay single-turn.
+- **Pipeline:**
+  - For a question with earlier turns, one short LLM call (`prompts/rewrite_question.md`, the last 3 turns, answers clipped to 500 characters without citation markers) produces a self-contained question in the same language.
+  - Retrieval and the answer use it. Empty, runaway or unchanged rewrites keep the original, and surrounding quotes or Markdown bold (seen with the local model) are stripped.
+  - `ChatResult.standalone_question`, `timings.rewrite_ms`, and the rewrite tokens counted in the turn's usage and costs.
+- **History:** migration 0004 stores `standalone_question`. The admin detail panel and the chat ("Understood as: …") show it.
+- **Evaluation:** `tests/eval/followups.yaml` (5 two-turn conversations, one German) and `app/evaluation/followups.py`, which asks each follow-up with and without its context.
+  - Claude: **5/5 in context against 1/5 without**, rewrite about 1.3 s.
+  - `ministral-3:3b`: **5/5 against 0/5**, rewrite 4–15 s.
+- **Tests:** backend 161 (7 new), frontend 28 (1 new).
+- **Checked in the browser:** "And on the Enterprise plan?" was understood as "What is the API request-per-minute limit on the Enterprise plan?" and answered correctly (3,000 per minute).
+
+### All phases done (2026-09-26)
+
+Every idea on the list is implemented on `dev-features`, in phases 10–18. Each phase was committed and pushed separately, with CI green, after tests, docs and a check against the live stack:
+- admin area with History, Statistics, Costs, Tests and Settings tabs
+- detailed answers and an answer-language selector
+- follow-up questions
+- a CLI
+- an MCP server
+- a Claude-only mode
 

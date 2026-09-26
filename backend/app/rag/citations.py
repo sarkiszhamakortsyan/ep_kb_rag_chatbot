@@ -19,6 +19,11 @@ class Citation:
     score: float
 
 
+def strip_markers(text: str) -> str:
+    """Text without [n] citation markers."""
+    return _MARKER.sub("", text)
+
+
 def cited_numbers(answer: str) -> list[int]:
     """Distinct citation numbers in order of first appearance."""
     numbers: list[int] = []

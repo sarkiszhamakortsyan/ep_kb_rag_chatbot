@@ -39,6 +39,7 @@ export type TurnDetail = Omit<TurnSummary, "sources"> & {
   ttft_ms: number | null;
   generation_ms: number;
   total_ms: number;
+  standalone_question?: string | null;
 };
 
 export type HistoryPage = {

@@ -1,4 +1,5 @@
-"""The RAG pipeline: retrieve -> (refuse early) -> prompt -> generate -> cite.
+"""The RAG pipeline: (rewrite a follow-up) -> retrieve -> (refuse early) -> prompt -> generate
+-> cite.
 
 Every turn ends in a `ChatResult` holding the answer plus everything the future admin
 features need (usage, timings, scores, refusal reason): ideas.md "Future-readiness design".
@@ -10,14 +11,26 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Literal
 
-from app.providers.llm.base import ChatMessage, GenerationDone, GenerationOptions, TextDelta, Usage
+from app.providers.llm.base import (
+    ChatMessage,
+    GenerationDone,
+    GenerationOptions,
+    LLMProvider,
+    TextDelta,
+    Usage,
+)
 from app.providers.llm.registry import LLMRegistry
-from app.rag.citations import Citation, build_citations, to_citation
+from app.rag.citations import Citation, build_citations, strip_markers, to_citation
 from app.rag.prompts import build_user_message, load_prompt, system_prompt
 from app.rag.retrieval import Retriever
-from app.stores.events.base import EventStore
+from app.stores.events.base import EventStore, Turns
 
 RefusalReason = Literal["low_score", "no_citations", "model_refusal"]
+
+# Follow-up questions: how many earlier turns are shown to the rewrite step, and how much of
+# each earlier answer (the question and the start of the answer carry the topic).
+CONTEXT_TURNS = 3
+CONTEXT_ANSWER_CHARS = 500
 
 
 @dataclass(frozen=True)
@@ -37,6 +50,7 @@ class Timings:
     time_to_first_token_ms: float | None = None  # from the start of the turn
     generation_ms: float = 0.0
     total_ms: float = 0.0
+    rewrite_ms: float = 0.0  # follow-up rewriting (0 for a first question)
 
 
 @dataclass(frozen=True)
@@ -55,7 +69,9 @@ class ChatResult:
     top_score: float
     sources_used: int  # chunks passed to the LLM
     stop_reason: str | None = None
-    language: str | None = None  # reserved for multi-language support (ideas.md #4)
+    language: str | None = None  # requested answer language (ideas.md #4)
+    # A follow-up rewritten as a self-contained question, when it differs from `question`.
+    standalone_question: str | None = None
 
 
 @dataclass(frozen=True)
@@ -103,12 +119,28 @@ class RagPipeline:
     ) -> AsyncIterator[PipelineEvent]:
         options = options or ChatOptions()
         started = time.perf_counter()
-        conversation_id = conversation_id or uuid.uuid4().hex
-        message_id = uuid.uuid4().hex
         # Resolve the provider first so a disabled/unknown provider fails before any work.
         llm = self._llms.get(options.provider)
 
-        retrieval = await self._retriever.retrieve(question)
+        # A follow-up ("and on Enterprise?") is rewritten into a self-contained question first,
+        # so retrieval and the answer know the topic. First questions skip this LLM call.
+        standalone: str | None = None
+        rewrite = GenerationDone(usage=Usage())
+        rewrite_ms = 0.0
+        turns = (
+            await self._events.recent_turns(conversation_id, CONTEXT_TURNS)
+            if conversation_id
+            else []
+        )
+        if turns:
+            rewrite_started = time.perf_counter()
+            standalone, rewrite = await self._rewrite(llm, question, turns)
+            rewrite_ms = _ms(rewrite_started)
+        asked = standalone or question
+
+        conversation_id = conversation_id or uuid.uuid4().hex
+        message_id = uuid.uuid4().hex
+        retrieval = await self._retriever.retrieve(asked)
         # Low-scoring chunks are noise: leave them out of the prompt (fewer tokens, less confusion).
         sources = [r for r in retrieval.results if r.score >= self._retriever.min_score]
         yield SourcesEvent(
@@ -131,15 +163,17 @@ class RagPipeline:
                 refusal_reason="low_score",
                 provider=None,
                 model=None,
-                usage=Usage(),
+                usage=rewrite.usage,
                 timings=Timings(
                     embed_ms=retrieval.embed_ms,
                     search_ms=retrieval.search_ms,
                     total_ms=_ms(started),
+                    rewrite_ms=rewrite_ms,
                 ),
                 top_score=retrieval.top_score,
                 sources_used=len(sources),
                 language=options.language,
+                standalone_question=standalone,
             )
             await self._events.record(result)
             yield Completed(result)
@@ -151,7 +185,7 @@ class RagPipeline:
         done = GenerationDone(usage=Usage())
         async for event in llm.stream(
             system_prompt(options.detail, options.language),
-            [ChatMessage("user", build_user_message(question, sources))],
+            [ChatMessage("user", build_user_message(asked, sources))],
             self._generation,
         ):
             if isinstance(event, TextDelta):
@@ -185,7 +219,7 @@ class RagPipeline:
             refusal_reason=refusal_reason,
             provider=llm.name,
             model=done.model or llm.model,
-            usage=done.usage,
+            usage=_add(done.usage, rewrite.usage),
             stop_reason=done.stop_reason,
             timings=Timings(
                 embed_ms=retrieval.embed_ms,
@@ -193,13 +227,43 @@ class RagPipeline:
                 time_to_first_token_ms=first_token,
                 generation_ms=_ms(generation_started),
                 total_ms=_ms(started),
+                rewrite_ms=rewrite_ms,
             ),
             top_score=retrieval.top_score,
             sources_used=len(sources),
             language=options.language,
+            standalone_question=standalone,
         )
         await self._events.record(result)
         yield Completed(result)
+
+    async def _rewrite(
+        self, llm: LLMProvider, question: str, turns: Turns
+    ) -> tuple[str | None, GenerationDone]:
+        """The follow-up as a self-contained question; None when the model keeps it as is."""
+        context = "\n\n".join(
+            f"User: {q}\nAssistant: {strip_markers(a)[:CONTEXT_ANSWER_CHARS]}" for q, a in turns
+        )
+        parts: list[str] = []
+        done = GenerationDone(usage=Usage())
+        async for event in llm.stream(
+            load_prompt("rewrite_question"),
+            [ChatMessage("user", f"Conversation:\n{context}\n\nNew question: {question}")],
+            GenerationOptions(temperature=0.0, max_output_tokens=150),
+        ):
+            if isinstance(event, TextDelta):
+                parts.append(event.text)
+            else:
+                done = event
+        lines = "".join(parts).strip().splitlines()
+        # Small models sometimes wrap the line in quotes or Markdown bold: drop those.
+        rewritten = lines[0].strip().strip("\"'*`").strip() if lines else ""
+        # Keep the original on an empty, runaway or unchanged result.
+        if not rewritten or len(rewritten) > 4 * len(question) + 200:
+            return None, done
+        if rewritten.casefold() == question.strip().casefold():
+            return None, done
+        return rewritten, done
 
     async def answer(
         self,
@@ -213,6 +277,15 @@ class RagPipeline:
             if isinstance(event, Completed):
                 return event.result
         raise RuntimeError("Pipeline finished without a result")
+
+
+def _add(a: Usage, b: Usage) -> Usage:
+    return Usage(
+        input_tokens=a.input_tokens + b.input_tokens,
+        output_tokens=a.output_tokens + b.output_tokens,
+        cache_read_input_tokens=a.cache_read_input_tokens + b.cache_read_input_tokens,
+        cache_creation_input_tokens=a.cache_creation_input_tokens + b.cache_creation_input_tokens,
+    )
 
 
 def _ms(since: float) -> float:

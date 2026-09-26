@@ -4,10 +4,13 @@ import { SseParser } from "./sse";
 describe("SseParser", () => {
   it("parses events split across arbitrary chunks", () => {
     const parser = new SseParser();
-    const stream = 'event: token\ndata: {"text":"Hel"}\n\nevent: token\ndata: {"text":"lo"}\n\n';
-    const events = [stream.slice(0, 7), stream.slice(7, 30), stream.slice(30)].flatMap((c) =>
-      parser.push(c),
-    );
+    const stream =
+      'event: token\ndata: {"text":"Hel"}\n\nevent: token\ndata: {"text":"lo"}\n\n';
+    const events = [
+      stream.slice(0, 7),
+      stream.slice(7, 30),
+      stream.slice(30),
+    ].flatMap((c) => parser.push(c));
     expect(events).toEqual([
       { event: "token", data: { text: "Hel" } },
       { event: "token", data: { text: "lo" } },

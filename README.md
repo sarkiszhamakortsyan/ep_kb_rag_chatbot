@@ -326,6 +326,26 @@ Built with the official MCP Python SDK (v2). The HTTP transport is stateless, an
   - A question embeds in about 50 ms.
   - Checked with the Ollama container stopped: health ok, cited answers, a German answer, and early refusals.
 
+### Follow-up questions
+
+A follow-up like *"And on the Enterprise plan?"* now keeps its topic:
+1. **Rewrite:** when a question belongs to a conversation with earlier turns, the model first rewrites it into a self-contained question, using the last 3 turns. The prompt is `prompts/rewrite_question.md`, and it keeps the question's language.
+2. **Search and answer:** retrieval and the answer both use the rewritten question.
+3. **Transparency:** the chat shows it as *"Understood as: …"*, and the admin history stores it next to the original.
+
+Details:
+- **Where the earlier turns come from:** the SQLite history, or a small in-memory store when the history is switched off.
+- **First questions** skip the extra call. The benchmarks stay single-turn, so their numbers are unchanged.
+- **Cost:** the rewrite adds one short LLM call, about 1.3 s with Claude and 4–15 s with the local model. Its tokens are included in the turn's usage and costs.
+- **Measured** on a 5-conversation set (`tests/eval/followups.yaml`, one in German): every follow-up answered correctly in context, and almost none without it.
+
+  | Model | In context | Without context |
+  |---|---|---|
+  | Claude | **5/5** | 1/5 |
+  | `ministral-3:3b` | **5/5** | 0/5 |
+
+  Benchmark: `uv run python -m app.evaluation.followups --provider anthropic` (or `ollama`).
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -465,13 +485,13 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 
 ## Known limitations and future work
 
-- **Single-turn questions.** Each question is answered on its own: `conversation_id` is returned and reused, but earlier turns aren't used as context, so a follow-up like *"and on the Enterprise plan?"* loses the topic. Multi-turn context (question rewriting over the history) is part of the planned response-history feature (`ideas.md` #5).
+- **Single-turn questions (on `main`).** There each question is answered on its own, so a follow-up like *"and on the Enterprise plan?"* loses the topic. The dev-features branch rewrites follow-ups using the conversation (see *Follow-up questions*).
 - **No authentication or rate limiting.** Fine for a local prototype. Before exposing it (especially with a Claude key), add auth such as SSO or an API gateway and per-user rate limits.
 - **Ollama provides the embeddings** in the default setup, even when Claude answers, because Anthropic has no embeddings API. On the dev-features branch, `docker-compose.claude-only.yml` runs the same embedding model inside the backend instead (see *Model switches and "Claude only"*).
 - **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (17/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
 - **English knowledge base.** Questions in other languages work, and the answer comes in the question's language, or in the language chosen in the header selector (dev-features).
-- **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): multi-turn follow-up questions. The response history, statistics, costs, tests and settings tabs, detailed answers, the language selector, the CLI, the MCP server and the Claude-only mode are built on this branch.
+- **Planned features** ([`ideas.md`](documentation/taskdocs/ideas.md)): on `main` they exist only as seams in the code; this branch builds all of them: the response history, statistics, costs, tests and settings tabs, detailed answers, the language selector, follow-up questions, the CLI, the MCP server and the Claude-only mode.
 
 ---
 

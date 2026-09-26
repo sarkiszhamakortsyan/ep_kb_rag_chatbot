@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from app.stores.events.base import EventStore
+from app.stores.events.base import EventStore, Turns
 
 if TYPE_CHECKING:
     from app.rag.pipeline import ChatResult
@@ -16,3 +16,10 @@ class FanOutEventStore(EventStore):
     async def record(self, result: "ChatResult") -> None:
         for store in self._stores:
             await store.record(result)
+
+    async def recent_turns(self, conversation_id: str, limit: int) -> Turns:
+        for store in self._stores:
+            turns = await store.recent_turns(conversation_id, limit)
+            if turns:
+                return turns
+        return []

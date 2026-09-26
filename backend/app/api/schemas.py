@@ -82,6 +82,7 @@ class TimingsOut(BaseModel):
     time_to_first_token_ms: float | None
     generation_ms: float
     total_ms: float
+    rewrite_ms: float = 0.0
 
 
 class ChatResponse(BaseModel):
@@ -101,6 +102,10 @@ class ChatResponse(BaseModel):
     language: str | None = Field(
         default=None, description="The requested answer language, if one was set."
     )
+    standalone_question: str | None = Field(
+        default=None,
+        description="A follow-up rewritten as a self-contained question (what was answered).",
+    )
 
     @classmethod
     def from_result(cls, result: ChatResult) -> "ChatResponse":
@@ -119,6 +124,7 @@ class ChatResponse(BaseModel):
             sources_used=result.sources_used,
             stop_reason=result.stop_reason,
             language=result.language,
+            standalone_question=result.standalone_question,
         )
 
 

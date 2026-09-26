@@ -25,6 +25,7 @@ export type Timings = {
   time_to_first_token_ms: number | null;
   generation_ms: number;
   total_ms: number;
+  rewrite_ms?: number;
 };
 
 export type ChatResponse = {
@@ -42,6 +43,7 @@ export type ChatResponse = {
   sources_used: number;
   stop_reason: string | null;
   language?: string | null;
+  standalone_question?: string | null; // a follow-up rewritten as a self-contained question
 };
 
 export type ChatOptions = {

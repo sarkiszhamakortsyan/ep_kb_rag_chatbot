@@ -52,6 +52,7 @@ class TurnDetail(BaseModel):
     ttft_ms: float | None
     generation_ms: float
     total_ms: float
+    standalone_question: str | None = None
 
 
 class HistoryPage(BaseModel):

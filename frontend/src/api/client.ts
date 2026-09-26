@@ -25,7 +25,11 @@ export async function toApiError(response: Response): Promise<ApiError> {
     const body = (await response.json()) as ApiErrorBody;
     return new ApiError(response.status, body.error.code, body.error.message);
   } catch {
-    return new ApiError(response.status, "http_error", `Request failed (HTTP ${response.status})`);
+    return new ApiError(
+      response.status,
+      "http_error",
+      `Request failed (HTTP ${response.status})`,
+    );
   }
 }
 
@@ -58,12 +62,16 @@ export async function* streamChat(
 ): AsyncGenerator<StreamEvent> {
   const response = await fetch(`${BASE}/chat/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/event-stream",
+    },
     body: JSON.stringify(request),
     signal,
   });
   if (!response.ok) throw await toApiError(response);
-  if (!response.body) throw new ApiError(0, "no_body", "The server returned an empty stream");
+  if (!response.body)
+    throw new ApiError(0, "no_body", "The server returned an empty stream");
 
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   const parser = new SseParser();

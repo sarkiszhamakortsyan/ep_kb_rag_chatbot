@@ -377,3 +377,17 @@ def test_stored_settings_outside_the_configuration_are_ignored(tmp_path: Path) -
         create_app(only_local, two_provider_services(), load_in_background=False)
     ) as client:
         assert client.get("/api/v1/providers").json()["default"] == "ollama"
+
+
+def test_follow_ups_are_rewritten_and_stored(client: TestClient) -> None:
+    first = client.post("/api/v1/chat", json={"message": "How long are backups kept?"}).json()
+    follow_up = client.post(
+        "/api/v1/chat",
+        json={"message": "And backups on Enterprise?", "conversation_id": first["conversation_id"]},
+    ).json()
+    # The fake model "rewrites" to its canned answer: enough to check the plumbing.
+    assert follow_up["standalone_question"] == "Backups are retained for 35 days [1]."
+    assert "rewrite_ms" in follow_up["timings"]
+    detail = client.get(f"/api/v1/admin/history/{follow_up['message_id']}", headers=AUTH).json()
+    assert detail["standalone_question"] == follow_up["standalone_question"]
+    assert detail["question"] == "And backups on Enterprise?"

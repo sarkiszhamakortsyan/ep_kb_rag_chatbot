@@ -8,7 +8,16 @@ if TYPE_CHECKING:
     from app.rag.pipeline import ChatResult
 
 
+# (question, answer) pairs of earlier turns, oldest first.
+Turns = list[tuple[str, str]]
+
+
 class EventStore(ABC):
     @abstractmethod
     async def record(self, result: "ChatResult") -> None:
         """Called exactly once per chat turn, after the answer is complete."""
+
+    async def recent_turns(self, conversation_id: str, limit: int) -> Turns:
+        """The last `limit` turns of a conversation, for follow-up questions (ideas.md #5).
+        Stores that keep no conversation text return none: every question then stands alone."""
+        return []

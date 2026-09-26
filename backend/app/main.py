@@ -19,6 +19,7 @@ from app.services import Services, create_services
 from app.stores.events.base import EventStore
 from app.stores.events.fanout import FanOutEventStore
 from app.stores.events.log_only import LogOnlyEventStore
+from app.stores.events.memory import InMemoryConversations
 from app.stores.history.sqlite import SqliteHistory
 
 # Builds the services; `events` receives every chat turn (log + history).
@@ -53,9 +54,10 @@ def create_app(
         api.state.history = history
         eval_runner = EvalRunner(history.save_eval_run) if history else None
         api.state.eval_runner = eval_runner
-        events: EventStore = (
-            FanOutEventStore([LogOnlyEventStore(), history]) if history else LogOnlyEventStore()
-        )
+        # The history (or, without it, a small in-memory store) also remembers recent turns
+        # for follow-up questions.
+        memory: EventStore = history or InMemoryConversations()
+        events: EventStore = FanOutEventStore([LogOnlyEventStore(), memory])
 
         async def build() -> Services:
             services = await services_factory(settings, events)

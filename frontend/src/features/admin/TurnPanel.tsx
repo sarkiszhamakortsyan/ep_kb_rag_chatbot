@@ -71,6 +71,14 @@ export function TurnPanel({ token, messageId, onClose }: Props) {
             <div className="rounded-xl bg-brand-soft px-4 py-3 text-brand-ink">
               {turn.question}
             </div>
+            {turn.standalone_question && (
+              <p className="-mt-3 text-xs text-ink-faint">
+                Follow-up, understood as:{" "}
+                <span className="text-ink-muted italic">
+                  {turn.standalone_question}
+                </span>
+              </p>
+            )}
 
             <div>
               {turn.refused && (

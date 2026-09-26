@@ -1,0 +1,37 @@
+# Multi-turn evaluation set (ideas.md #5, follow-up questions).
+# Each conversation: a first question, then a follow-up that needs the first turn to make sense.
+# The follow-up passes when it cites an expected document and contains every key fact
+# ("a|b" = either spelling, e.g. German number formatting).
+
+version: 1
+conversations:
+  - id: f01
+    first: How many API requests per minute can a Business workspace make?
+    follow_up: And on the Enterprise plan?
+    expected_doc_ids: [kb-002]
+    key_facts: ["3,000|3.000|3000"]
+
+  - id: f02
+    first: How long are audit logs kept on the Business plan?
+    follow_up: What about Starter?
+    expected_doc_ids: [kb-003]
+    key_facts: ["90 days|90 Tage"]
+
+  - id: f03
+    first: What is the first-response time for a P1 ticket on the Enterprise tier?
+    follow_up: And for a P2 ticket?
+    expected_doc_ids: [kb-005]
+    key_facts: ["1 hour|one hour"]
+
+  - id: f04
+    first: When is a webhook endpoint disabled automatically?
+    follow_up: How do we get it working again?
+    expected_doc_ids: [kb-004]
+    key_facts: ["re-enable|reenable"]
+
+  - id: f05
+    lang: de
+    first: Wie viele API-Anfragen pro Minute darf ein Business-Workspace senden?
+    follow_up: Und bei Enterprise?
+    expected_doc_ids: [kb-002]
+    key_facts: ["3,000|3.000|3000"]
