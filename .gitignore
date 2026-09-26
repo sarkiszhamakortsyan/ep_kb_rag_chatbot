@@ -21,6 +21,7 @@ coverage/
 # Generated data (vector index cache, future SQLite DB)
 backend/data/index/
 backend/data/*.db
+backend/data/db/
 
 # Editors / OS
 .idea/

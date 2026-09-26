@@ -61,8 +61,13 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
     log_level: str = "INFO"
 
-    # Admin area (future hidden tabs); disabled when empty
+    # Admin area (hidden tabs: history, stats, ...). Disabled when empty.
     admin_token: SecretStr | None = None
+
+    # Response history (ideas.md #5): every turn is stored in SQLite for the admin area.
+    history_enabled: bool = True
+    history_retention_days: int = Field(default=90, ge=1)
+    database_path: Path = Path("data/db/history.sqlite")
 
     @field_validator("enabled_llm_providers", "cors_origins", mode="before")
     @classmethod

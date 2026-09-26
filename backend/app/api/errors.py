@@ -22,10 +22,34 @@ class ServiceNotReadyError(Exception):
     """The knowledge-base index is still loading (or failed to load)."""
 
 
+class AdminDisabledError(Exception):
+    """ADMIN_TOKEN is not set, so the admin area does not exist."""
+
+
+class UnauthorizedError(Exception):
+    """Missing or wrong admin token."""
+
+
+class HistoryDisabledError(Exception):
+    """HISTORY_ENABLED=false, so nothing is stored."""
+
+
+class NotFoundError(Exception):
+    """The requested record does not exist."""
+
+
 def error_payload(exc: Exception) -> tuple[int, str, str]:
     """(status, code, message) for an exception. Shared by JSON responses and SSE error events."""
     if isinstance(exc, ServiceNotReadyError):
         return 503, "not_ready", str(exc)
+    if isinstance(exc, AdminDisabledError):
+        return 404, "admin_disabled", str(exc)
+    if isinstance(exc, UnauthorizedError):
+        return 401, "unauthorized", str(exc)
+    if isinstance(exc, HistoryDisabledError):
+        return 404, "history_disabled", str(exc)
+    if isinstance(exc, NotFoundError):
+        return 404, "not_found", str(exc)
     if isinstance(exc, UnknownProviderError | ProviderDisabledError):
         return 400, "invalid_provider", str(exc)
     if isinstance(exc, ProviderConfigError):
@@ -65,7 +89,14 @@ def install_error_handlers(app: FastAPI) -> None:
         logger.exception("Unhandled error")
         return _response(500, "internal_error", "Internal server error")
 
-    app.add_exception_handler(ServiceNotReadyError, domain_error)
+    for error in (
+        ServiceNotReadyError,
+        AdminDisabledError,
+        UnauthorizedError,
+        HistoryDisabledError,
+        NotFoundError,
+    ):
+        app.add_exception_handler(error, domain_error)
     app.add_exception_handler(ProviderError, domain_error)
     app.add_exception_handler(RequestValidationError, validation_error)
     app.add_exception_handler(HTTPException, http_error)

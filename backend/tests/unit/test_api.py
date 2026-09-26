@@ -20,6 +20,7 @@ from app.providers.llm.base import (
 )
 from app.providers.llm.registry import DEFAULT_FACTORIES as REAL_LLM_FACTORIES
 from app.services import Services, create_services
+from app.stores.events.base import EventStore
 from tests.fakes import FakeEmbedder, FakeLLM
 
 KB = {
@@ -63,15 +64,19 @@ def settings(tmp_path: Path) -> Settings:
         top_k=2,
         min_score=0.3,
         ollama_base_url="http://127.0.0.1:9",
+        database_path=tmp_path / "db" / "history.sqlite",
     )
 
 
 def factory(
     llms: dict[str, Callable[[Settings], LLMProvider]],
 ) -> Callable[[Settings], "asyncio.Future[Services]"]:
-    async def build(settings: Settings) -> Services:
+    async def build(settings: Settings, events: EventStore) -> Services:
         return await create_services(
-            settings, llm_factories=llms, embedding_factories={"ollama": lambda s: FakeEmbedder()}
+            settings,
+            events,
+            llm_factories=llms,
+            embedding_factories={"ollama": lambda s: FakeEmbedder()},
         )
 
     return build  # type: ignore[return-value]
@@ -275,7 +280,7 @@ def test_config_error_at_startup_is_reported_not_retried(settings: Settings) -> 
 def test_chat_is_503_while_index_is_loading(settings: Settings) -> None:
     release = asyncio.Event()
 
-    async def slow_factory(s: Settings) -> Services:
+    async def slow_factory(s: Settings, events: EventStore) -> Services:
         await release.wait()
         raise AssertionError("never reached in this test")
 

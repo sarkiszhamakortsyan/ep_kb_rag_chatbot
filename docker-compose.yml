@@ -54,6 +54,7 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
     volumes:
       - backend-index:/app/data/index
+      - backend-db:/app/data/db # response history (SQLite)
     depends_on:
       ollama-init:
         condition: service_completed_successfully
@@ -82,3 +83,4 @@ services:
 volumes:
   ollama-models:
   backend-index:
+  backend-db:

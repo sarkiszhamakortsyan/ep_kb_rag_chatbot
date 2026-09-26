@@ -21,6 +21,7 @@ from app.rag.chunking import chunk_document
 from app.rag.ingest import build_or_load_index, load_documents
 from app.rag.models import Chunk
 from app.services import Services, create_services
+from app.stores.events.base import EventStore
 from app.stores.vector.memory import InMemoryVectorStore
 from tests.fakes import FakeEmbedder, FakeLLM
 
@@ -81,11 +82,13 @@ async def test_api_overhead_under_concurrency(tmp_path: Path) -> None:
         min_score=0.0,
         enabled_llm_providers=["ollama"],
         llm_provider="ollama",
+        database_path=tmp_path / "history.sqlite",
     )
 
-    async def factory(s: Settings) -> Services:
+    async def factory(s: Settings, events: EventStore) -> Services:
         return await create_services(
             s,
+            events,
             llm_factories={"ollama": lambda _: FakeLLM("Backups are retained for 35 days [1].")},
             embedding_factories={"ollama": lambda _: FakeEmbedder(dimensions=768)},
         )

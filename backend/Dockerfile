@@ -18,7 +18,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 COPY app ./app
 COPY data/kb ./data/kb
-RUN mkdir -p data/index && chown -R appuser:appuser data
+RUN mkdir -p data/index data/db && chown -R appuser:appuser data
 USER appuser
 EXPOSE 8000
 CMD ["uvicorn", "app.main:api", "--host", "0.0.0.0", "--port", "8000"]

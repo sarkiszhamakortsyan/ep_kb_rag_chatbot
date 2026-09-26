@@ -12,7 +12,7 @@ Mark every idea after you finish.
 - Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them.
 - Method to write the response in professional language, clear and accurate. Provide more details only when requested.
 - Option to Question / Answer in different languages.
-- Add hidden tab with response history.
+- Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
 - Add hidden tab with unit, speed, and performance test.
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
 - Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README)
@@ -99,7 +99,7 @@ The list above has nine ideas. The README list adds two (MCP server, CLI) that w
 
 The admin features (#1, #2, #5, #6) share one foundation: a database for chat events, admin authentication and the admin page shell. That foundation comes first and is built once. Quick, independent features come next, and the biggest infrastructure change (Claude only, without Ollama) comes last.
 
-#### Phase 10: admin foundation + response history (#5). Size: M
+#### Phase 10: admin foundation + response history (#5). Size: M ✅ (2026-09-26, branch `dev-features`)
 - **Storage:** SQLite (a file in a Docker volume, no new service) behind the existing `EventStore` interface: `SqliteEventStore` with a `turns` table. It holds the time, conversation and message ids, question, answer, citations (JSON), provider, model, language, refusal and reason, top score, token usage and timings. Schema migrations use plain versioned SQL files.
 - **Privacy:** questions can contain customer data, so recording is configurable (`HISTORY_ENABLED`, default on) with a retention period (`HISTORY_RETENTION_DAYS`, default 90) and a purge on startup.
 - **Admin API:** `/api/v1/admin/*`, protected by `ADMIN_TOKEN`. When the token isn't set, the admin API is switched off (404). Endpoints: `GET /admin/history` (paged, filter by date, provider, refused, text search) and `GET /admin/history/{message_id}`.
@@ -165,3 +165,17 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 2. **History privacy:** store full questions and answers (the recommendation, with a 90-day retention period), or only metrics without text.
 3. **Charts:** a small chart library (for example Recharts, about 100 KB) or hand-made SVG charts (no dependency, simpler charts).
 4. **"Claude only" embeddings:** in-process (recommended) or Voyage AI.
+
+### Progress
+
+The features are built on the **`dev-features`** branch. `main` and `dev` stay the official submission.
+
+**Phase 10 ✅ (2026-09-26): admin foundation + response history.**
+- **Backend:**
+  - `SqliteHistory` (`app/stores/history/`) with versioned SQL migrations, retention purge, and filter and paging queries.
+  - It's attached to the existing `EventStore` hook through `FanOutEventStore` (log + history).
+  - `/api/v1/admin/{session,history,history/{id},history/export.csv}`, protected by `ADMIN_TOKEN` (`app/core/security.py`).
+- **Frontend:** `/admin` with token sign-in (session storage), History tab with search, filters, paging, detail panel and CSV export, and Ctrl+Shift+A from the chat.
+- **Tests:** backend 120 (18 new: store and admin API), frontend 21 (4 new).
+- **Checked end to end:** in Docker, with screenshots in light and dark mode.
+

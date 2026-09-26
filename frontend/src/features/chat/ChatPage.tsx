@@ -1,5 +1,5 @@
 import { ArrowUp, Database, Gauge, KeyRound, LifeBuoy, Square, SquarePen, type LucideIcon } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { getHealth, getProviders } from "../../api/client";
 import type { Health, Provider } from "../../api/types";
 import { AssistantBubble } from "./AssistantBubble";
@@ -48,6 +48,18 @@ export function ChatPage() {
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages]);
+
+  // Hidden entry to the admin area (it is protected by ADMIN_TOKEN, not by being hidden).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        window.location.assign("/admin");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const send = (question: string) => void ask(question, provider || undefined);
   const empty = messages.length === 0;
@@ -180,7 +192,7 @@ function Composer({ busy, onSend, onStop, autoFocus }: ComposerProps) {
     onSend(draft);
     setDraft("");
   };
-  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) submit(e);
   };
 
