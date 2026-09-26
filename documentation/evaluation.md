@@ -75,7 +75,7 @@ The source cards used to show the raw cosine similarity as "N% match", and "61%"
 - **Decision:** `embeddinggemma` stays.
 
 **Changes made:**
-- **Source cards** now show a calibrated **high / medium / low relevance** level (at least 0.55 / at least 0.45 / below that), with the exact similarity in the tooltip.
+- **Source cards** now show a calibrated match level: **strong match** (at least 0.55), **good match** (at least 0.40) or **related**, with the exact similarity in the tooltip. Every source shown is cited by the answer, and correctly used sources can score below 0.45, so no level sounds negative.
 - **The index fingerprint** now includes the embedding prompt format, so changing the format rebuilds the index. Previously only the model name counted.
 
 ## Speed

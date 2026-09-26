@@ -195,6 +195,16 @@ def write_index() -> None:
         "after every assistant turn by a Claude Code hook (`.claude/settings.json` -> "
         "`scripts/export_ai_logs.py`).\n\n" + "\n".join(rows) + "\n"
     )
+    # Snapshots saved by hand with Claude Code's /export command (plain text, as shown in the CLI).
+    exports = sorted((OUT_DIR / "cli-exports").glob("*.txt"))
+    if exports:
+        index += (
+            "\n## Plain-text exports (`/export`)\n\n"
+            "Snapshots of the same sessions as the terminal showed them, saved with the `/export` "
+            "command and checked for secrets.\n\n"
+            + "\n".join(f"- [{p.name}](cli-exports/{p.name})" for p in exports)
+            + "\n"
+        )
     (OUT_DIR / "README.md").write_text(index, encoding="utf-8")
 
 

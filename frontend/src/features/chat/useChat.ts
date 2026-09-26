@@ -8,7 +8,7 @@ export type AssistantMessage = {
   id: string;
   role: "assistant";
   text: string;
-  status: "streaming" | "done" | "error";
+  status: "streaming" | "done" | "error" | "stopped";
   sources: Citation[]; // candidates sent before generation (meta event)
   result?: ChatResponse; // final result (citations, refusal, usage, timings)
   error?: { code: string; message: string };
@@ -82,6 +82,15 @@ export function useChat() {
     [busy, conversationId],
   );
 
+  // Stops the answer being generated and keeps the text streamed so far.
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    setMessages((all) =>
+      all.map((m) => (m.role === "assistant" && m.status === "streaming" ? { ...m, status: "stopped" } : m)),
+    );
+    setBusy(false);
+  }, []);
+
   const newConversation = useCallback(() => {
     abortRef.current?.abort();
     setMessages([]);
@@ -89,5 +98,5 @@ export function useChat() {
     setBusy(false);
   }, []);
 
-  return { messages, conversationId, busy, ask, newConversation };
+  return { messages, conversationId, busy, ask, stop, newConversation };
 }

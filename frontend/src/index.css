@@ -1,12 +1,96 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
 
-/* Minimal typography for Markdown answers (lists, bold, tables, code). */
-.prose-answer p { margin: 0.4rem 0; }
-.prose-answer ul { list-style: disc; padding-left: 1.25rem; margin: 0.4rem 0; }
-.prose-answer ol { list-style: decimal; padding-left: 1.25rem; margin: 0.4rem 0; }
-.prose-answer li { margin: 0.15rem 0; }
-.prose-answer strong { font-weight: 600; }
-.prose-answer code { background: var(--color-slate-100); border-radius: 0.25rem; padding: 0 0.25rem; font-size: 0.85em; }
-.prose-answer table { border-collapse: collapse; margin: 0.5rem 0; font-size: 0.875rem; }
-.prose-answer th, .prose-answer td { border: 1px solid var(--color-slate-200); padding: 0.25rem 0.5rem; text-align: left; }
-.prose-answer h1, .prose-answer h2, .prose-answer h3 { font-weight: 600; margin: 0.6rem 0 0.3rem; }
+/*
+ * Design tokens. Components use these semantic names (bg-surface, text-ink-muted, …)
+ * instead of raw palette colours, so dark mode is a single override below.
+ */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-subtle: #f1f3f6;
+  --color-line: #e3e6eb;
+  --color-line-strong: #cdd2da;
+  --color-ink: #111827;
+  --color-ink-muted: #4b5563;
+  --color-ink-faint: #6b7280;
+
+  --color-brand: #4f46e5;
+  --color-brand-strong: #4338ca;
+  --color-brand-soft: #eef0ff;
+  --color-brand-ink: #3730a3;
+  --color-on-brand: #ffffff;
+
+  --color-success-soft: #ecfdf5;
+  --color-success-ink: #047857;
+  --color-warning-soft: #fffbeb;
+  --color-warning-line: #fcd9a0;
+  --color-warning-ink: #a14a07;
+  --color-danger-soft: #fef2f2;
+  --color-danger-line: #fecaca;
+  --color-danger-ink: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0d1117;
+    --color-surface: #151a23;
+    --color-subtle: #1c2330;
+    --color-line: #262e3b;
+    --color-line-strong: #364152;
+    --color-ink: #e6e9ef;
+    --color-ink-muted: #a7b0bf;
+    --color-ink-faint: #8a94a6;
+
+    --color-brand: #8b93ff;
+    --color-brand-strong: #a9afff;
+    --color-brand-soft: #22234a;
+    --color-brand-ink: #d1d5ff;
+    --color-on-brand: #0d1117;
+
+    --color-success-soft: #0c2a1f;
+    --color-success-ink: #6ee7b7;
+    --color-warning-soft: #2a1f0a;
+    --color-warning-line: #6b4a12;
+    --color-warning-ink: #fcd34d;
+    --color-danger-soft: #2c1215;
+    --color-danger-line: #7f1d1d;
+    --color-danger-ink: #fca5a5;
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-feature-settings: "cv11", "ss01"; /* Inter: single-storey a, open digits */
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Visible keyboard focus everywhere (mouse clicks don't show it). */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Typography for Markdown answers (lists, bold, tables, code). */
+.prose-answer { line-height: 1.65; }
+.prose-answer > :first-child { margin-top: 0; }
+.prose-answer > :last-child { margin-bottom: 0; }
+.prose-answer p { margin: 0.5rem 0; }
+.prose-answer ul { list-style: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
+.prose-answer ol { list-style: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
+.prose-answer li { margin: 0.25rem 0; padding-left: 0.125rem; }
+.prose-answer li::marker { color: var(--color-ink-faint); }
+.prose-answer strong { font-weight: 600; color: var(--color-ink); }
+.prose-answer code { background: var(--color-subtle); border: 1px solid var(--color-line); border-radius: 0.3rem; padding: 0.05rem 0.3rem; font-size: 0.85em; }
+.prose-answer table { border-collapse: collapse; margin: 0.75rem 0; font-size: 0.875rem; width: 100%; }
+.prose-answer th { background: var(--color-subtle); font-weight: 600; }
+.prose-answer th, .prose-answer td { border: 1px solid var(--color-line); padding: 0.4rem 0.6rem; text-align: left; }
+.prose-answer h1, .prose-answer h2, .prose-answer h3 { font-weight: 600; margin: 0.9rem 0 0.4rem; }

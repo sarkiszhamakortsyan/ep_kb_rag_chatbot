@@ -15,15 +15,27 @@ export function linkCitations(answer: string, messageId: string, known: Set<numb
   });
 }
 
-export type Relevance = "high" | "medium" | "low";
+export type Relevance = "strong" | "good" | "related";
 
 /**
  * Cosine similarity is not a percentage of correctness: with embeddinggemma a correct top
- * match usually scores 0.55–0.75. Thresholds are calibrated on the evaluation set
- * (documentation/evaluation.md); questions below MIN_SCORE (0.35) never reach the UI.
+ * match usually scores 0.55–0.75, and correctly used sources can score below 0.45.
+ * Every source shown is cited by the answer, so the levels are deliberately never negative.
+ * Thresholds are calibrated on the evaluation set (documentation/evaluation.md).
  */
 export function relevance(score: number): Relevance {
-  if (score >= 0.55) return "high";
-  if (score >= 0.45) return "medium";
-  return "low";
+  if (score >= 0.55) return "strong";
+  if (score >= 0.4) return "good";
+  return "related";
+}
+
+export const RELEVANCE_LABEL: Record<Relevance, string> = {
+  strong: "strong match",
+  good: "good match",
+  related: "related",
+};
+
+/** Answer text without [n] markers, for pasting into e-mails or tickets. */
+export function stripCitations(answer: string): string {
+  return answer.replace(/[ \t]?\[\d+(?:\s*,\s*\d+)*\]/g, "");
 }

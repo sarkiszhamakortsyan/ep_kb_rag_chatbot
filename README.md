@@ -3,7 +3,7 @@
 A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). It answers natural-language questions **strictly from internal documentation**, **cites the exact document sections** it used, and **refuses politely** (pointing to a human expert) when the documentation has no answer.
 
 - **Backend:** Python 3.12 + FastAPI. Heading-aware chunking, exact in-memory vector search with an on-disk index cache, and a streaming RAG pipeline with citation mapping.
-- **Frontend:** Vite + React + TypeScript + Tailwind. Streamed answers, clickable `[n]` citation chips and source cards.
+- **Frontend:** Vite + React + TypeScript + Tailwind. Streamed answers with progress steps and a Stop button, clickable `[n]` citation chips, source cards with a match level, copy and regenerate, light and dark themes.
 - **LLM:** a local model via **Ollama** (`ministral-3:3b`, embeddings `embeddinggemma`), or **Claude** with your own API key (`claude-opus-5`), selectable per question.
 - **One command:** `docker compose up`.
 
@@ -241,7 +241,7 @@ Six local models were compared (`ministral-3:3b`, `qwen3.5:4b`, `gemma3:4b`, `ll
 - at least one expected document for every question
 - query embedding: about 50 ms; retrieval p50 60 ms
 - the right document is ranked first for every question. Four other embedding models (`qwen3-embedding`, `bge-m3`, `nomic-embed-text`, and a different query prompt) did no better; their higher similarity numbers come from a different score scale ([comparison](documentation/evaluation.md#embedding-models-compared-2026-09-26))
-- the UI shows each source's **relevance** as high / medium / low, calibrated on this set, with the raw similarity in the tooltip, because a raw "61% match" reads like a grade
+- the UI labels each source **strong match / good match / related**, calibrated on this set, with the raw similarity in the tooltip, because a raw "61% match" reads like a grade
 
 **Off-topic refusals** (no LLM call) take about 50 ms. **Without the model:** the API handles about 450 requests/s (p95 54 ms). The index builds in 16 s and loads from cache in 5 ms.
 
@@ -314,6 +314,7 @@ The assignment asks which AI tools were used, and for which parts.
 - **Included:** every prompt I wrote, verbatim and timestamped, and every reply from Claude in full, including the context summaries written when a long session was compacted.
 - **Shortened:** the tool calls Claude made (commands, file edits, their output) are kept but collapsed, with long ones cut at 1,500 characters.
 - **Removed:** secrets are redacted. Claude's internal reasoning isn't part of the log.
+- **Also saved:** plain-text snapshots made with Claude Code's `/export` command, exactly as the terminal showed them, in [`documentation/ai-logs/cli-exports/`](documentation/ai-logs/cli-exports/).
 
 A Claude Code hook (`.claude/settings.json` → `scripts/export_ai_logs.py`) regenerates the log after every assistant turn, so it never falls behind the conversation. The logs are committed with each phase. `python3 scripts/export_ai_logs.py --all` re-exports every session by hand.
 

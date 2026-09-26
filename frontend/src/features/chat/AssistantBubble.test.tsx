@@ -25,10 +25,10 @@ describe("AssistantBubble", () => {
     const sources = screen.getByRole("region", { name: "Sources" });
     expect(sources).toHaveTextContent("Guide 1");
     expect(sources).toHaveTextContent("Section 1");
-    expect(sources).toHaveTextContent("high relevance");
+    expect(sources).toHaveTextContent("strong match");
 
     await userEvent.click(chip);
-    expect(document.getElementById("cite-a1-1")).toHaveClass("border-indigo-400");
+    expect(document.getElementById("cite-a1-1")).toHaveClass("border-brand");
     expect(screen.getByText("Snippet text 1.")).toBeVisible();
   });
 
@@ -66,6 +66,19 @@ describe("AssistantBubble", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Anthropic is busy");
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(onRetry).toHaveBeenCalledWith("How long are backups kept?");
+  });
+
+  it("keeps a stopped answer and offers to regenerate it", async () => {
+    const onRetry = vi.fn();
+    render(
+      <AssistantBubble
+        message={message({ text: "Backups are", status: "stopped", result: undefined })}
+        onRetry={onRetry}
+      />,
+    );
+    expect(screen.getByText("Stopped.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Regenerate" }));
     expect(onRetry).toHaveBeenCalledWith("How long are backups kept?");
   });
 });

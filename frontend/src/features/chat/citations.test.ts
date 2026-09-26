@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { linkCitations, relevance } from "./citations";
+import { linkCitations, relevance, stripCitations } from "./citations";
 
 describe("linkCitations", () => {
   const known = new Set([1, 2, 3]);
@@ -21,9 +21,17 @@ describe("linkCitations", () => {
 
 describe("relevance", () => {
   it("maps similarity scores to calibrated levels", () => {
-    expect(relevance(0.74)).toBe("high");
-    expect(relevance(0.55)).toBe("high");
-    expect(relevance(0.5)).toBe("medium");
-    expect(relevance(0.4)).toBe("low");
+    expect(relevance(0.74)).toBe("strong");
+    expect(relevance(0.55)).toBe("strong");
+    expect(relevance(0.42)).toBe("good");
+    expect(relevance(0.38)).toBe("related");
+  });
+});
+
+describe("stripCitations", () => {
+  it("removes markers for copying", () => {
+    expect(stripCitations("Kept 35 days [1]. Hourly on Enterprise [2, 3][4].")).toBe(
+      "Kept 35 days. Hourly on Enterprise.",
+    );
   });
 });
