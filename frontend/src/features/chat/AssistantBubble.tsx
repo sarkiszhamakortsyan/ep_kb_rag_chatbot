@@ -1,4 +1,13 @@
-import { Check, CircleCheck, Copy, Info, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  CircleCheck,
+  Copy,
+  Info,
+  ListPlus,
+  LoaderCircle,
+  RotateCcw,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,17 +17,24 @@ import { LogoMark } from "./LogoMark";
 import { modelName } from "./providers";
 import type { AssistantMessage } from "./useChat";
 
-type Props = { message: AssistantMessage; onRetry: (question: string) => void };
+type Props = {
+  message: AssistantMessage;
+  onRetry: (question: string) => void;
+  onMoreDetail?: (question: string) => void;
+};
 
 const REFUSAL_LABEL = "Not covered by the knowledge base";
 
-export function AssistantBubble({ message, onRetry }: Props) {
+export function AssistantBubble({ message, onRetry, onMoreDetail }: Props) {
   const [highlighted, setHighlighted] = useState<number | null>(null);
   const result = message.result;
   // While streaming, markers refer to the candidate sources; afterwards to the cited ones.
   const citations = result ? result.citations : [];
   const known = useMemo(
-    () => new Set((result ? result.citations : message.sources).map((c) => c.number)),
+    () =>
+      new Set(
+        (result ? result.citations : message.sources).map((c) => c.number),
+      ),
     [result, message.sources],
   );
   const markdown = useMemo(
@@ -50,7 +66,9 @@ export function AssistantBubble({ message, onRetry }: Props) {
           </div>
         )}
 
-        {streaming && !message.text && <Progress sourceCount={message.sources.length} />}
+        {streaming && !message.text && (
+          <Progress sourceCount={message.sources.length} />
+        )}
 
         {message.text && (
           <div className="prose-answer text-[15px] text-ink" aria-live="polite">
@@ -74,7 +92,12 @@ export function AssistantBubble({ message, onRetry }: Props) {
                     );
                   }
                   return (
-                    <a href={href} target="_blank" rel="noreferrer" className="text-brand underline underline-offset-2">
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-brand underline underline-offset-2"
+                    >
                       {children}
                     </a>
                   );
@@ -90,7 +113,9 @@ export function AssistantBubble({ message, onRetry }: Props) {
         )}
 
         {message.status === "stopped" && (
-          <p className="mt-2 text-sm text-ink-faint italic">{message.text ? "Stopped." : "Stopped before the answer started."}</p>
+          <p className="mt-2 text-sm text-ink-faint italic">
+            {message.text ? "Stopped." : "Stopped before the answer started."}
+          </p>
         )}
 
         {message.status === "error" && message.error && (
@@ -113,7 +138,11 @@ export function AssistantBubble({ message, onRetry }: Props) {
           </div>
         )}
 
-        <CitationList messageId={message.id} citations={citations} highlighted={highlighted} />
+        <CitationList
+          messageId={message.id}
+          citations={citations}
+          highlighted={highlighted}
+        />
 
         {(result || message.status === "stopped") && (
           <footer className="mt-3 flex items-center gap-1 text-xs text-ink-faint">
@@ -126,6 +155,16 @@ export function AssistantBubble({ message, onRetry }: Props) {
               <RotateCcw aria-hidden className="size-3.5" />
               Regenerate
             </button>
+            {onMoreDetail && result && !refused && !message.detailed && (
+              <button
+                type="button"
+                onClick={() => onMoreDetail(message.question)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 hover:bg-subtle hover:text-ink"
+              >
+                <ListPlus aria-hidden className="size-3.5" />
+                More detail
+              </button>
+            )}
             {result && (
               <span className="ml-auto">
                 {result.provider ? `${modelName(result.model)} · ` : ""}
@@ -144,7 +183,10 @@ function Progress({ sourceCount }: { sourceCount: number }) {
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     const started = Date.now();
-    const timer = setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 1000);
+    const timer = setInterval(
+      () => setSeconds(Math.floor((Date.now() - started) / 1000)),
+      1000,
+    );
     return () => clearInterval(timer);
   }, []);
 
@@ -153,7 +195,10 @@ function Progress({ sourceCount }: { sourceCount: number }) {
     { label: "Searching the knowledge base", done: found },
     ...(found
       ? [
-          { label: `Found ${sourceCount} relevant section${sourceCount > 1 ? "s" : ""}`, done: true },
+          {
+            label: `Found ${sourceCount} relevant section${sourceCount > 1 ? "s" : ""}`,
+            done: true,
+          },
           { label: "Writing the answer", done: false },
         ]
       : []),
@@ -166,13 +211,18 @@ function Progress({ sourceCount }: { sourceCount: number }) {
             {s.done ? (
               <CircleCheck aria-hidden className="size-4 text-success-ink" />
             ) : (
-              <LoaderCircle aria-hidden className="size-4 animate-spin text-brand" />
+              <LoaderCircle
+                aria-hidden
+                className="size-4 animate-spin text-brand"
+              />
             )}
             <span className={s.done ? "" : "text-ink"}>{s.label}</span>
           </li>
         ))}
       </ol>
-      {seconds >= 3 && <p className="mt-2 pl-6 text-xs text-ink-faint">{seconds} s</p>}
+      {seconds >= 3 && (
+        <p className="mt-2 pl-6 text-xs text-ink-faint">{seconds} s</p>
+      )}
     </div>
   );
 }
@@ -191,7 +241,11 @@ function CopyButton({ text }: { text: string }) {
       onClick={copy}
       className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 hover:bg-subtle hover:text-ink"
     >
-      {copied ? <Check aria-hidden className="size-3.5 text-success-ink" /> : <Copy aria-hidden className="size-3.5" />}
+      {copied ? (
+        <Check aria-hidden className="size-3.5 text-success-ink" />
+      ) : (
+        <Copy aria-hidden className="size-3.5" />
+      )}
       {copied ? "Copied" : "Copy"}
     </button>
   );

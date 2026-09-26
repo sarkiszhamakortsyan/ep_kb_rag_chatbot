@@ -5,7 +5,9 @@ import { chatResponse, citation } from "../../test/fixtures";
 import { AssistantBubble } from "./AssistantBubble";
 import type { AssistantMessage } from "./useChat";
 
-const message = (overrides: Partial<AssistantMessage> = {}): AssistantMessage => ({
+const message = (
+  overrides: Partial<AssistantMessage> = {},
+): AssistantMessage => ({
   id: "a1",
   role: "assistant",
   text: "Backups are retained for **35 days** [1].",
@@ -33,22 +35,40 @@ describe("AssistantBubble", () => {
   });
 
   it("marks refusals and shows no sources", () => {
-    const refused = chatResponse({ refused: true, refusal_reason: "low_score", citations: [] });
+    const refused = chatResponse({
+      refused: true,
+      refusal_reason: "low_score",
+      citations: [],
+    });
     render(
-      <AssistantBubble message={message({ text: "I couldn't find this.", result: refused })} onRetry={vi.fn()} />,
+      <AssistantBubble
+        message={message({ text: "I couldn't find this.", result: refused })}
+        onRetry={vi.fn()}
+      />,
     );
-    expect(screen.getByText("Not covered by the knowledge base")).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Sources" })).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Not covered by the knowledge base"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Sources" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows progress while streaming", () => {
     render(
       <AssistantBubble
-        message={message({ text: "", status: "streaming", result: undefined, sources: [citation(1), citation(2)] })}
+        message={message({
+          text: "",
+          status: "streaming",
+          result: undefined,
+          sources: [citation(1), citation(2)],
+        })}
         onRetry={vi.fn()}
       />,
     );
-    expect(screen.getByRole("status")).toHaveTextContent("Found 2 relevant sections");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Found 2 relevant sections",
+    );
   });
 
   it("shows errors with a retry button", async () => {
@@ -73,7 +93,11 @@ describe("AssistantBubble", () => {
     const onRetry = vi.fn();
     render(
       <AssistantBubble
-        message={message({ text: "Backups are", status: "stopped", result: undefined })}
+        message={message({
+          text: "Backups are",
+          status: "stopped",
+          result: undefined,
+        })}
         onRetry={onRetry}
       />,
     );

@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.api.errors import error_payload
 from app.api.schemas import ChatRequest, ChatResponse, CitationOut, ErrorResponse
 from app.api.state import get_services
-from app.rag.pipeline import AnswerDelta, ChatOptions, Completed, SourcesEvent
+from app.rag.pipeline import AnswerDelta, Completed, SourcesEvent
 from app.services import Services
 
 router = APIRouter(tags=["chat"])
@@ -31,7 +31,7 @@ async def chat(
     result = await services.pipeline.answer(
         request.message,
         conversation_id=request.conversation_id,
-        options=ChatOptions(provider=request.options.provider),
+        options=request.options.to_chat_options(),
     )
     return ChatResponse.from_result(result)
 
@@ -67,7 +67,7 @@ async def _events(request: ChatRequest, services: Services) -> AsyncIterator[str
         async for event in services.pipeline.stream(
             request.message,
             conversation_id=request.conversation_id,
-            options=ChatOptions(provider=request.options.provider),
+            options=request.options.to_chat_options(),
         ):
             if isinstance(event, SourcesEvent):
                 yield _sse(

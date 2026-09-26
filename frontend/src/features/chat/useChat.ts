@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, streamChat } from "../../api/client";
-import type { Citation, ChatResponse } from "../../api/types";
+import type { ChatOptions, Citation, ChatResponse } from "../../api/types";
 
-export type UserMessage = { id: string; role: "user"; text: string };
+export type UserMessage = {
+  id: string;
+  role: "user";
+  text: string;
+  detailed?: boolean;
+};
 
 export type AssistantMessage = {
   id: string;
@@ -13,6 +18,7 @@ export type AssistantMessage = {
   result?: ChatResponse; // final result (citations, refusal, usage, timings)
   error?: { code: string; message: string };
   question: string; // kept so a failed answer can be retried
+  detailed?: boolean; // asked with detail="detailed"
 };
 
 export type Message = UserMessage | AssistantMessage;
@@ -28,27 +34,43 @@ export function useChat() {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const update = (id: string, change: (m: AssistantMessage) => AssistantMessage) =>
+  const update = (
+    id: string,
+    change: (m: AssistantMessage) => AssistantMessage,
+  ) =>
     setMessages((all) =>
       all.map((m) => (m.id === id && m.role === "assistant" ? change(m) : m)),
     );
 
   const ask = useCallback(
-    async (question: string, provider?: string) => {
+    async (question: string, options: ChatOptions = {}) => {
       const text = question.trim();
       if (!text || busy) return;
       const controller = new AbortController();
       abortRef.current = controller;
       const answerId = localId();
       setBusy(true);
+      const detailed = options.detail === "detailed";
       setMessages((all) => [
         ...all,
-        { id: localId(), role: "user", text },
-        { id: answerId, role: "assistant", text: "", status: "streaming", sources: [], question: text },
+        { id: localId(), role: "user", text, detailed },
+        {
+          id: answerId,
+          role: "assistant",
+          text: "",
+          status: "streaming",
+          sources: [],
+          question: text,
+          detailed,
+        },
       ]);
 
       try {
-        const request = { message: text, conversation_id: conversationId, options: { provider } };
+        const request = {
+          message: text,
+          conversation_id: conversationId,
+          options,
+        };
         for await (const event of streamChat(request, controller.signal)) {
           if (event.event === "meta") {
             setConversationId(event.data.conversation_id);
@@ -56,15 +78,31 @@ export function useChat() {
           } else if (event.event === "token") {
             update(answerId, (m) => ({ ...m, text: m.text + event.data.text }));
           } else if (event.event === "done") {
-            update(answerId, (m) => ({ ...m, text: event.data.answer, status: "done", result: event.data }));
+            update(answerId, (m) => ({
+              ...m,
+              text: event.data.answer,
+              status: "done",
+              result: event.data,
+            }));
           } else if (event.event === "error") {
-            update(answerId, (m) => ({ ...m, status: "error", error: event.data }));
+            update(answerId, (m) => ({
+              ...m,
+              status: "error",
+              error: event.data,
+            }));
           }
         }
         // A stream that ends without `done` or `error` was cut off.
         update(answerId, (m) =>
           m.status === "streaming"
-            ? { ...m, status: "error", error: { code: "stream_interrupted", message: "The answer was interrupted. Please try again." } }
+            ? {
+                ...m,
+                status: "error",
+                error: {
+                  code: "stream_interrupted",
+                  message: "The answer was interrupted. Please try again.",
+                },
+              }
             : m,
         );
       } catch (err) {
@@ -72,7 +110,10 @@ export function useChat() {
         const error =
           err instanceof ApiError
             ? { code: err.code, message: err.message }
-            : { code: "network_error", message: "Could not reach the server. Is the backend running?" };
+            : {
+                code: "network_error",
+                message: "Could not reach the server. Is the backend running?",
+              };
         update(answerId, (m) => ({ ...m, status: "error", error }));
       } finally {
         if (abortRef.current === controller) abortRef.current = null;
@@ -86,7 +127,11 @@ export function useChat() {
   const stop = useCallback(() => {
     abortRef.current?.abort();
     setMessages((all) =>
-      all.map((m) => (m.role === "assistant" && m.status === "streaming" ? { ...m, status: "stopped" } : m)),
+      all.map((m) =>
+        m.role === "assistant" && m.status === "streaming"
+          ? { ...m, status: "stopped" }
+          : m,
+      ),
     );
     setBusy(false);
   }, []);

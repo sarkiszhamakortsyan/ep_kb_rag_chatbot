@@ -13,7 +13,7 @@ from typing import Literal
 from app.providers.llm.base import ChatMessage, GenerationDone, GenerationOptions, TextDelta, Usage
 from app.providers.llm.registry import LLMRegistry
 from app.rag.citations import Citation, build_citations, to_citation
-from app.rag.prompts import build_user_message, load_prompt
+from app.rag.prompts import build_user_message, load_prompt, system_prompt
 from app.rag.retrieval import Retriever
 from app.stores.events.base import EventStore
 
@@ -24,6 +24,10 @@ RefusalReason = Literal["low_score", "no_citations", "model_refusal"]
 class ChatOptions:
     # LLM provider for this turn; None = the configured default (ideas.md #7).
     provider: str | None = None
+    # "detailed" asks for a complete explanation instead of a concise answer (ideas.md #3).
+    detail: Literal["concise", "detailed"] = "concise"
+    # ISO code from prompts.LANGUAGES; None = answer in the question's language (ideas.md #4).
+    language: str | None = None
 
 
 @dataclass(frozen=True)
@@ -135,6 +139,7 @@ class RagPipeline:
                 ),
                 top_score=retrieval.top_score,
                 sources_used=len(sources),
+                language=options.language,
             )
             await self._events.record(result)
             yield Completed(result)
@@ -145,7 +150,7 @@ class RagPipeline:
         parts: list[str] = []
         done = GenerationDone(usage=Usage())
         async for event in llm.stream(
-            load_prompt("system"),
+            system_prompt(options.detail, options.language),
             [ChatMessage("user", build_user_message(question, sources))],
             self._generation,
         ):
@@ -191,6 +196,7 @@ class RagPipeline:
             ),
             top_score=retrieval.top_score,
             sources_used=len(sources),
+            language=options.language,
         )
         await self._events.record(result)
         yield Completed(result)

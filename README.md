@@ -245,6 +245,18 @@ The **Costs** tab (`/admin/costs`) estimates spending from the stored token coun
   - local-model usage
 - **Ask Claude for suggestions:** an optional button that sends **only the aggregated figures** (never questions or answers) to Claude, which returns prioritised recommendations. One call costs about $0.02 to $0.03 with Opus, and the UI shows the exact cost.
 
+### Answer detail and language
+
+- **More detail:** a button under every answered question asks it again with `options.detail = "detailed"`.
+  - The system prompt gets one extra section: explain fully, covering every relevant fact, step, condition and exception in the sources, still cited.
+  - In a test with Claude, the detailed answer was about twice as long and organised under headings.
+- **Answer language:** a selector in the chat header (Auto, English, Deutsch, Français, Español, Italiano, Português, Nederlands, Polski) sends `options.language`.
+  - The model answers in that language whatever language the question is in. Checked with Claude (English question → French) and with the local model (English question → German).
+  - *Auto*, the default, keeps the original behaviour of answering in the question's language.
+  - The choice is remembered in the browser.
+- **Unchanged default:** without these options the system prompt is exactly `system.md`, so the benchmark results still apply. The extra sections are template files (`prompts/detail_detailed.md`, `prompts/answer_language.md`).
+- **Limitation:** the short "not covered" message for off-topic questions comes from a template, not the model, so it stays in English.
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -385,8 +397,8 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 - **Ollama is always required** for embeddings, even when Claude answers. Anthropic has no embeddings API. A "Claude only" mode needs an in-process or Voyage embedding provider (`ideas.md` #7; the interface exists).
 - **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (17/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
-- **English knowledge base.** Questions in other languages work, and the answer comes in the question's language; there's no language selector yet (`ideas.md` #4).
-- **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): concise vs detailed answers; a model on/off toggle. The response history, statistics, costs and tests tabs are built on this branch.
+- **English knowledge base.** Questions in other languages work, and the answer comes in the question's language, or in the language chosen in the header selector (dev-features).
+- **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): a model on/off toggle. The response history, statistics, costs and tests tabs, detailed answers and the language selector are built on this branch.
 
 ---
 
@@ -465,8 +477,8 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <h2 id="features-which-we-can-try-to-implement">Features which we can try to implement</h2>
 - [x] Create a hidden menu with statistics about the usage. *(dev-features: Statistics tab)*
 - [x] Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them. *(dev-features: Costs tab with computed hints and optional Claude advice)*
-- [ ] Method to write the response in professional language, clear and accurate. Provide more details only when requested.
-- [ ] Option to Question / Answer in different languages.
+- [x] Method to write the response in professional language, clear and accurate. Provide more details only when requested. *(dev-features: "More detail" button)*
+- [x] Option to Question / Answer in different languages. *(dev-features: answer-language selector)*
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
 - [ ] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
 - [ ] Check if we can build the hole Chatbot in an MCP server.

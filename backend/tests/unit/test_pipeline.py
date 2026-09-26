@@ -23,6 +23,7 @@ from app.rag.pipeline import (
     RagPipeline,
     SourcesEvent,
 )
+from app.rag.prompts import load_prompt
 from app.rag.retrieval import Retriever
 from app.stores.events.base import EventStore
 from app.stores.events.log_only import LogOnlyEventStore
@@ -158,6 +159,23 @@ async def test_provider_option_selects_llm() -> None:
     pipeline, _ = await make_pipeline({"a": default, "b": other})
     result = await pipeline.answer("backups retained?", options=ChatOptions(provider="b"))
     assert result.provider == "b" and other.calls and not default.calls
+
+
+async def test_detail_and_language_options_extend_the_system_prompt() -> None:
+    llm = FakeLLM("Backups are retained for 35 days [1].")
+    pipeline, _ = await make_pipeline({"fake": llm})
+
+    await pipeline.answer("backups retained?")
+    plain = llm.calls[-1][0]
+    assert plain == load_prompt("system")  # no options: exactly the reviewed base prompt
+
+    result = await pipeline.answer(
+        "backups retained?", options=ChatOptions(detail="detailed", language="de")
+    )
+    system = llm.calls[-1][0]
+    assert system.startswith(plain)
+    assert "detailed answer" in system and "Write the whole answer in German" in system
+    assert result.language == "de"
 
 
 async def test_disabled_provider_fails_before_retrieval() -> None:

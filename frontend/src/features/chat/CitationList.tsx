@@ -1,6 +1,11 @@
 import { ChevronDown, FileText } from "lucide-react";
 import type { Citation } from "../../api/types";
-import { citationAnchor, relevance, RELEVANCE_LABEL, type Relevance } from "./citations";
+import {
+  citationAnchor,
+  relevance,
+  RELEVANCE_LABEL,
+  type Relevance,
+} from "./citations";
 
 const RELEVANCE_STYLE: Record<Relevance, string> = {
   strong: "bg-success-soft text-success-ink",
@@ -8,7 +13,11 @@ const RELEVANCE_STYLE: Record<Relevance, string> = {
   related: "bg-subtle text-ink-muted",
 };
 
-type Props = { messageId: string; citations: Citation[]; highlighted: number | null };
+type Props = {
+  messageId: string;
+  citations: Citation[];
+  highlighted: number | null;
+};
 
 export function CitationList({ messageId, citations, highlighted }: Props) {
   if (citations.length === 0) return null;
@@ -39,11 +48,20 @@ export function CitationList({ messageId, citations, highlighted }: Props) {
                   <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-brand-soft text-xs font-semibold text-brand-ink">
                     {c.number}
                   </span>
-                  <FileText aria-hidden className="mt-1 hidden size-4 shrink-0 text-ink-faint sm:block" />
+                  <FileText
+                    aria-hidden
+                    className="mt-1 hidden size-4 shrink-0 text-ink-faint sm:block"
+                  />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium text-ink">{c.title}</span>
+                    <span className="block font-medium text-ink">
+                      {c.title}
+                    </span>
                     <span className="mt-0.5 flex items-center gap-2">
-                      {c.section && <span className="min-w-0 truncate text-xs text-ink-faint">{c.section}</span>}
+                      {c.section && (
+                        <span className="min-w-0 truncate text-xs text-ink-faint">
+                          {c.section}
+                        </span>
+                      )}
                       <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${RELEVANCE_STYLE[level]}`}
                         title={`Similarity to the question: ${c.score.toFixed(2)}`}

@@ -10,8 +10,8 @@ Mark every idea after you finish.
 
 - Create a hidden menu with statistics about the usage. ✅ (dev-features, phase 11)
 - Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them. ✅ (dev-features, phase 12)
-- Method to write the response in professional language, clear and accurate. Provide more details only when requested.
-- Option to Question / Answer in different languages.
+- Method to write the response in professional language, clear and accurate. Provide more details only when requested. ✅ (dev-features, phase 14)
+- Option to Question / Answer in different languages. ✅ (dev-features, phase 14)
 - Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
 - Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
@@ -127,7 +127,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 - Results are stored in SQLite. `GET /admin/eval` lists the runs, and the tab shows pass rate, recall, p50/p95 and failed questions, compared with the previous run.
 - The web UI calls the evaluation module and never runs `pytest` or shell commands.
 
-#### Phase 14: detail level + language (#3, #4). Size: S
+#### Phase 14: detail level + language (#3, #4). Size: S ✅ (2026-09-26)
 - `options.detail = "concise" | "detailed"` chooses the prompt template (`system.md` or a new `system_detailed.md`). Each answer gets a **More detail** button, which re-asks the same question in detailed mode.
 - `options.language = "auto" | "en" | "de" | …` adds one line to the prompt ("Answer in German"). `auto` stays the default and keeps today's behaviour. The header gets a language selector.
 - **Tests:** add a few eval questions per language and a detailed-mode check. The answer benchmark must stay at 18/18 on Claude and 17/18 on the local model.
@@ -209,4 +209,14 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
 - **Frontend:** a Tests tab with a benchmark and model picker, a confirmation step for paid Claude runs, a live progress bar with Cancel, the recent runs compared with the previous run, and a run detail panel (failures first, answers expandable).
 - **Tests:** backend 134 (4 new: retrieval run, answer run kept out of the history, busy and cancel, bad input), frontend 25 (3 new).
 - **Checked end to end in Docker:** retrieval recall 0.97 and hit rate 1.00; answers with Claude 18/18 in 67 s; a second start returned 409; the history count was unchanged.
+
+**Phase 14 ✅ (2026-09-26): detail level and answer language.**
+- **API:** `options.detail` (`concise` | `detailed`) and `options.language` (one of `en de fr es it pt nl pl`; an unknown code gets 422). `ChatResult`/`ChatResponse.language` report the requested language.
+- **Prompt:** `system_prompt()` appends `detail_detailed.md` and/or `answer_language.md` to the unchanged `system.md`. Without options the prompt is byte-for-byte the same, which a test checks, so the 18/18 and 17/18 benchmark results still hold and no rerun was needed.
+- **Frontend:** a "More detail" button on answered questions (the question gets a "More detail" tag), and an answer-language selector in the header, stored in `localStorage`.
+- **Tests:** backend 138 (4 new), frontend 26 (1 new).
+- **Checked with real models:**
+  - Claude: detailed 178 words against 97 concise; English question → French; German question → English.
+  - `ministral-3:3b`: English question → German, cited, in 54 s.
+- **Limitation:** the low-score "not covered" template stays English.
 

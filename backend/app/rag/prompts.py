@@ -1,5 +1,6 @@
-"""Prompt templates live in app/prompts/*.md so they can be reviewed and versioned like code
-(and later gain variants, e.g. a "detailed" answer style, ideas.md #3)."""
+"""Prompt templates live in app/prompts/*.md so they can be reviewed and versioned like code.
+Optional sections are appended for a detailed answer (ideas.md #3) or a fixed answer language
+(ideas.md #4); without options the system prompt is exactly `system.md`."""
 
 from collections.abc import Sequence
 from functools import lru_cache
@@ -10,9 +11,32 @@ from app.stores.vector.base import SearchResult
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
 
 
+# Answer languages offered in the UI (ISO 639-1 code -> the name used in the prompt).
+LANGUAGES: dict[str, str] = {
+    "en": "English",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "it": "Italian",
+    "pt": "Portuguese",
+    "nl": "Dutch",
+    "pl": "Polish",
+}
+
+
 @lru_cache
 def load_prompt(name: str) -> str:
     return (PROMPTS_DIR / f"{name}.md").read_text(encoding="utf-8").strip()
+
+
+def system_prompt(detail: str = "concise", language: str | None = None) -> str:
+    """The system prompt plus the sections for the requested answer style."""
+    parts = [load_prompt("system")]
+    if detail == "detailed":
+        parts.append(load_prompt("detail_detailed"))
+    if language:
+        parts.append(load_prompt("answer_language").format(language=LANGUAGES[language]))
+    return "\n\n".join(parts)
 
 
 def build_user_message(question: str, sources: Sequence[SearchResult]) -> str:

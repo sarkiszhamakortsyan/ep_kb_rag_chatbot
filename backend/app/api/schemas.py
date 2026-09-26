@@ -5,19 +5,37 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.rag.citations import Citation
-from app.rag.pipeline import ChatResult
+from app.rag.pipeline import ChatOptions, ChatResult
+from app.rag.prompts import LANGUAGES
 
 MAX_MESSAGE_CHARS = 4000
 
 
 class ChatOptionsIn(BaseModel):
-    # Unknown options are rejected (422) instead of silently ignored. Planned additions:
-    # `language` (ideas.md #4) and `detail` (ideas.md #3).
+    # Unknown options are rejected (422) instead of silently ignored.
     model_config = ConfigDict(extra="forbid")
 
     provider: str | None = Field(
         default=None, description="LLM provider for this question, e.g. 'ollama' or 'anthropic'."
     )
+    detail: Literal["concise", "detailed"] = Field(
+        default="concise", description="'detailed' asks for a complete explanation."
+    )
+    language: str | None = Field(
+        default=None,
+        description="Answer language (ISO 639-1 code, e.g. 'de'); omit to answer in the "
+        "question's language.",
+    )
+
+    @field_validator("language")
+    @classmethod
+    def _known_language(cls, value: str | None) -> str | None:
+        if value is not None and value not in LANGUAGES:
+            raise ValueError(f"unsupported language; use one of {', '.join(LANGUAGES)}")
+        return value
+
+    def to_chat_options(self) -> ChatOptions:
+        return ChatOptions(provider=self.provider, detail=self.detail, language=self.language)
 
 
 class ChatRequest(BaseModel):
@@ -80,6 +98,9 @@ class ChatResponse(BaseModel):
     top_score: float
     sources_used: int
     stop_reason: str | None
+    language: str | None = Field(
+        default=None, description="The requested answer language, if one was set."
+    )
 
     @classmethod
     def from_result(cls, result: ChatResult) -> "ChatResponse":
@@ -97,6 +118,7 @@ class ChatResponse(BaseModel):
             top_score=round(result.top_score, 4),
             sources_used=result.sources_used,
             stop_reason=result.stop_reason,
+            language=result.language,
         )
 
 

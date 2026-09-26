@@ -41,12 +41,19 @@ export type ChatResponse = {
   top_score: number;
   sources_used: number;
   stop_reason: string | null;
+  language?: string | null;
+};
+
+export type ChatOptions = {
+  provider?: string;
+  detail?: "concise" | "detailed";
+  language?: string; // ISO 639-1 code; omitted = answer in the question's language
 };
 
 export type ChatRequest = {
   message: string;
   conversation_id?: string;
-  options?: { provider?: string };
+  options?: ChatOptions;
 };
 
 export type Provider = {
@@ -64,14 +71,26 @@ export type Health = {
   ready: boolean;
   version: string;
   llm_provider: string;
-  index: { ready: boolean; documents: number | null; chunks: number | null; error: string | null };
+  index: {
+    ready: boolean;
+    documents: number | null;
+    chunks: number | null;
+    error: string | null;
+  };
 };
 
 export type ApiErrorBody = { error: { code: string; message: string } };
 
 // Server-Sent Events from POST /api/v1/chat/stream
 export type StreamEvent =
-  | { event: "meta"; data: { conversation_id: string; message_id: string; sources: Citation[] } }
+  | {
+      event: "meta";
+      data: {
+        conversation_id: string;
+        message_id: string;
+        sources: Citation[];
+      };
+    }
   | { event: "token"; data: { text: string } }
   | { event: "done"; data: ChatResponse }
   | { event: "error"; data: { code: string; message: string } };

@@ -1,17 +1,51 @@
-import { ArrowUp, Database, Gauge, KeyRound, LifeBuoy, Square, SquarePen, type LucideIcon } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import {
+  ArrowUp,
+  Database,
+  Gauge,
+  Globe,
+  KeyRound,
+  LifeBuoy,
+  Square,
+  SquarePen,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { getHealth, getProviders } from "../../api/client";
 import type { Health, Provider } from "../../api/types";
 import { AssistantBubble } from "./AssistantBubble";
 import { LogoMark } from "./LogoMark";
+import { LANGUAGES, readLanguage, storeLanguage } from "./languages";
 import { providerLabel } from "./providers";
 import { useChat } from "./useChat";
 
 const EXAMPLES: { topic: string; icon: LucideIcon; question: string }[] = [
-  { topic: "SSO & provisioning", icon: KeyRound, question: "Which plans support SCIM user provisioning?" },
-  { topic: "API limits", icon: Gauge, question: "How should a client handle HTTP 429 responses?" },
-  { topic: "Data & GDPR", icon: Database, question: "What happens to customer data after the contract ends?" },
-  { topic: "Support & SLA", icon: LifeBuoy, question: "How fast does support respond to a P1 ticket on Enterprise?" },
+  {
+    topic: "SSO & provisioning",
+    icon: KeyRound,
+    question: "Which plans support SCIM user provisioning?",
+  },
+  {
+    topic: "API limits",
+    icon: Gauge,
+    question: "How should a client handle HTTP 429 responses?",
+  },
+  {
+    topic: "Data & GDPR",
+    icon: Database,
+    question: "What happens to customer data after the contract ends?",
+  },
+  {
+    topic: "Support & SLA",
+    icon: LifeBuoy,
+    question: "How fast does support respond to a P1 ticket on Enterprise?",
+  },
 ];
 const MAX_CHARS = 4000;
 
@@ -19,6 +53,7 @@ export function ChatPage() {
   const { messages, busy, ask, stop, newConversation } = useChat();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [provider, setProvider] = useState<string>("");
+  const [language, setLanguage] = useState(readLanguage);
   const [health, setHealth] = useState<Health | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +87,11 @@ export function ChatPage() {
   // Hidden entry to the admin area (it is protected by ADMIN_TOKEN, not by being hidden).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "a") {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "a"
+      ) {
         e.preventDefault();
         window.location.assign("/admin");
       }
@@ -61,9 +100,16 @@ export function ChatPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const send = (question: string) => void ask(question, provider || undefined);
+  const send = (question: string, detailed = false) =>
+    void ask(question, {
+      provider: provider || undefined,
+      language: language || undefined,
+      detail: detailed ? "detailed" : undefined,
+    });
   const empty = messages.length === 0;
-  const composer = <Composer busy={busy} onSend={send} onStop={stop} autoFocus={empty} />;
+  const composer = (
+    <Composer busy={busy} onSend={send} onStop={stop} autoFocus={empty} />
+  );
 
   return (
     <div className="flex h-dvh flex-col bg-canvas">
@@ -72,10 +118,34 @@ export function ChatPage() {
           <LogoMark className="size-8 shrink-0" />
           <div className="min-w-0 flex-1 leading-tight">
             <h1 className="truncate text-[15px] font-semibold text-ink">
-              OmniCorp <span className="hidden font-normal text-ink-muted sm:inline">Knowledge Assistant</span>
+              OmniCorp{" "}
+              <span className="hidden font-normal text-ink-muted sm:inline">
+                Knowledge Assistant
+              </span>
             </h1>
           </div>
           <StatusBadge health={health} />
+          <label className="relative flex items-center" title="Answer language">
+            <span className="sr-only">Answer language</span>
+            <Globe
+              aria-hidden
+              className="pointer-events-none absolute left-2.5 z-10 size-4 text-ink-faint"
+            />
+            <select
+              value={language}
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                storeLanguage(e.target.value);
+              }}
+              className="h-9 w-24 truncate rounded-lg border border-line bg-surface pr-1 pl-7 text-sm text-ink hover:border-line-strong sm:w-auto"
+            >
+              {LANGUAGES.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          </label>
           {providers.length > 0 && (
             <label className="flex items-center">
               <span className="sr-only">Model</span>
@@ -86,7 +156,12 @@ export function ChatPage() {
                 className="h-9 max-w-36 truncate rounded-lg border border-line bg-surface px-2 text-sm text-ink hover:border-line-strong sm:max-w-none"
               >
                 {providers.map((p) => (
-                  <option key={p.name} value={p.name} disabled={!p.available} title={p.detail ?? ""}>
+                  <option
+                    key={p.name}
+                    value={p.name}
+                    disabled={!p.available}
+                    title={p.detail ?? ""}
+                  >
                     {providerLabel(p)}
                   </option>
                 ))}
@@ -118,10 +193,20 @@ export function ChatPage() {
                   key={m.id}
                   className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-brand-soft px-4 py-2.5 whitespace-pre-wrap text-brand-ink"
                 >
+                  {m.detailed && (
+                    <span className="mb-1 block text-xs font-medium tracking-wide text-brand-ink/70 uppercase">
+                      More detail
+                    </span>
+                  )}
                   {m.text}
                 </div>
               ) : (
-                <AssistantBubble key={m.id} message={m} onRetry={send} />
+                <AssistantBubble
+                  key={m.id}
+                  message={m}
+                  onRetry={(q) => send(q, m.detailed)}
+                  onMoreDetail={(q) => send(q, true)}
+                />
               ),
             )}
             <div ref={endRef} />
@@ -130,13 +215,23 @@ export function ChatPage() {
       </main>
 
       {!empty && (
-        <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{composer}</div>
+        <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {composer}
+        </div>
       )}
     </div>
   );
 }
 
-function Welcome({ busy, onPick, children }: { busy: boolean; onPick: (q: string) => void; children: ReactNode }) {
+function Welcome({
+  busy,
+  onPick,
+  children,
+}: {
+  busy: boolean;
+  onPick: (q: string) => void;
+  children: ReactNode;
+}) {
   return (
     <div className="mx-auto flex min-h-full max-w-3xl flex-col justify-center px-4 py-10">
       <div className="mb-8 text-center">
@@ -145,7 +240,8 @@ function Welcome({ busy, onPick, children }: { busy: boolean; onPick: (q: string
           Ask a question about OmniCorp products and policies.
         </h2>
         <p className="mt-2 text-sm text-ink-muted">
-          Plans, SSO, API limits, data retention and support, with a source for every fact.
+          Plans, SSO, API limits, data retention and support, with a source for
+          every fact.
         </p>
       </div>
       {children}
@@ -162,7 +258,9 @@ function Welcome({ busy, onPick, children }: { busy: boolean; onPick: (q: string
               <Icon aria-hidden className="size-4" />
             </span>
             <span>
-              <span className="block text-xs font-medium text-ink-faint">{topic}</span>
+              <span className="block text-xs font-medium text-ink-faint">
+                {topic}
+              </span>
               <span className="block text-sm text-ink">{question}</span>
             </span>
           </button>
@@ -172,7 +270,12 @@ function Welcome({ busy, onPick, children }: { busy: boolean; onPick: (q: string
   );
 }
 
-type ComposerProps = { busy: boolean; onSend: (q: string) => void; onStop: () => void; autoFocus: boolean };
+type ComposerProps = {
+  busy: boolean;
+  onSend: (q: string) => void;
+  onStop: () => void;
+  autoFocus: boolean;
+};
 
 function Composer({ busy, onSend, onStop, autoFocus }: ComposerProps) {
   const [draft, setDraft] = useState("");
@@ -234,7 +337,8 @@ function Composer({ busy, onSend, onStop, autoFocus }: ComposerProps) {
         )}
       </div>
       <p className="mt-2 text-center text-xs text-ink-faint">
-        Answers come only from internal documentation. Check them before sharing with customers.
+        Answers come only from internal documentation. Check them before sharing
+        with customers.
         <span className="hidden sm:inline"> Shift+Enter for a new line.</span>
       </p>
     </form>

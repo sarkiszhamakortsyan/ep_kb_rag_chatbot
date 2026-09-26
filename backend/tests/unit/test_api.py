@@ -167,13 +167,27 @@ def test_off_topic_question_is_refused_without_llm(client: TestClient) -> None:
     assert body["provider"] is None and body["citations"] == []
 
 
+def test_chat_accepts_detail_and_language(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/chat",
+        json={
+            "message": "How long are backups kept?",
+            "options": {"detail": "detailed", "language": "fr"},
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["language"] == "fr"
+
+
 @pytest.mark.parametrize(
     ("payload", "fragment"),
     [
         ({"message": "   "}, "message"),
         ({"message": "x" * 4001}, "message"),
         ({}, "message"),
-        ({"message": "hi", "options": {"language": "de"}}, "options.language"),
+        ({"message": "hi", "options": {"language": "xx"}}, "options.language"),
+        ({"message": "hi", "options": {"tone": "casual"}}, "options.tone"),
+        ({"message": "hi", "options": {"detail": "huge"}}, "options.detail"),
         ({"message": "hi", "conversation_id": "../etc"}, "conversation_id"),
     ],
 )
