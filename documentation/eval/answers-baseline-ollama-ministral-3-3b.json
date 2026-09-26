@@ -1,0 +1,27 @@
+{
+  "questions": 18,
+  "passed": 16,
+  "answer_accuracy": 0.867,
+  "refusal_accuracy": 1.0,
+  "key_fact_coverage": 0.92,
+  "failed_ids": [
+    "q06",
+    "q11"
+  ],
+  "model": "ministral-3:3b",
+  "total_latency": {
+    "p50_ms": 60866.5,
+    "p95_ms": 197771.8,
+    "max_ms": 197771.8
+  },
+  "time_to_first_token": {
+    "p50_ms": 43045.8,
+    "p95_ms": 73140.1,
+    "max_ms": 73140.1
+  },
+  "tokens": {
+    "input": 21942,
+    "cache_read": 0,
+    "output": 1206
+  }
+}

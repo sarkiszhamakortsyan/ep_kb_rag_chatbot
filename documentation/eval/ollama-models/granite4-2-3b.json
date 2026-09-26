@@ -1,0 +1,33 @@
+{
+  "questions": 18,
+  "passed": 10,
+  "answer_accuracy": 0.467,
+  "refusal_accuracy": 1.0,
+  "key_fact_coverage": 0.88,
+  "failed_ids": [
+    "q01",
+    "q04",
+    "q06",
+    "q07",
+    "q11",
+    "q12",
+    "q13",
+    "q14"
+  ],
+  "model": "granite4.2:3b",
+  "total_latency": {
+    "p50_ms": 60859.3,
+    "p95_ms": 77443.7,
+    "max_ms": 77443.7
+  },
+  "time_to_first_token": {
+    "p50_ms": 40139.1,
+    "p95_ms": 75883.4,
+    "max_ms": 75883.4
+  },
+  "tokens": {
+    "input": 22198,
+    "cache_read": 0,
+    "output": 1141
+  }
+}

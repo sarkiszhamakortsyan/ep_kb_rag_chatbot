@@ -1,0 +1,34 @@
+{
+  "questions": 18,
+  "passed": 9,
+  "answer_accuracy": 0.4,
+  "refusal_accuracy": 1.0,
+  "key_fact_coverage": 0.8,
+  "failed_ids": [
+    "q01",
+    "q04",
+    "q07",
+    "q08",
+    "q10",
+    "q11",
+    "q12",
+    "q13",
+    "q14"
+  ],
+  "model": "phi4-mini:3.8b",
+  "total_latency": {
+    "p50_ms": 65668.0,
+    "p95_ms": 84988.7,
+    "max_ms": 84988.7
+  },
+  "time_to_first_token": {
+    "p50_ms": 43955.2,
+    "p95_ms": 84770.7,
+    "max_ms": 84770.7
+  },
+  "tokens": {
+    "input": 20867,
+    "cache_read": 0,
+    "output": 999
+  }
+}

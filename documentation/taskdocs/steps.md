@@ -175,3 +175,7 @@ The README was rewritten with: quick start, architecture (Mermaid), API with exa
 
 ### After the MVP
 Pick ideas from `ideas.md` one at a time, using the extension points already in place. Mark each one done there when finished.
+
+### Follow-up (2026-09-26): local model benchmark
+
+Six small Ollama models were benchmarked on the host CPU with the answer benchmark. `ministral-3:3b` became the default local model: 16/18 (15/18 in a second run) at about 61 s per answer, against 14/18 at 79 s for `gemma3:4b`. Results: `documentation/evaluation.md`, decision: `research.md` (2026-09-26 addendum).

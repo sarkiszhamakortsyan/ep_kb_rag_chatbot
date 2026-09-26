@@ -10,7 +10,7 @@ Measured on 2026-09-25 on the development VM (4 vCPU, 15 GB RAM, no GPU). The Cl
 | Backend performance | `uv run pytest -m perf -s` | nothing | 5 | ✅ see "Speed" below |
 | Backend integration | `uv run pytest -m integration` | Ollama | 2 | ✅ |
 | Retrieval benchmark | `uv run pytest -m eval -s` or `uv run python -m app.evaluation.retrieval --k 6` | Ollama | 4 tests / 18 questions | ✅ |
-| Answer benchmark | `uv run python -m app.evaluation.answers --provider anthropic` (or `ollama`) | Ollama (+ `ANTHROPIC_API_KEY` for Claude, about $0.20 per run) | 18 questions | ✅ Claude 18/18, local 14/18 |
+| Answer benchmark | `uv run python -m app.evaluation.answers --provider anthropic` (or `ollama`) | Ollama (+ `ANTHROPIC_API_KEY` for Claude, about $0.20 per run) | 18 questions | ✅ Claude 18/18, local `ministral-3:3b` 16/18 |
 | Frontend | `npm test` | nothing | 14 | ✅ |
 | Browser E2E (manual) | headless Chromium against `docker compose up` | full stack | 3 questions, reset, `/admin` | ✅ (Phases 6–7) |
 
@@ -79,24 +79,33 @@ Tokens per answer: about 1,360 input (38% served from the prompt cache) and abou
 | Loading the cached index (49 chunks) | 5 ms |
 | API with a fake model, 200 requests at concurrency 20 | **450 req/s**, p50 36 ms, p95 54 ms |
 
-### Local model (Ollama, `gemma3:4b`), from [`eval/answers-baseline-ollama-gemma3-4b.json`](eval/answers-baseline-ollama-gemma3-4b.json)
+### Local models (Ollama), compared on the host CPU
 
-Measured after the VM was switched to the host CPU (Intel i5-8300H, 4 vCPU, AVX2/FMA, no GPU).
+Measured after the VM was switched to the host CPU (Intel i5-8300H, 4 vCPU, AVX2/FMA, no GPU). Each model got the same 18 questions, retrieval and prompt. The raw summaries are in [`eval/ollama-models/`](eval/ollama-models/).
 
-| Metric | Value |
-|---|---|
-| Passed | **14 / 18** (answer accuracy 0.80, key-fact coverage 0.88) |
-| Refusal accuracy | 2 / 3 |
-| Time to first token, p50 / p95 | 59 s / 80 s (about 1,300 prompt tokens read at about 23 tokens/s) |
-| Full answer, p50 / p95 | 79 s / 101 s (answers are short: about 64 output tokens) |
-| Raw speed (warm) | generation 5.4 tokens/s, prompt reading about 57 tokens/s (short prompts) |
+| Model | Passed | Answerable (15) | Unanswerable refused (3) | Key-fact coverage | Time to first token p50 | Full answer p50 / p95 |
+|---|---|---|---|---|---|---|
+| **`ministral-3:3b`** (default) | **16 / 18** (run 1: 15) | 13 | 3 | 0.92 | 43 s | **61 s** / 198 s* |
+| `qwen3.5:4b` (`think=false`) | 16 / 18 | 13 | 3 | 0.92 | 80 s | 119 s / 172 s |
+| `gemma3:4b` (previous default) | 14 / 18 | 12 | 2 | 0.88 | 59 s | 79 s / 101 s |
+| `llama3.2:3b` | 12 / 18 | 9 | 3 | 0.84 | 33 s | 48 s / 68 s |
+| `granite4.2:3b` | 10 / 18 | 7 | 3 | 0.88 | 40 s | 61 s / 77 s |
+| `phi4-mini` (3.8B) | 9 / 18 | 6 | 3 | 0.80 | 44 s | 66 s / 85 s |
 
-The failures:
-- **q07 and q11** are correct but miss one exact detail (the `X-Omni-Signature` header name; "1 request per 200 records").
-- **q12** is incomplete: it gives the hourly P1 updates but not the 15-minute first response.
-- **q17** states *"OmniCorp does not integrate with on-premise LDAP"*. The knowledge base doesn't say that, so it's an **unsupported claim**, the most serious error type for this product. Claude refused the same question correctly.
+\* One outlier: q13 generated the same 92 tokens as in run 1 but took 198 s instead of 58 s, which points to a busy VM rather than the model. Run 1 had p95 92 s.
 
-**Conclusion:** use Claude when quality and latency matter; use the local model for privacy or offline use, preferably with a GPU and possibly a larger model.
+The default, `ministral-3:3b` ([`eval/answers-baseline-ollama-ministral-3-3b.json`](eval/answers-baseline-ollama-ministral-3-3b.json)), was run twice:
+- **Run 2 (baseline): 16/18.** It missed q06, which is correct but says "read-only for 30 days" instead of the checked phrase "30-day grace period". It also missed q11, which leaves out "1 request per 200 records".
+- **Run 1: 15/18.** It had the same two misses plus q10, where it gave the 10% credit for 98.7% uptime instead of 25%.
+- **Both runs** refused every unanswerable question and answered the German question in German.
+
+`gemma3:4b` missed q07, q11 and q12 by leaving out one detail each. Its fourth miss, q17, was the only **unsupported claim** in the whole comparison: *"OmniCorp does not integrate with on-premise LDAP"*, which the knowledge base doesn't say.
+
+**Conclusion:**
+- **`ministral-3:3b`** gives the best trade-off on a CPU and is the default.
+- **`qwen3.5:4b`** is the choice when answer quality matters more than speed.
+- **Claude** is the choice when both matter.
+- **A GPU** would make any of the local models interactive.
 
 ### Embeddings and index on the host CPU
 
@@ -106,7 +115,7 @@ The failures:
 | Retrieval, p50 / p95 | 1.1 s / 3.3 s | **60 ms / 73 ms** |
 | Off-topic refusal (no LLM call) | 0.8 s | **about 50 ms** |
 | Full index build (49 chunks) | about 5 min | **16 s** |
-| `gemma3:4b` generation | 2.5 tokens/s (RAG prompts timed out) | 5.4 tokens/s (RAG answer about 80 s) |
+| `gemma3:4b` generation | 2.5 tokens/s (RAG prompts timed out) | 5.4 tokens/s (RAG answer about 80 s; `ministral-3:3b` about 60 s) |
 
 ## Reproducing
 
@@ -118,5 +127,7 @@ uv run pytest -m perf -s                   # speed
 uv run pytest -m "integration or eval" -s  # needs Ollama
 uv run python -m app.evaluation.retrieval --k 6 --json ../documentation/eval/retrieval-baseline.json
 uv run python -m app.evaluation.answers --provider anthropic --json ../documentation/eval/answers-baseline-claude-opus-5.json
+uv run python -m app.evaluation.answers --provider ollama --json ../documentation/eval/answers-baseline-ollama-ministral-3-3b.json
+OLLAMA_CHAT_MODEL=qwen3.5:4b OLLAMA_THINK=false uv run python -m app.evaluation.answers --provider ollama   # any other model
 cd ../frontend && npm test
 ```

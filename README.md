@@ -4,7 +4,7 @@ A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). 
 
 - **Backend:** Python 3.12 + FastAPI. Heading-aware chunking, exact in-memory vector search with an on-disk index cache, and a streaming RAG pipeline with citation mapping.
 - **Frontend:** Vite + React + TypeScript + Tailwind. Streamed answers, clickable `[n]` citation chips and source cards.
-- **LLM:** a local model via **Ollama** (`gemma3:4b`, embeddings `embeddinggemma`), or **Claude** with your own API key (`claude-opus-5`), selectable per question.
+- **LLM:** a local model via **Ollama** (`ministral-3:3b`, embeddings `embeddinggemma`), or **Claude** with your own API key (`claude-opus-5`), selectable per question.
 - **One command:** `docker compose up`.
 
 > The original assignment brief and the progress checklist are at the [end of this file](#assignment-brief).
@@ -74,7 +74,7 @@ flowchart LR
     end
 
     E --> O[Ollama<br/>embeddinggemma]
-    L --> O2[Ollama<br/>gemma3:4b]
+    L --> O2[Ollama<br/>ministral-3:3b]
     L --> A[Anthropic API<br/>claude-opus-5]
     KB[(5 Markdown KB articles)] --> I
 ```
@@ -192,7 +192,7 @@ The full research, with arguments for and against each option, is in [`documenta
 | **"No valid citation = refusal"** | Language-independent refusal detection, no second LLM call | Depends on the model following the citation rule; measured at 100% on the eval set |
 | **Provider registries (LLM and embeddings separate)** | Switch models by configuration or per request; fakes in tests; Anthropic has no embeddings API, so embeddings are their own interface | More indirection than hard-coding one model |
 | **`claude-opus-5` default for Claude, server-side refusal fallback, cached system prompt** | Anthropic's current recommended default; a safety-filter refusal is retried on a fallback model; prompt caching cuts input cost | Opus costs more than Sonnet or Haiku: change `ANTHROPIC_MODEL` to trade quality for cost |
-| **`gemma3:4b` + `embeddinggemma` for local use** | The best quality that runs on a CPU in about 6 GB of RAM; both are multilingual (German questions work over English documents) | About 5 tokens/s on a laptop CPU, so answers take about a minute (see below) |
+| **`ministral-3:3b` + `embeddinggemma` for local use** | Won a benchmark of six small models on a CPU: 16/18, no unsupported claims, about 1 minute per answer (`qwen3.5:4b` matched the quality at 2 minutes; `gemma3:4b`, the first default, scored 14/18). Both are multilingual (German questions work over English documents) | Answers still take about a minute on a laptop CPU (see below) |
 | **SSE over POST (not WebSockets)** | One-directional token stream, works through nginx and plain HTTP, easy to test | `EventSource` only supports GET, so the frontend parses the stream itself (`src/api/sse.ts`) |
 | **Background index loading** | The container is healthy at once; a slow first build doesn't block health checks | Clients must handle `503 not_ready` (the UI does) |
 | **nginx serves the UI and forwards `/api`** | Same origin, so no CORS; security headers and CSP; gzip; SSE without buffering | One more container |
@@ -224,15 +224,17 @@ CI (`.github/workflows/ci.yml`) runs the offline suites on every push: backend l
 
 An answerable question passes when it is answered, cites an expected document **and** contains every key fact. An unanswerable one passes when it is refused.
 
-| | Claude `claude-opus-5` | Local `gemma3:4b` (4-core i5 laptop CPU) |
+| | Claude `claude-opus-5` | Local `ministral-3:3b` (4-core i5 laptop CPU) |
 |---|---|---|
-| Passed | **18 / 18** | 14 / 18 |
-| Refusals correct | 3 / 3 | 2 / 3 (stated *"does not integrate with LDAP"*, which isn't in the docs) |
-| Time to first token (p50) | 2.6 s | 59 s (mostly reading the ~1,300-token prompt) |
-| Full answer (p50 / p95) | 4.8 s / 11.5 s | 79 s / 101 s |
+| Passed | **18 / 18** | 16 / 18 (15 in a second run) |
+| Refusals correct | 3 / 3 | 3 / 3 |
+| Time to first token (p50) | 2.6 s | 43 s (mostly reading the ~1,300-token prompt) |
+| Full answer (p50) | 4.8 s | 61 s |
 | Cost per question | about $0.011 | $0 |
 
-The local model's other three misses are incomplete answers (a missing header name, ratio or response time), not wrong ones. The recommendation: **Claude for quality and speed; local for privacy or offline use**, ideally with a GPU.
+The local model's misses are an answer that is correct but worded differently from the checked phrase, and an answer that leaves out one detail. In the other run it also once picked the wrong credit tier from a table. The recommendation: **Claude for quality and speed; local for privacy or offline use**, ideally with a GPU.
+
+Six local models were compared (`ministral-3:3b`, `qwen3.5:4b`, `gemma3:4b`, `llama3.2:3b`, `granite4.2:3b`, `phi4-mini`): see [the comparison in `documentation/evaluation.md`](documentation/evaluation.md#local-models-ollama-compared-on-the-host-cpu). Any Ollama model can be used with `OLLAMA_CHAT_MODEL`.
 
 **Retrieval** (`embeddinggemma`, top 6):
 - recall of the expected documents: **0.97**
@@ -254,7 +256,7 @@ All settings are environment variables, read from `.env` (see [`.env.example`](.
 | `ANTHROPIC_API_KEY` | – | Your key (bring your own) |
 | `ANTHROPIC_MODEL` | `claude-opus-5` | e.g. `claude-sonnet-5` or `claude-haiku-4-5` for lower cost |
 | `ANTHROPIC_EFFORT` | – | Optional: `low`/`medium` for faster, cheaper answers |
-| `OLLAMA_CHAT_MODEL` / `OLLAMA_EMBED_MODEL` | `gemma3:4b` / `embeddinggemma` | Local models, pulled automatically |
+| `OLLAMA_CHAT_MODEL` / `OLLAMA_EMBED_MODEL` | `ministral-3:3b` / `embeddinggemma` | Local models, pulled automatically. For `qwen3.5:4b` (better, slower) also set `OLLAMA_THINK=false` |
 | `OLLAMA_TIMEOUT_S` | `300` | Maximum wait for the first token |
 | `TOP_K` / `MIN_SCORE` | `6` / `0.35` | Chunks sent to the LLM; refusal threshold (calibrated) |
 | `CHUNK_MAX_WORDS` / `CHUNK_OVERLAP_WORDS` | `300` / `45` | Chunk size; changing them rebuilds the index |
@@ -295,7 +297,7 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 - **Single-turn questions.** Each question is answered on its own: `conversation_id` is returned and reused, but earlier turns aren't used as context, so a follow-up like *"and on the Enterprise plan?"* loses the topic. Multi-turn context (question rewriting over the history) is part of the planned response-history feature (`ideas.md` #5).
 - **No authentication or rate limiting.** Fine for a local prototype. Before exposing it (especially with a Claude key), add auth such as SSO or an API gateway and per-user rate limits.
 - **Ollama is always required** for embeddings, even when Claude answers. Anthropic has no embeddings API. A "Claude only" mode needs an in-process or Voyage embedding provider (`ideas.md` #7; the interface exists).
-- **Local answers are slow on a CPU** (about 80 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (14/18 vs 18/18; one unsupported claim). A GPU or Claude is recommended for interactive use.
+- **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (16/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
 - **English knowledge base.** Questions in other languages work, and the answer comes in the question's language; there's no language selector yet (`ideas.md` #4).
 - **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): hidden statistics, costs, history and tests tabs; concise vs detailed answers; a model on/off toggle.

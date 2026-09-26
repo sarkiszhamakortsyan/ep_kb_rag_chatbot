@@ -38,7 +38,7 @@ services:
         condition: service_healthy
     environment:
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-gemma3:4b}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-ministral-3:3b}
       OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL:-embeddinggemma}
     entrypoint: ["/bin/sh", "-c"]
     command:
