@@ -24,6 +24,7 @@ from app.stores.history.costs import CostReport, compute_costs
 from app.stores.history.stats import UsageStats, compute_stats
 
 if TYPE_CHECKING:
+    from app.evaluation.runner import EvalRun
     from app.rag.pipeline import ChatResult
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,8 @@ class SqliteHistory(EventStore):
         self._conn = conn
         self._migrate()
         self._purge()
+        with self._lock, conn:  # runs cut off by a restart can never finish
+            conn.execute("UPDATE eval_runs SET status = 'interrupted' WHERE status = 'running'")
 
     def close(self) -> None:
         with self._lock:
@@ -203,6 +206,74 @@ class SqliteHistory(EventStore):
         with self._lock:
             return compute_stats(self._connection(), date_from, date_to)
 
+    # --- benchmark runs (admin Tests tab) -------------------------------------------------------
+
+    async def save_eval_run(self, run: "EvalRun") -> None:
+        await asyncio.to_thread(self._save_eval_run, run)
+
+    def _save_eval_run(self, run: "EvalRun") -> None:
+        with self._lock:
+            conn = self._connection()
+            with conn:
+                conn.execute(
+                    f"INSERT OR REPLACE INTO eval_runs ({EVAL_COLUMNS}) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        run.id,
+                        run.kind,
+                        run.provider,
+                        run.model,
+                        run.status,
+                        run.started_at,
+                        run.finished_at,
+                        run.total,
+                        run.done,
+                        json.dumps(run.summary) if run.summary is not None else None,
+                        json.dumps(run.results, ensure_ascii=False),
+                        run.error,
+                    ),
+                )
+
+    async def list_eval_runs(self, limit: int = 20) -> list["EvalRun"]:
+        """Newest first, without the per-question results."""
+        return await asyncio.to_thread(self._eval_runs, limit, None)
+
+    async def get_eval_run(self, run_id: str) -> "EvalRun | None":
+        runs = await asyncio.to_thread(self._eval_runs, 1, run_id)
+        return runs[0] if runs else None
+
+    def _eval_runs(self, limit: int, run_id: str | None) -> list["EvalRun"]:
+        from app.evaluation.runner import EvalRun
+
+        where, params = ("WHERE id = ?", [run_id]) if run_id else ("", [])
+        with self._lock:
+            rows = (
+                self._connection()
+                .execute(
+                    f"SELECT {EVAL_COLUMNS} FROM eval_runs {where} "
+                    "ORDER BY started_at DESC LIMIT ?",
+                    [*params, limit],
+                )
+                .fetchall()
+            )
+        return [
+            EvalRun(
+                id=r["id"],
+                kind=r["kind"],
+                provider=r["provider"],
+                model=r["model"],
+                status=r["status"],
+                started_at=r["started_at"],
+                finished_at=r["finished_at"],
+                total=r["total"],
+                done=r["done"],
+                summary=json.loads(r["summary"]) if r["summary"] else None,
+                results=json.loads(r["results"]) if run_id and r["results"] else [],
+                error=r["error"],
+            )
+            for r in rows
+        ]
+
     async def costs(
         self, date_from: date, date_to: date, prices: PriceTable, *, top_k: int
     ) -> CostReport:
@@ -244,6 +315,12 @@ class SqliteHistory(EventStore):
                 .fetchone()
             )
         return _turn(row) if row else None
+
+
+EVAL_COLUMNS = (
+    "id, kind, provider, model, status, started_at, finished_at, total, done, summary, "
+    "results, error"
+)
 
 
 def _where(filters: HistoryFilter) -> tuple[str, list[Any]]:

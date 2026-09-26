@@ -1,11 +1,15 @@
-from collections.abc import Iterator
+import asyncio
+import time
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
 from app.main import create_app
+from app.providers.llm.base import StreamEvent
 from app.services import Services, create_services
 from app.stores.events.base import EventStore
 from tests.fakes import FakeEmbedder, FakeLLM
@@ -214,3 +218,80 @@ def test_cost_advice_sends_only_aggregates(tmp_path: Path) -> None:
     assert body["usd"] > 0
     sent = advisor.calls[0][1][0].content
     assert '"questions": 1' in sent and "secret customer question" not in sent
+
+
+# --- benchmark runs (Tests tab) ---------------------------------------------------------------
+
+
+def wait_for_run(client: TestClient, run_id: str) -> dict[str, Any]:
+    for _ in range(200):
+        run: dict[str, Any] = client.get(f"/api/v1/admin/eval/{run_id}", headers=AUTH).json()
+        if run["status"] != "running":
+            return run
+        time.sleep(0.02)
+    raise AssertionError("benchmark did not finish")
+
+
+def test_retrieval_benchmark_run(client: TestClient) -> None:
+    started = client.post("/api/v1/admin/eval", json={"kind": "retrieval"}, headers=AUTH)
+    assert started.status_code == 202
+    run = wait_for_run(client, started.json()["id"])
+
+    assert run["status"] == "done" and run["done"] == run["total"] == 18
+    assert run["summary"]["questions"] == 18 and "mean_recall" in run["summary"]
+    assert {"id", "question", "passed", "retrieved", "top_score"} <= set(run["results"][0])
+
+    listing = client.get("/api/v1/admin/eval", headers=AUTH).json()
+    assert listing["running"] is None
+    assert listing["runs"][0]["id"] == run["id"] and listing["runs"][0]["results"] == []
+
+
+def test_answer_benchmark_run_stays_out_of_the_history(client: TestClient) -> None:
+    started = client.post("/api/v1/admin/eval", json={"kind": "answers"}, headers=AUTH).json()
+    assert started["provider"] == "ollama"
+    run = wait_for_run(client, started["id"])
+
+    assert run["status"] == "done" and run["summary"]["questions"] == 18
+    assert run["results"][0]["answer"] == "Backups are retained for 35 days [1]."
+    assert client.get("/api/v1/admin/history", headers=AUTH).json()["total"] == 0
+
+
+def test_only_one_benchmark_at_a_time_and_cancel(tmp_path: Path) -> None:
+    gate = asyncio.Event()
+
+    class SlowLLM(FakeLLM):
+        async def stream(self, *args: Any, **kwargs: Any) -> AsyncIterator[StreamEvent]:
+            await gate.wait()
+            async for event in super().stream(*args, **kwargs):
+                yield event
+
+    async def services(settings: Settings, events: EventStore) -> Services:
+        return await create_services(
+            settings,
+            events,
+            llm_factories={"ollama": lambda s: SlowLLM("Slow [1].", name="ollama")},
+            embedding_factories={"ollama": lambda s: FakeEmbedder()},
+        )
+
+    with TestClient(
+        create_app(make_settings(tmp_path), services, load_in_background=False)
+    ) as client:
+        run_id = client.post("/api/v1/admin/eval", json={"kind": "answers"}, headers=AUTH).json()[
+            "id"
+        ]
+        busy = client.post("/api/v1/admin/eval", json={"kind": "retrieval"}, headers=AUTH)
+        assert busy.status_code == 409 and busy.json()["error"]["code"] == "eval_busy"
+        assert client.get("/api/v1/admin/eval", headers=AUTH).json()["running"] == run_id
+
+        assert client.post(f"/api/v1/admin/eval/{run_id}/cancel", headers=AUTH).status_code == 202
+        assert wait_for_run(client, run_id)["status"] == "cancelled"
+        assert client.post(f"/api/v1/admin/eval/{run_id}/cancel", headers=AUTH).status_code == 404
+
+
+def test_benchmark_rejects_bad_input(client: TestClient) -> None:
+    assert client.post("/api/v1/admin/eval", json={"kind": "load"}, headers=AUTH).status_code == 422
+    bad = client.post(
+        "/api/v1/admin/eval", json={"kind": "answers", "provider": "gpt"}, headers=AUTH
+    )
+    assert bad.status_code == 400
+    assert client.get("/api/v1/admin/eval/nope", headers=AUTH).status_code == 404

@@ -11,6 +11,7 @@ from app.api.state import AppState
 from app.api.v1 import admin, chat, health, providers
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
+from app.evaluation.runner import EvalRunner
 from app.services import Services, create_services
 from app.stores.events.base import EventStore
 from app.stores.events.fanout import FanOutEventStore
@@ -42,6 +43,8 @@ def create_app(
         # The history opens before the index loads, so the admin area works while it builds.
         history = _open_history(settings)
         api.state.history = history
+        eval_runner = EvalRunner(history.save_eval_run) if history else None
+        api.state.eval_runner = eval_runner
         events: EventStore = (
             FanOutEventStore([LogOnlyEventStore(), history]) if history else LogOnlyEventStore()
         )
@@ -52,6 +55,8 @@ def create_app(
         else:
             await state.load(lambda: services_factory(settings, events))
         yield
+        if eval_runner:
+            await eval_runner.close()
         await state.close()
         if history:
             history.close()

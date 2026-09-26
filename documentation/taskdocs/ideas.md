@@ -13,7 +13,7 @@ Mark every idea after you finish.
 - Method to write the response in professional language, clear and accurate. Provide more details only when requested.
 - Option to Question / Answer in different languages.
 - Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
-- Add hidden tab with unit, speed, and performance test.
+- Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
 - Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README)
 - Option to use it over a CLI. (added 2026-09-26, from the README)
@@ -122,7 +122,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
   - a lower `TOP_K`
   - routing simple questions to a cheaper model
 
-#### Phase 13: tests tab (#6). Size: S
+#### Phase 13: tests tab (#6). Size: S ✅ (2026-09-26)
 - `POST /api/v1/admin/eval` starts the retrieval benchmark and optionally the answer benchmark, for a chosen model, as a background job. Only one runs at a time, and a Claude run shows its estimated cost first.
 - Results are stored in SQLite. `GET /admin/eval` lists the runs, and the tab shows pass rate, recall, p50/p95 and failed questions, compared with the previous run.
 - The web UI calls the evaluation module and never runs `pytest` or shell commands.
@@ -198,4 +198,15 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
   - The chart, range picker and cards became shared components (`DailyChart`, `RangePicker`, `ui.tsx`).
 - **Tests:** backend 130 (6 new: pricing, cost report, endpoints; the advice test checks that no question text is sent), frontend 22.
 - **Checked end to end:** a real advice call cost $0.025 (the note was corrected from "one question"). The mobile header and the plural wording in the hints were fixed after the screenshots.
+
+**Phase 13 ✅ (2026-09-26): tests tab.**
+- **Backend:**
+  - `EvalRunner` (`app/evaluation/runner.py`) runs the retrieval or answer benchmark as one background job at a time (409 `eval_busy` otherwise), question by question, saving progress after each step.
+  - The answer runs use a separate pipeline with a no-op event store, so benchmark answers stay out of the history, stats and costs.
+  - Migration `0002_eval_runs.sql`. Runs left "running" by a restart become "interrupted".
+  - Endpoints `GET/POST /api/v1/admin/eval`, `GET /admin/eval/{id}` and `POST /admin/eval/{id}/cancel`.
+  - The question set is copied into the Docker image (`.dockerignore` exception).
+- **Frontend:** a Tests tab with a benchmark and model picker, a confirmation step for paid Claude runs, a live progress bar with Cancel, the recent runs compared with the previous run, and a run detail panel (failures first, answers expandable).
+- **Tests:** backend 134 (4 new: retrieval run, answer run kept out of the history, busy and cancel, bad input), frontend 25 (3 new).
+- **Checked end to end in Docker:** retrieval recall 0.97 and hit rate 1.00; answers with Claude 18/18 in 67 s; a second start returned 409; the history count was unchanged.
 

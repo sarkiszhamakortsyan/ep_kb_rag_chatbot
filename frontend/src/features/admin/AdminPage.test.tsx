@@ -110,14 +110,29 @@ const costs = {
   cache_share: 0.3,
   per_day: [{ day: "2026-09-26", usd: 0.0301 }],
   per_model: [
-    { provider: "anthropic", model: "claude-opus-5", questions: 3, input_tokens: 3000, output_tokens: 300,
-      cache_read_tokens: 1000, cache_write_tokens: 0, usd: 0.0301, priced: true },
+    {
+      provider: "anthropic",
+      model: "claude-opus-5",
+      questions: 3,
+      input_tokens: 3000,
+      output_tokens: 300,
+      cache_read_tokens: 1000,
+      cache_write_tokens: 0,
+      usd: 0.0301,
+      priced: true,
+    },
   ],
   what_if: [
     { model: "claude-opus-5", usd: 0.0301 },
     { model: "claude-haiku-4-5", usd: 0.006 },
   ],
-  hints: [{ kind: "saving", title: "A smaller Claude model would cost 80% less", detail: "Run the benchmark first." }],
+  hints: [
+    {
+      kind: "saving",
+      title: "A smaller Claude model would cost 80% less",
+      detail: "Run the benchmark first.",
+    },
+  ],
 };
 
 function mockAdminApi() {
@@ -131,7 +146,13 @@ function mockAdminApi() {
     if (url.endsWith("/session")) return Promise.resolve(jsonResponse(session));
     if (url.includes("/stats")) return Promise.resolve(jsonResponse(stats));
     if (url.includes("/costs/advice")) {
-      return Promise.resolve(jsonResponse({ advice: "- **Use Haiku** for simple questions.", model: "claude-opus-5", usd: 0.012 }));
+      return Promise.resolve(
+        jsonResponse({
+          advice: "- **Use Haiku** for simple questions.",
+          model: "claude-opus-5",
+          usd: 0.012,
+        }),
+      );
     }
     if (url.includes("/costs")) return Promise.resolve(jsonResponse(costs));
     if (url.includes("/history/m1"))
@@ -245,15 +266,23 @@ describe("AdminPage", () => {
     const user = userEvent.setup();
     render(<AdminPage />);
 
-    expect(await screen.findByRole("heading", { name: "Costs" })).toBeInTheDocument();
-    expect(await screen.findByText("A smaller Claude model would cost 80% less")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Costs" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByText("A smaller Claude model would cost 80% less"),
+    ).toBeInTheDocument();
     expect(screen.getAllByText("$0.0301").length).toBeGreaterThan(0);
     expect(screen.getByText("(-80%)")).toBeInTheDocument(); // Haiku vs actual
 
-    await user.click(screen.getByRole("button", { name: "Ask Claude for suggestions" }));
+    await user.click(
+      screen.getByRole("button", { name: "Ask Claude for suggestions" }),
+    );
     expect(await screen.findByText("Use Haiku")).toBeInTheDocument();
     expect(screen.getByText(/this advice cost \$0\.0120/)).toBeInTheDocument();
-    const adviceCall = fetchMock.mock.calls.find(([url]) => url.includes("/costs/advice"))!;
+    const adviceCall = fetchMock.mock.calls.find(([url]) =>
+      url.includes("/costs/advice"),
+    )!;
     expect(adviceCall[1]?.method).toBe("POST");
   });
 });

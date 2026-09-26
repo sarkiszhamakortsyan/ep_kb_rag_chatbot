@@ -201,3 +201,62 @@ export async function getCostAdvice(
   if (!response.ok) throw await toApiError(response);
   return (await response.json()) as CostAdvice;
 }
+
+export type EvalKind = "retrieval" | "answers";
+
+export type EvalRun = {
+  id: string;
+  kind: EvalKind;
+  provider: string | null;
+  model: string | null;
+  status: "running" | "done" | "failed" | "cancelled" | "interrupted";
+  started_at: string;
+  finished_at: string | null;
+  total: number;
+  done: number;
+  // answers: passed, questions, failed_ids, ...; retrieval: mean_recall, hit_rate, ...
+  summary: Record<string, unknown> | null;
+  results: Record<string, unknown>[];
+  error: string | null;
+};
+
+export const listEvalRuns = async (token: string) =>
+  (await (await adminFetch(token, "/eval")).json()) as {
+    runs: EvalRun[];
+    running: string | null;
+  };
+
+export const getEvalRun = async (token: string, id: string) =>
+  (await (
+    await adminFetch(token, `/eval/${encodeURIComponent(id)}`)
+  ).json()) as EvalRun;
+
+async function adminPost(
+  token: string,
+  path: string,
+  body?: unknown,
+): Promise<Response> {
+  const response = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) throw await toApiError(response);
+  return response;
+}
+
+export const startEvalRun = async (
+  token: string,
+  kind: EvalKind,
+  provider?: string,
+) =>
+  (await (
+    await adminPost(token, "/eval", { kind, provider })
+  ).json()) as EvalRun;
+
+export const cancelEvalRun = async (token: string, id: string) => {
+  await adminPost(token, `/eval/${encodeURIComponent(id)}/cancel`);
+};

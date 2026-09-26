@@ -18,6 +18,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 COPY app ./app
 COPY data/kb ./data/kb
+# The benchmark question set, for the admin Tests tab (same path as in the repo)
+COPY tests/eval/questions.yaml ./tests/eval/questions.yaml
 RUN mkdir -p data/index data/db && chown -R appuser:appuser data
 USER appuser
 EXPOSE 8000

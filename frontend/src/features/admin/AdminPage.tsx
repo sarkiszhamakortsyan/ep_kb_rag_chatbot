@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ChartColumn,
+  FlaskConical,
   History,
   LogOut,
   Wallet,
@@ -13,6 +14,7 @@ import { HistoryTab } from "./HistoryTab";
 import { SignIn } from "./SignIn";
 import { CostsTab } from "./CostsTab";
 import { StatsTab } from "./StatsTab";
+import { TestsTab } from "./TestsTab";
 
 // The token is kept for this browser tab only (sessionStorage), never in localStorage.
 const TOKEN_KEY = "omnicorp-admin-token";
@@ -34,18 +36,21 @@ function storeToken(token: string | null) {
   }
 }
 
-type TabId = "stats" | "costs" | "history";
+type TabId = "stats" | "costs" | "history" | "tests";
 type Tab = { id: TabId; label: string; icon: LucideIcon };
 const TABS: Tab[] = [
   { id: "stats", label: "Statistics", icon: ChartColumn },
   { id: "costs", label: "Costs", icon: Wallet },
   { id: "history", label: "History", icon: History },
+  { id: "tests", label: "Tests", icon: FlaskConical },
 ];
 
 // Each tab has its own address (/admin/stats, /admin/history), so back/forward and bookmarks work.
 const tabFromPath = (): TabId => {
   const tab = window.location.pathname.split("/")[2];
-  return tab === "history" || tab === "costs" ? tab : "stats";
+  return tab === "history" || tab === "costs" || tab === "tests"
+    ? tab
+    : "stats";
 };
 
 /** Hidden admin area (/admin, or Ctrl+Shift+A in the chat). The ADMIN_TOKEN protects the data. */
@@ -98,7 +103,10 @@ export function AdminPage() {
           <h1 className="hidden text-[15px] font-semibold text-ink sm:block">
             OmniCorp <span className="font-normal text-ink-muted">Admin</span>
           </h1>
-          <nav aria-label="Admin sections" className="flex gap-0.5 sm:ml-4 sm:gap-1">
+          <nav
+            aria-label="Admin sections"
+            className="flex gap-0.5 sm:ml-4 sm:gap-1"
+          >
             {TABS.map(({ id, label, icon: Icon }) => (
               <a
                 key={id}
@@ -148,6 +156,8 @@ export function AdminPage() {
           <StatsTab token={token} onUnauthorized={signOut} />
         ) : tab === "costs" ? (
           <CostsTab token={token} onUnauthorized={signOut} />
+        ) : tab === "tests" ? (
+          <TestsTab token={token} onUnauthorized={signOut} />
         ) : (
           <HistoryTab
             token={token}

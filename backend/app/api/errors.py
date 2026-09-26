@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
+from app.evaluation.runner import EvalBusyError
 from app.providers.errors import (
     ProviderConfigError,
     ProviderDisabledError,
@@ -56,6 +57,8 @@ def error_payload(exc: Exception) -> tuple[int, str, str]:
         return 404, "not_found", str(exc)
     if isinstance(exc, InvalidRangeError):
         return 422, "invalid_range", str(exc)
+    if isinstance(exc, EvalBusyError):
+        return 409, "eval_busy", str(exc)
     if isinstance(exc, UnknownProviderError | ProviderDisabledError):
         return 400, "invalid_provider", str(exc)
     if isinstance(exc, ProviderConfigError):
@@ -102,6 +105,7 @@ def install_error_handlers(app: FastAPI) -> None:
         HistoryDisabledError,
         NotFoundError,
         InvalidRangeError,
+        EvalBusyError,
     ):
         app.add_exception_handler(error, domain_error)
     app.add_exception_handler(ProviderError, domain_error)
