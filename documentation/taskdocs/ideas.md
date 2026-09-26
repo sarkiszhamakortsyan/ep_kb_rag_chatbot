@@ -15,7 +15,7 @@ Mark every idea after you finish.
 - Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
 - Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
-- Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README)
+- Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README) ✅ (dev-features, phase 16)
 - Option to use it over a CLI. (added 2026-09-26, from the README) ✅ (dev-features, phase 15)
 
 ---
@@ -138,7 +138,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 - Colours are turned off automatically when output goes to a file. Exit codes: 0 answered, 2 not covered, 1 error, so scripts can use it.
 - **Tests:** the CLI against a mocked API.
 
-#### Phase 16: MCP server (#8). Size: M
+#### Phase 16: MCP server (#8). Size: M ✅ (2026-09-26)
 - **Answer to the question:** yes. The chatbot can be offered as an **MCP server**, so assistants such as Claude Desktop or Claude Code can use the knowledge base directly. Two tools:
   - `search_knowledge_base(query, k)` returns the matching sections with document, section and score. The calling assistant writes the answer itself.
   - `ask_knowledge_base(question, model?)` runs our full pipeline and returns the answer with citations. Answers stay under our rules: sources only, refusals, citations.
@@ -230,4 +230,17 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
 - **Exit codes:** 0 answered, 2 not covered, 1 error. Colours only on a terminal (`NO_COLOR` respected).
 - **Tests:** backend 144 (6 new, using a mock transport: streaming output and options, exit codes, error paths, JSON, health and providers, an interactive script).
 - **Checked against the live stack:** from the host (Claude answer with sources, early refusal with exit 2, an interactive German answer) and inside the backend container.
+
+**Phase 16 ✅ (2026-09-26): MCP server.**
+- **SDK:** the official MCP Python SDK **v2** (`mcp` 2.2, where `FastMCP` is now `MCPServer`).
+- **Tools and resources** (`app/mcp/server.py`):
+  - `search_knowledge_base` and `ask_knowledge_base`, plus the resources `kb://documents` and `kb://documents/{doc_id}`.
+  - Expected problems (unsupported language, unknown model, index still loading) come back as `ToolError` messages instead of a generic failure.
+- **Transports:**
+  - stdio: `python -m app.mcp`, which builds the services in-process and logs to stderr (`configure_logging(stream=...)`).
+  - Streamable HTTP: mounted in the API at `/api/mcp/` (so nginx's `/api/` proxy already covers it) behind a constant-time `MCP_TOKEN` bearer check. It's stateless, with DNS-rebinding protection from `MCP_ALLOWED_HOSTS`, and its session manager runs in the API's startup and shutdown.
+- **Tests:** backend 148 (4 new: tools and resources through the SDK's in-process client, not-ready errors, and the HTTP token check both on and off).
+- **Checked end to end:**
+  - HTTP through nginx with a temporary token: tools listed, search found the right sections, a cited Claude answer, resources read, 401 without the token.
+  - stdio as a subprocess with local Ollama: search and a cited Claude answer.
 

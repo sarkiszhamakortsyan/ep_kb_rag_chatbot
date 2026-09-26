@@ -223,8 +223,10 @@ def test_cost_advice_sends_only_aggregates(tmp_path: Path) -> None:
 # --- benchmark runs (Tests tab) ---------------------------------------------------------------
 
 
-def wait_for_run(client: TestClient, run_id: str) -> dict[str, Any]:
-    for _ in range(200):
+def wait_for_run(client: TestClient, run_id: str, timeout_s: float = 15.0) -> dict[str, Any]:
+    # Generous deadline: the run is a background task, and CI machines can be slow.
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
         run: dict[str, Any] = client.get(f"/api/v1/admin/eval/{run_id}", headers=AUTH).json()
         if run["status"] != "running":
             return run

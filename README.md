@@ -274,6 +274,40 @@ docker compose exec backend python -m app.cli --url http://localhost:8000 ask "�
 - **Colours:** used only on a terminal, and never when `NO_COLOR` is set.
 - **Interactive mode:** it keeps the conversation id until `/new`.
 
+### MCP server
+
+The knowledge base is also an **MCP server**, so AI assistants such as Claude Code or Claude Desktop can use it directly:
+
+| Tool / resource | What it does |
+|---|---|
+| `ask_knowledge_base(question, model?, language?)` | The full pipeline: a cited answer, or `refused: true` when the documentation has no answer |
+| `search_knowledge_base(query, k?)` | The best-matching sections (document, section, text, score), for the assistant to answer from itself |
+| `kb://documents` · `kb://documents/{doc_id}` | The list of articles, and one article in full |
+
+**Over HTTP**, inside the running stack:
+1. Set `MCP_TOKEN` in `.env` and restart the backend. Without it the endpoint doesn't exist.
+2. The endpoint is `http://localhost:8080/api/mcp/`, and it expects `Authorization: Bearer <MCP_TOKEN>`.
+3. It's served by the backend, so questions asked this way also appear in the admin history.
+
+```bash
+claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ --header "Authorization: Bearer $MCP_TOKEN"
+```
+
+**Over stdio**, as a local subprocess:
+- It needs Ollama reachable for the embeddings, and `ANTHROPIC_API_KEY` for Claude answers. Its logs go to stderr.
+- Claude Code:
+
+  ```bash
+  claude mcp add omnicorp-kb -- uv run --directory /path/to/repo/backend python -m app.mcp
+  ```
+- Claude Desktop (`claude_desktop_config.json`):
+
+  ```json
+  { "mcpServers": { "omnicorp-kb": { "command": "uv", "args": ["run", "--directory", "/path/to/repo/backend", "python", "-m", "app.mcp"] } } }
+  ```
+
+Built with the official MCP Python SDK (v2). The HTTP transport is stateless, and host names are checked against `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -375,6 +409,7 @@ All settings are environment variables, read from `.env` (see [`.env.example`](.
 | `FRONTEND_PORT` | `8080` | Web UI port |
 | `ADMIN_TOKEN` | – | Enables the admin area (dev-features); empty = switched off |
 | `HISTORY_ENABLED` / `HISTORY_RETENTION_DAYS` | `true` / `90` | Store questions and answers for the admin area, and for how long |
+| `MCP_TOKEN` / `MCP_ALLOWED_HOSTS` | – / `localhost,127.0.0.1` | MCP server over HTTP at `/api/mcp/` (dev-features); empty token = switched off |
 | `MODEL_PRICES` / `LOCAL_COST_PER_HOUR` | Claude list prices / `0` | Costs tab: price overrides (JSON, USD per million tokens) and an optional hourly cost for the local model |
 
 ---
@@ -392,6 +427,7 @@ backend/
     stores/         vector/ (in-memory numpy store), events/ (per-turn hook), history/ (SQLite, migrations, statistics)
     evaluation/     retrieval + answer benchmarks (CLI, pytest, and background runs for the Tests tab)
     cli/            command-line client for the API (ask, interactive session, health, providers)
+    mcp/            MCP server: tools and resources, stdio entry point, token-guarded HTTP mount
   data/kb/          5 mock OmniCorp articles (SSO, API limits, retention/GDPR, webhooks, support SLAs)
   tests/            unit/, integration/, eval/ (questions.yaml), perf/, fakes.py
 frontend/src/
@@ -499,5 +535,5 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Option to Question / Answer in different languages. *(dev-features: answer-language selector)*
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
 - [ ] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
-- [ ] Check if we can build the hole Chatbot in an MCP server.
+- [x] Check if we can build the hole Chatbot in an MCP server. *(dev-features: MCP tools and resources, over HTTP and stdio)*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
