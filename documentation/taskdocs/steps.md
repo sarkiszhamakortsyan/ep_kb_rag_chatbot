@@ -178,4 +178,4 @@ Pick ideas from `ideas.md` one at a time, using the extension points already in 
 
 ### Follow-up (2026-09-26): local model benchmark
 
-Six small Ollama models were benchmarked on the host CPU with the answer benchmark. `ministral-3:3b` became the default local model: 16/18 (15/18 in a second run) at about 61 s per answer, against 14/18 at 79 s for `gemma3:4b`. Results: `documentation/evaluation.md`, decision: `research.md` (2026-09-26 addendum).
+Six small Ollama models were benchmarked on the host CPU with the answer benchmark. `ministral-3:3b` became the default local model: 16/18 (15/18 in a second run) at about 61 s per answer, against 14/18 at 79 s for `gemma3:4b`. Results: `documentation/evaluation.md`, decision: `research.md` (2026-09-26 addendum). A follow-up prompt rule (keep the sources' specific numbers and terms) raised it to 17/18, with Claude still at 18/18. An embedding comparison kept `embeddinggemma`. The source cards now show a calibrated relevance level instead of the raw "% match", and the index fingerprint now includes the embedding prompt.

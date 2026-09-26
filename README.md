@@ -192,7 +192,7 @@ The full research, with arguments for and against each option, is in [`documenta
 | **"No valid citation = refusal"** | Language-independent refusal detection, no second LLM call | Depends on the model following the citation rule; measured at 100% on the eval set |
 | **Provider registries (LLM and embeddings separate)** | Switch models by configuration or per request; fakes in tests; Anthropic has no embeddings API, so embeddings are their own interface | More indirection than hard-coding one model |
 | **`claude-opus-5` default for Claude, server-side refusal fallback, cached system prompt** | Anthropic's current recommended default; a safety-filter refusal is retried on a fallback model; prompt caching cuts input cost | Opus costs more than Sonnet or Haiku: change `ANTHROPIC_MODEL` to trade quality for cost |
-| **`ministral-3:3b` + `embeddinggemma` for local use** | Won a benchmark of six small models on a CPU: 16/18, no unsupported claims, about 1 minute per answer (`qwen3.5:4b` matched the quality at 2 minutes; `gemma3:4b`, the first default, scored 14/18). Both are multilingual (German questions work over English documents) | Answers still take about a minute on a laptop CPU (see below) |
+| **`ministral-3:3b` + `embeddinggemma` for local use** | Won a benchmark of six small models on a CPU: 16/18 (17/18 after a prompt fix), no unsupported claims, about 1 minute per answer (`qwen3.5:4b` matched the quality at 2 minutes; `gemma3:4b`, the first default, scored 14/18). Both are multilingual (German questions work over English documents) | Answers still take about a minute on a laptop CPU (see below) |
 | **SSE over POST (not WebSockets)** | One-directional token stream, works through nginx and plain HTTP, easy to test | `EventSource` only supports GET, so the frontend parses the stream itself (`src/api/sse.ts`) |
 | **Background index loading** | The container is healthy at once; a slow first build doesn't block health checks | Clients must handle `503 not_ready` (the UI does) |
 | **nginx serves the UI and forwards `/api`** | Same origin, so no CORS; security headers and CSP; gzip; SSE without buffering | One more container |
@@ -226,13 +226,13 @@ An answerable question passes when it is answered, cites an expected document **
 
 | | Claude `claude-opus-5` | Local `ministral-3:3b` (4-core i5 laptop CPU) |
 |---|---|---|
-| Passed | **18 / 18** | 16 / 18 (15 in a second run) |
+| Passed | **18 / 18** | 17 / 18 |
 | Refusals correct | 3 / 3 | 3 / 3 |
-| Time to first token (p50) | 2.6 s | 43 s (mostly reading the ~1,300-token prompt) |
-| Full answer (p50) | 4.8 s | 61 s |
+| Time to first token (p50) | 1.4 s | 43–60 s (mostly reading the ~1,300-token prompt) |
+| Full answer (p50) | 3.8 s | 61–74 s (varies between runs) |
 | Cost per question | about $0.011 | $0 |
 
-The local model's misses are an answer that is correct but worded differently from the checked phrase, and an answer that leaves out one detail. In the other run it also once picked the wrong credit tier from a table. The recommendation: **Claude for quality and speed; local for privacy or offline use**, ideally with a GPU.
+The local model's one remaining miss is an answer that leaves out a detail ("1 request per 200 records"). A prompt rule to keep the sources' specific numbers and terms raised it from 16/18 to 17/18, and Claude stayed at 18/18. The recommendation: **Claude for quality and speed; local for privacy or offline use**, ideally with a GPU.
 
 Six local models were compared (`ministral-3:3b`, `qwen3.5:4b`, `gemma3:4b`, `llama3.2:3b`, `granite4.2:3b`, `phi4-mini`): see [the comparison in `documentation/evaluation.md`](documentation/evaluation.md#local-models-ollama-compared-on-the-host-cpu). Any Ollama model can be used with `OLLAMA_CHAT_MODEL`.
 
@@ -240,6 +240,8 @@ Six local models were compared (`ministral-3:3b`, `qwen3.5:4b`, `gemma3:4b`, `ll
 - recall of the expected documents: **0.97**
 - at least one expected document for every question
 - query embedding: about 50 ms; retrieval p50 60 ms
+- the right document is ranked first for every question. Four other embedding models (`qwen3-embedding`, `bge-m3`, `nomic-embed-text`, and a different query prompt) did no better; their higher similarity numbers come from a different score scale ([comparison](documentation/evaluation.md#embedding-models-compared-2026-09-26))
+- the UI shows each source's **relevance** as high / medium / low, calibrated on this set, with the raw similarity in the tooltip, because a raw "61% match" reads like a grade
 
 **Off-topic refusals** (no LLM call) take about 50 ms. **Without the model:** the API handles about 450 requests/s (p95 54 ms). The index builds in 16 s and loads from cache in 5 ms.
 
@@ -297,7 +299,7 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 - **Single-turn questions.** Each question is answered on its own: `conversation_id` is returned and reused, but earlier turns aren't used as context, so a follow-up like *"and on the Enterprise plan?"* loses the topic. Multi-turn context (question rewriting over the history) is part of the planned response-history feature (`ideas.md` #5).
 - **No authentication or rate limiting.** Fine for a local prototype. Before exposing it (especially with a Claude key), add auth such as SSO or an API gateway and per-user rate limits.
 - **Ollama is always required** for embeddings, even when Claude answers. Anthropic has no embeddings API. A "Claude only" mode needs an in-process or Voyage embedding provider (`ideas.md` #7; the interface exists).
-- **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (16/18 vs 18/18). A GPU or Claude is recommended for interactive use.
+- **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (17/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
 - **English knowledge base.** Questions in other languages work, and the answer comes in the question's language; there's no language selector yet (`ideas.md` #4).
 - **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): hidden statistics, costs, history and tests tabs; concise vs detailed answers; a model on/off toggle.
@@ -374,3 +376,13 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <b>- [x] If the client insists to have the answer (if there is no in documentation) choose what to do - like forward to human, or disregard in polite way</b> (polite refusal that points to an Internal SME Request)<br />
 <b>- [x] Unit, speed, and performance test</b> (see `documentation/evaluation.md`)<br />
 <b>- [x] Proceed with the plan</b><br />
+
+<h2>Features which we can try to implement</h2>
+- [ ] Create a hidden menu with statistics about the usage.
+- [ ] Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them.
+- [ ] Method to write the response in professional language, clear and accurate. Provide more details only when requested.
+- [ ] Option to Question / Answer in different languages.
+- [ ] Add hidden tab with response history.
+- [ ] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
+- [ ] Check if we can build the hole Chatbot in an MCP server.
+- [ ] Option to use it over CLI.

@@ -74,6 +74,15 @@ async def test_changed_model_or_chunking_triggers_rebuild(kb: Path, tmp_path: Pa
     assert other_chunking.rebuilt
 
 
+async def test_changed_document_prompt_triggers_rebuild(kb: Path, tmp_path: Path) -> None:
+    index = tmp_path / "index"
+    await build_or_load_index(kb, index, CountingEmbedder())
+    embedder = CountingEmbedder()
+    embedder.document_format = "title: {title} | text: {text}"
+    _, report = await build_or_load_index(kb, index, embedder)
+    assert report.rebuilt and embedder.documents_embedded == 2
+
+
 async def test_corrupt_cache_is_rebuilt(kb: Path, tmp_path: Path) -> None:
     index = tmp_path / "index"
     await build_or_load_index(kb, index, CountingEmbedder())

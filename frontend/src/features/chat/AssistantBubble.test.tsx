@@ -25,7 +25,7 @@ describe("AssistantBubble", () => {
     const sources = screen.getByRole("region", { name: "Sources" });
     expect(sources).toHaveTextContent("Guide 1");
     expect(sources).toHaveTextContent("Section 1");
-    expect(sources).toHaveTextContent("61% match");
+    expect(sources).toHaveTextContent("high relevance");
 
     await userEvent.click(chip);
     expect(document.getElementById("cite-a1-1")).toHaveClass("border-indigo-400");

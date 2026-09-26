@@ -141,3 +141,7 @@ Six local chat models were compared on the host CPU with the full answer benchma
 | `phi4-mini` (3.8B) | 9 / 18 | 3 / 3 | 66 s | |
 
 **Decision:** `ministral-3:3b` becomes the default. It beats `gemma3:4b` on quality (no unsupported claims) and on speed, and matches `qwen3.5:4b`'s quality in half the time. Its remaining misses are incomplete answers, plus one arithmetic slip in run 1 (a 98.7% uptime got the 10% credit instead of 25%), which run 2 answered correctly. `qwen3.5:4b` is documented as the option when quality matters more than speed. Claude remains the recommendation for demos. Details and raw results: `documentation/evaluation.md` and `documentation/eval/ollama-models/`.
+
+Follow-up the same day:
+- **Prompt fix:** a prompt rule to keep the sources' specific numbers and terms raised `ministral-3:3b` to 17/18, and Claude stayed at 18/18.
+- **Embeddings:** four alternative embedding set-ups gave no better ranking, so `embeddinggemma` stays (`documentation/evaluation.md`).

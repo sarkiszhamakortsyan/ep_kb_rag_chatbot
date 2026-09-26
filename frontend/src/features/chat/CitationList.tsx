@@ -1,5 +1,11 @@
 import type { Citation } from "../../api/types";
-import { citationAnchor } from "./citations";
+import { citationAnchor, relevance, type Relevance } from "./citations";
+
+const RELEVANCE_STYLE: Record<Relevance, string> = {
+  high: "bg-emerald-50 text-emerald-700",
+  medium: "bg-amber-50 text-amber-700",
+  low: "bg-slate-100 text-slate-500",
+};
 
 type Props = { messageId: string; citations: Citation[]; highlighted: number | null };
 
@@ -27,8 +33,11 @@ export function CitationList({ messageId, citations, highlighted }: Props) {
                 <span className="flex-1">
                   <span className="font-medium text-slate-800">{c.title}</span>
                   {c.section && <span className="text-slate-500"> › {c.section}</span>}
-                  <span className="ml-2 text-xs text-slate-400" title="Similarity to the question">
-                    {Math.round(c.score * 100)}% match
+                  <span
+                    className={`ml-2 rounded px-1.5 py-0.5 text-xs ${RELEVANCE_STYLE[relevance(c.score)]}`}
+                    title={`Similarity to the question: ${c.score.toFixed(2)}`}
+                  >
+                    {relevance(c.score)} relevance
                   </span>
                 </span>
               </summary>

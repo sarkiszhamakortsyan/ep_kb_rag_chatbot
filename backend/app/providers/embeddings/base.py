@@ -20,6 +20,9 @@ class EmbeddingDocument:
 class EmbeddingProvider(ABC):
     name: str
     model: str
+    # Anything besides the model that changes document vectors (e.g. a prompt template).
+    # Part of the index fingerprint, so changing it rebuilds the index.
+    document_format: str = ""
 
     @abstractmethod
     async def embed_documents(self, documents: Sequence[EmbeddingDocument]) -> list[Vector]:

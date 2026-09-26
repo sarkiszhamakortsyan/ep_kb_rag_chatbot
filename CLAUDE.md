@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-All phases (0–9) of the build plan in `documentation/taskdocs/steps.md` are done. The README documents the architecture, API, trade-offs, testing and AI usage; `documentation/evaluation.md` has the test and benchmark results (Claude 18/18, local `ministral-3:3b` 16/18, plus a comparison of six local models). Key entry points: the API app factory `backend/app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); the pipeline in `app/rag/pipeline.py`, with prompts in `app/prompts/*.md` and wiring in `app/services.py`; shared test fakes in `backend/tests/fakes.py`. CI: `.github/workflows/ci.yml`. New features come from `documentation/taskdocs/ideas.md`, one at a time. Keep this file's commands up to date.
+All phases (0–9) of the build plan in `documentation/taskdocs/steps.md` are done. The README documents the architecture, API, trade-offs, testing and AI usage; `documentation/evaluation.md` has the test and benchmark results (Claude 18/18, local `ministral-3:3b` 17/18, plus a comparison of six local models). Key entry points: the API app factory `backend/app/main.py` (`create_app`) and `app/api/` (schemas, error mapping, SSE, background index loading in `state.py`); the pipeline in `app/rag/pipeline.py`, with prompts in `app/prompts/*.md` and wiring in `app/services.py`; shared test fakes in `backend/tests/fakes.py`. CI: `.github/workflows/ci.yml`. New features come from `documentation/taskdocs/ideas.md`, one at a time. Keep this file's commands up to date.
 
 ## Commands
 

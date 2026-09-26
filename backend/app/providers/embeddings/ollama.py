@@ -36,6 +36,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self._query_prompt, self._document_prompt = next(
             (p for prefix, p in _PROMPTS.items() if model.startswith(prefix)), _PLAIN
         )
+        self.document_format = self._document_prompt
         self._client = client or httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT)
 
     async def embed_documents(self, documents: Sequence[EmbeddingDocument]) -> list[Vector]:

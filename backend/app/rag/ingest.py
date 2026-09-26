@@ -1,7 +1,8 @@
 """Load the KB, chunk it, embed it, and cache the index on disk.
 
 The cache key (fingerprint) covers the document contents, the chunking parameters and the
-embedding provider/model, so changing any of them triggers a clean rebuild on startup.
+embedding provider, model and document prompt, so changing any of them triggers a clean
+rebuild on startup.
 
 CLI: `uv run python -m app.rag.ingest [--force]`
 """
@@ -60,6 +61,7 @@ def fingerprint(
 ) -> str:
     digest = hashlib.sha256()
     digest.update(f"v{INDEX_FORMAT_VERSION}|{embedder.name}:{embedder.model}|".encode())
+    digest.update(f"{embedder.document_format}|".encode())
     digest.update(json.dumps(asdict(config), sort_keys=True).encode())
     for doc in sorted(documents, key=lambda d: d.doc_id):
         digest.update(f"|{doc.doc_id}|{doc.title}|{doc.lang}|".encode())

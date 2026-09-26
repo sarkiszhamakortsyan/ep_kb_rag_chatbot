@@ -14,3 +14,16 @@ export function linkCitations(answer: string, messageId: string, known: Set<numb
     return numbers.map((n) => `[${n}](#${citationAnchor(messageId, n)})`).join("");
   });
 }
+
+export type Relevance = "high" | "medium" | "low";
+
+/**
+ * Cosine similarity is not a percentage of correctness: with embeddinggemma a correct top
+ * match usually scores 0.55–0.75. Thresholds are calibrated on the evaluation set
+ * (documentation/evaluation.md); questions below MIN_SCORE (0.35) never reach the UI.
+ */
+export function relevance(score: number): Relevance {
+  if (score >= 0.55) return "high";
+  if (score >= 0.45) return "medium";
+  return "low";
+}
