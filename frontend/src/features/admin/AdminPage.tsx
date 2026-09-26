@@ -4,6 +4,7 @@ import {
   FlaskConical,
   History,
   LogOut,
+  SlidersHorizontal,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import { HistoryTab } from "./HistoryTab";
 import { SignIn } from "./SignIn";
 import { CostsTab } from "./CostsTab";
 import { StatsTab } from "./StatsTab";
+import { SettingsTab } from "./SettingsTab";
 import { TestsTab } from "./TestsTab";
 
 // The token is kept for this browser tab only (sessionStorage), never in localStorage.
@@ -36,21 +38,24 @@ function storeToken(token: string | null) {
   }
 }
 
-type TabId = "stats" | "costs" | "history" | "tests";
+type TabId = "stats" | "costs" | "history" | "tests" | "settings";
 type Tab = { id: TabId; label: string; icon: LucideIcon };
 const TABS: Tab[] = [
   { id: "stats", label: "Statistics", icon: ChartColumn },
   { id: "costs", label: "Costs", icon: Wallet },
   { id: "history", label: "History", icon: History },
   { id: "tests", label: "Tests", icon: FlaskConical },
+  { id: "settings", label: "Settings", icon: SlidersHorizontal },
 ];
 
 // Each tab has its own address (/admin/stats, /admin/history), so back/forward and bookmarks work.
 const tabFromPath = (): TabId => {
   const tab = window.location.pathname.split("/")[2];
-  return tab === "history" || tab === "costs" || tab === "tests"
-    ? tab
-    : "stats";
+  return (
+    (["history", "costs", "tests", "settings"] as const).find(
+      (t) => t === tab,
+    ) ?? "stats"
+  );
 };
 
 /** Hidden admin area (/admin, or Ctrl+Shift+A in the chat). The ADMIN_TOKEN protects the data. */
@@ -158,6 +163,8 @@ export function AdminPage() {
           <CostsTab token={token} onUnauthorized={signOut} />
         ) : tab === "tests" ? (
           <TestsTab token={token} onUnauthorized={signOut} />
+        ) : tab === "settings" ? (
+          <SettingsTab token={token} onUnauthorized={signOut} />
         ) : (
           <HistoryTab
             token={token}

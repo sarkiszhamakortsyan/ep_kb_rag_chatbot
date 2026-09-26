@@ -18,7 +18,16 @@ def _ollama(settings: Settings) -> EmbeddingProvider:
     )
 
 
-DEFAULT_FACTORIES: Mapping[str, Callable[[Settings], EmbeddingProvider]] = {"ollama": _ollama}
+def _local(settings: Settings) -> EmbeddingProvider:
+    from app.providers.embeddings.local import LocalEmbeddingProvider
+
+    return LocalEmbeddingProvider(settings.local_embed_model, settings.models_dir)
+
+
+DEFAULT_FACTORIES: Mapping[str, Callable[[Settings], EmbeddingProvider]] = {
+    "ollama": _ollama,
+    "local": _local,
+}
 
 
 def build_embedding_registry(

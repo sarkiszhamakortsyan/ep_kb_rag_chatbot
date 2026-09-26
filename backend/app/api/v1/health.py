@@ -28,7 +28,12 @@ class HealthResponse(BaseModel):
 
 
 async def ollama_status(settings: Settings) -> OllamaStatus:
-    required = {settings.ollama_chat_model, settings.ollama_embed_model}
+    # Only the Ollama models this configuration actually uses.
+    required = set()
+    if "ollama" in settings.enabled_llm_providers:
+        required.add(settings.ollama_chat_model)
+    if settings.embedding_provider == "ollama":
+        required.add(settings.ollama_embed_model)
     try:
         async with httpx.AsyncClient(base_url=settings.ollama_base_url, timeout=3.0) as client:
             response = await client.get("/api/tags")
@@ -70,7 +75,8 @@ async def health(
         status=status,
         ready=index.ready,
         version=app.__version__,
-        llm_provider=settings.llm_provider,
+        # The runtime default (admin Settings can change it) once the services are loaded.
+        llm_provider=services.llms.default if services else settings.llm_provider,
         index=index,
         ollama=ollama,
     )

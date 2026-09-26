@@ -297,3 +297,83 @@ def test_benchmark_rejects_bad_input(client: TestClient) -> None:
     )
     assert bad.status_code == 400
     assert client.get("/api/v1/admin/eval/nope", headers=AUTH).status_code == 404
+
+
+# --- runtime settings ---------------------------------------------------------------------------
+
+
+def two_provider_services() -> Any:
+    async def services(settings: Settings, events: EventStore) -> Services:
+        return await create_services(
+            settings,
+            events,
+            llm_factories={
+                "ollama": lambda s: FakeLLM("Local [1].", name="ollama"),
+                "anthropic": lambda s: FakeLLM(
+                    "Cloud [1].", name="anthropic", model="claude-opus-5"
+                ),
+            },
+            embedding_factories={"ollama": lambda s: FakeEmbedder()},
+        )
+
+    return services
+
+
+def test_model_settings_apply_at_once_and_after_a_restart(tmp_path: Path) -> None:
+    settings = make_settings(tmp_path, enabled_llm_providers=["ollama", "anthropic"])
+
+    with TestClient(
+        create_app(settings, two_provider_services(), load_in_background=False)
+    ) as client:
+        current = client.get("/api/v1/admin/settings", headers=AUTH).json()
+        assert [(p["name"], p["enabled"], p["default"]) for p in current["providers"]] == [
+            ("ollama", True, True),
+            ("anthropic", True, False),
+        ]
+        assert current["embedding_provider"] == "fake"
+
+        changed = client.put(
+            "/api/v1/admin/settings",
+            json={"enabled_providers": ["anthropic"], "default_provider": "anthropic"},
+            headers=AUTH,
+        )
+        assert changed.status_code == 200
+        assert client.get("/api/v1/providers").json()["default"] == "anthropic"
+        assert client.get("/api/v1/health").json()["llm_provider"] == "anthropic"
+        rejected = client.post(
+            "/api/v1/chat", json={"message": "q", "options": {"provider": "ollama"}}
+        )
+        assert rejected.status_code == 400
+
+        bad = client.put(
+            "/api/v1/admin/settings",
+            json={"enabled_providers": ["ollama"], "default_provider": "anthropic"},
+            headers=AUTH,
+        )
+        assert bad.status_code == 400 and bad.json()["error"]["code"] == "invalid_provider"
+        assert client.put("/api/v1/admin/settings", json={}, headers=AUTH).status_code == 422
+
+    # A restart keeps the admin's choice.
+    with TestClient(
+        create_app(settings, two_provider_services(), load_in_background=False)
+    ) as client:
+        assert client.get("/api/v1/providers").json()["default"] == "anthropic"
+        assert [p["name"] for p in client.get("/api/v1/providers").json()["providers"]] == [
+            "anthropic"
+        ]
+
+
+def test_stored_settings_outside_the_configuration_are_ignored(tmp_path: Path) -> None:
+    both = make_settings(tmp_path, enabled_llm_providers=["ollama", "anthropic"])
+    with TestClient(create_app(both, two_provider_services(), load_in_background=False)) as client:
+        client.put(
+            "/api/v1/admin/settings",
+            json={"enabled_providers": ["anthropic"], "default_provider": "anthropic"},
+            headers=AUTH,
+        )
+    # The operator later allows only ollama in .env: the stored choice no longer fits.
+    only_local = make_settings(tmp_path, enabled_llm_providers=["ollama"])
+    with TestClient(
+        create_app(only_local, two_provider_services(), load_in_background=False)
+    ) as client:
+        assert client.get("/api/v1/providers").json()["default"] == "ollama"

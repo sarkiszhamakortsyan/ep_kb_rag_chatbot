@@ -11,7 +11,7 @@ from app.core.pricing import ModelPrice, PriceTable
 from app.rag.chunking import ChunkingConfig
 
 LLMProviderName = Literal["ollama", "anthropic"]
-EmbeddingProviderName = Literal["ollama"]
+EmbeddingProviderName = Literal["ollama", "local"]
 
 
 class Settings(BaseSettings):
@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_chat_model: str = "ministral-3:3b"
     ollama_embed_model: str = "embeddinggemma"
+
+    # In-process embeddings (EMBEDDING_PROVIDER=local): no Ollama needed ("Claude only" mode).
+    # The same model as Ollama's embeddinggemma, run with fastembed; downloaded on first use.
+    local_embed_model: str = "google/embeddinggemma-300m"
+    models_dir: Path = Path("data/models")
     ollama_num_ctx: int = Field(default=4096, ge=512)
     ollama_keep_alive: str = "30m"
     # None = don't send `think`; set false for thinking models (e.g. qwen3) to cut CPU latency.

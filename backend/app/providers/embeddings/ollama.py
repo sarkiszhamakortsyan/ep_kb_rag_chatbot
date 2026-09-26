@@ -3,17 +3,10 @@ from collections.abc import Sequence
 import httpx
 
 from app.providers.embeddings.base import EmbeddingDocument, EmbeddingProvider, Vector
+from app.providers.embeddings.prompts import prompts_for
 from app.providers.errors import ProviderError, ProviderUnavailableError
 
 _TIMEOUT = httpx.Timeout(connect=5.0, read=300.0, write=30.0, pool=5.0)
-
-# Retrieval models are trained with task prefixes; omitting them hurts ranking.
-# Keys are matched against the start of the model name. Documents use {title} and {text}.
-_PROMPTS: dict[str, tuple[str, str]] = {
-    "embeddinggemma": ("task: search result | query: {text}", "title: {title} | text: {text}"),
-    "nomic-embed-text": ("search_query: {text}", "search_document: {text}"),
-}
-_PLAIN = ("{text}", "{text}")
 
 
 class OllamaEmbeddingProvider(EmbeddingProvider):
@@ -33,9 +26,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.model = model
         self._batch_size = batch_size
         self._keep_alive = keep_alive
-        self._query_prompt, self._document_prompt = next(
-            (p for prefix, p in _PROMPTS.items() if model.startswith(prefix)), _PLAIN
-        )
+        self._query_prompt, self._document_prompt = prompts_for(model)
         self.document_format = self._document_prompt
         self._client = client or httpx.AsyncClient(base_url=base_url, timeout=_TIMEOUT)
 

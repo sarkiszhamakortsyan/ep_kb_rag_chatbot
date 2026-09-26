@@ -206,6 +206,30 @@ class SqliteHistory(EventStore):
         with self._lock:
             return compute_stats(self._connection(), date_from, date_to)
 
+    # --- runtime settings (admin Settings tab) ----------------------------------------------
+
+    def get_setting(self, key: str) -> Any:
+        """The stored JSON value, or None. Synchronous: read once at startup."""
+        with self._lock:
+            row = (
+                self._connection()
+                .execute("SELECT value FROM app_settings WHERE key = ?", (key,))
+                .fetchone()
+            )
+        return json.loads(row["value"]) if row else None
+
+    async def set_setting(self, key: str, value: Any) -> None:
+        await asyncio.to_thread(self._set_setting, key, value)
+
+    def _set_setting(self, key: str, value: Any) -> None:
+        with self._lock:
+            conn = self._connection()
+            with conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES (?,?,?)",
+                    (key, json.dumps(value), self._clock().isoformat(timespec="seconds")),
+                )
+
     # --- benchmark runs (admin Tests tab) -------------------------------------------------------
 
     async def save_eval_run(self, run: "EvalRun") -> None:

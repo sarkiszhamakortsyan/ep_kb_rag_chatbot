@@ -20,7 +20,7 @@ COPY app ./app
 COPY data/kb ./data/kb
 # The benchmark question set, for the admin Tests tab (same path as in the repo)
 COPY tests/eval/questions.yaml ./tests/eval/questions.yaml
-RUN mkdir -p data/index data/db && chown -R appuser:appuser data
+RUN mkdir -p data/index data/db data/models && chown -R appuser:appuser data
 USER appuser
 EXPOSE 8000
 CMD ["uvicorn", "app.main:api", "--host", "0.0.0.0", "--port", "8000"]

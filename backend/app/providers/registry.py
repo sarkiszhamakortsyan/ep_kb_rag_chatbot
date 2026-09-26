@@ -23,6 +23,8 @@ class ProviderRegistry[P: _Closable]:
     ) -> None:
         self._factories = dict(factories)
         self._enabled = list(enabled)
+        # What the configuration allows; runtime changes (admin Settings) stay within it.
+        self.allowed = list(self._enabled)
         self._instances: dict[str, P] = {}
         for name in self._enabled:
             if name not in self._factories:
@@ -33,6 +35,19 @@ class ProviderRegistry[P: _Closable]:
     @property
     def enabled(self) -> list[str]:
         return list(self._enabled)
+
+    def configure(self, enabled: Iterable[str], default: str) -> None:
+        """Switch providers on/off at runtime, within `allowed`; `default` must stay enabled."""
+        wanted = list(dict.fromkeys(enabled))
+        outside = [name for name in wanted if name not in self.allowed]
+        if outside:
+            raise ProviderDisabledError(f"Not allowed by the configuration: {', '.join(outside)}")
+        if not wanted:
+            raise ProviderDisabledError("At least one provider must stay enabled")
+        if default not in wanted:
+            raise ProviderDisabledError(f"The default {default!r} must be enabled")
+        self._enabled = wanted
+        self.default = default
 
     def get(self, name: str | None = None) -> P:
         """Return the named (or default) provider; raises if it is unknown or disabled."""

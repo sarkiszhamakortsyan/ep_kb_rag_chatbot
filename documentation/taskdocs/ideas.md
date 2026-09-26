@@ -14,7 +14,7 @@ Mark every idea after you finish.
 - Option to Question / Answer in different languages. ✅ (dev-features, phase 14)
 - Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
 - Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
-- Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
+- Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. ✅ (dev-features, phase 17)
 - Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README) ✅ (dev-features, phase 16)
 - Option to use it over a CLI. (added 2026-09-26, from the README) ✅ (dev-features, phase 15)
 
@@ -148,7 +148,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
   - streamable HTTP: mounted in the existing backend under `/mcp`, protected by a token, so one Docker stack serves the web UI, the API and MCP.
 - **Tests:** the tools called through the SDK's in-memory client. The README gets setup snippets for Claude Desktop and Claude Code.
 
-#### Phase 17: model switches and "Claude only" (#7). Size: M–L
+#### Phase 17: model switches and "Claude only" (#7). Size: M–L ✅ (2026-09-26)
 - **Admin switches:** a Settings tab to switch providers on and off at runtime (stored in SQLite, applied without a restart), and to choose the default model.
 - **"Claude only" also removes Ollama from the embeddings**, which Anthropic doesn't provide. Two options:
   1. **In-process embeddings** of the same `embeddinggemma` model inside the backend (`sentence-transformers` or an ONNX runtime). No Ollama container is needed and the index stays the same. The cost is a backend image about 1 GB larger and slower cold starts.
@@ -243,4 +243,20 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
 - **Checked end to end:**
   - HTTP through nginx with a temporary token: tools listed, search found the right sections, a cited Claude answer, resources read, 401 without the token.
   - stdio as a subprocess with local Ollama: search and a cited Claude answer.
+
+**Phase 17 ✅ (2026-09-26): model switches and "Claude only".**
+- **Runtime switches:**
+  - `ProviderRegistry.configure()` changes the enabled providers and the default within `allowed` (the `.env` list).
+  - The Settings API is `GET/PUT /api/v1/admin/settings`. Choices are stored in the `app_settings` table (migration 0003) and re-applied when the services load; ones that no longer fit the configuration are ignored with a warning.
+  - `/health` reports the runtime default.
+- **"Claude only":**
+  - `LocalEmbeddingProvider` (`EMBEDDING_PROVIDER=local`) runs **the same `google/embeddinggemma-300m`** through fastembed and ONNX Runtime. Its vectors equal Ollama's (cosine 1.000), and the retrieval benchmark is identical (recall 0.97, weakest answerable 0.416, strongest unanswerable 0.515 against 0.516).
+  - The model is downloaded with `huggingface_hub` into plain files in the `backend-models` volume. ONNX Runtime 1.30 rejects the symlinked Hugging Face cache for external weight files, which was found and worked around during the phase.
+  - The embedding task prefixes moved to `app/providers/embeddings/prompts.py`, shared by both providers.
+  - `docker-compose.claude-only.yml` puts `ollama`/`ollama-init` in an opt-in profile, resets the backend's `depends_on` (Compose `!reset`), and sets local embeddings with Claude as the only provider. The health check now requires only the Ollama models actually in use.
+- **Recommendation carried out:** option 1 from the plan (in-process), not Voyage AI, so no extra paid key is needed.
+- **Tests:** backend 154 (6 new: registry policy, local provider prompts and config error, settings API including restart persistence and stale stored choices), frontend 27 (1 new).
+- **Checked end to end:**
+  - Claude-only with the Ollama container stopped: ready after 96 s including the download, cited answers, a German answer, a refusal, question embedding 50–60 ms.
+  - Default mode: settings changed at runtime and kept after a restart, then restored to the original.
 

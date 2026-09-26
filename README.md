@@ -308,6 +308,24 @@ claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ --hea
 
 Built with the official MCP Python SDK (v2). The HTTP transport is stateless, and host names are checked against `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
 
+### Model switches and "Claude only"
+
+- **Settings tab** (`/admin/settings`):
+  - Switch answer models on or off and choose the default, without a restart. The chat's model picker updates immediately.
+  - The configuration stays the upper limit: only providers in `ENABLED_LLM_PROVIDERS` can be enabled.
+  - Choices are stored in SQLite and re-applied after a restart. They're ignored, with a warning in the log, if the configuration no longer allows them.
+- **Claude only, without any Ollama container:**
+
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.claude-only.yml up -d --build
+  ```
+
+  - Anthropic has no embeddings API, so embeddings then run **inside the backend** with fastembed (ONNX Runtime, no PyTorch).
+  - It's the **same `embeddinggemma` model**: vectors are identical to Ollama's (cosine 1.000), and the retrieval benchmark gives the same recall 0.97 and the same scores, so the thresholds stay valid.
+  - The model (about 1.2 GB) is downloaded once into the `backend-models` volume. The first start takes about 1.5 minutes; after that it loads in about 2 s.
+  - A question embeds in about 50 ms.
+  - Checked with the Ollama container stopped: health ok, cited answers, a German answer, and early refusals.
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -409,6 +427,7 @@ All settings are environment variables, read from `.env` (see [`.env.example`](.
 | `FRONTEND_PORT` | `8080` | Web UI port |
 | `ADMIN_TOKEN` | – | Enables the admin area (dev-features); empty = switched off |
 | `HISTORY_ENABLED` / `HISTORY_RETENTION_DAYS` | `true` / `90` | Store questions and answers for the admin area, and for how long |
+| `EMBEDDING_PROVIDER` / `LOCAL_EMBED_MODEL` | `ollama` / `google/embeddinggemma-300m` | `local` runs the embeddings inside the backend (dev-features, used by `docker-compose.claude-only.yml`) |
 | `MCP_TOKEN` / `MCP_ALLOWED_HOSTS` | – / `localhost,127.0.0.1` | MCP server over HTTP at `/api/mcp/` (dev-features); empty token = switched off |
 | `MODEL_PRICES` / `LOCAL_COST_PER_HOUR` | Claude list prices / `0` | Costs tab: price overrides (JSON, USD per million tokens) and an optional hourly cost for the local model |
 
@@ -448,11 +467,11 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 
 - **Single-turn questions.** Each question is answered on its own: `conversation_id` is returned and reused, but earlier turns aren't used as context, so a follow-up like *"and on the Enterprise plan?"* loses the topic. Multi-turn context (question rewriting over the history) is part of the planned response-history feature (`ideas.md` #5).
 - **No authentication or rate limiting.** Fine for a local prototype. Before exposing it (especially with a Claude key), add auth such as SSO or an API gateway and per-user rate limits.
-- **Ollama is always required** for embeddings, even when Claude answers. Anthropic has no embeddings API. A "Claude only" mode needs an in-process or Voyage embedding provider (`ideas.md` #7; the interface exists).
+- **Ollama provides the embeddings** in the default setup, even when Claude answers, because Anthropic has no embeddings API. On the dev-features branch, `docker-compose.claude-only.yml` runs the same embedding model inside the backend instead (see *Model switches and "Claude only"*).
 - **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (17/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
 - **English knowledge base.** Questions in other languages work, and the answer comes in the question's language, or in the language chosen in the header selector (dev-features).
-- **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): a model on/off toggle. The response history, statistics, costs and tests tabs, detailed answers and the language selector are built on this branch.
+- **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): multi-turn follow-up questions. The response history, statistics, costs, tests and settings tabs, detailed answers, the language selector, the CLI, the MCP server and the Claude-only mode are built on this branch.
 
 ---
 
@@ -534,6 +553,6 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Method to write the response in professional language, clear and accurate. Provide more details only when requested. *(dev-features: "More detail" button)*
 - [x] Option to Question / Answer in different languages. *(dev-features: answer-language selector)*
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
-- [ ] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
+- [x] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. *(dev-features: Settings tab, Claude-only compose mode)*
 - [x] Check if we can build the hole Chatbot in an MCP server. *(dev-features: MCP tools and resources, over HTTP and stdio)*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*

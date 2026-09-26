@@ -78,3 +78,27 @@ def test_embedding_registry_uses_configured_provider() -> None:
     registry = build_embedding_registry(make())
     assert registry.enabled == ["ollama"]
     assert registry.get().model == "embeddinggemma"
+
+
+def test_runtime_configure_stays_within_the_configuration() -> None:
+    registry = build_llm_registry(make(enabled_llm_providers="ollama,anthropic"))
+    assert registry.allowed == ["ollama", "anthropic"]
+
+    registry.configure(["anthropic"], "anthropic")
+    assert registry.enabled == ["anthropic"] and registry.default == "anthropic"
+    with pytest.raises(ProviderDisabledError):
+        registry.get("ollama")
+
+    for enabled, default in ((["gpt"], "gpt"), ([], "ollama"), (["ollama"], "anthropic")):
+        with pytest.raises(ProviderDisabledError):
+            registry.configure(enabled, default)
+    assert registry.enabled == ["anthropic"]  # unchanged after rejected changes
+
+
+def test_local_embedding_provider_is_registered() -> None:
+    from app.providers.embeddings.local import LocalEmbeddingProvider
+
+    provider = build_embedding_registry(make(embedding_provider="local")).get()
+    assert isinstance(provider, LocalEmbeddingProvider)
+    assert provider.model == "google/embeddinggemma-300m"
+    assert provider.document_format == "title: {title} | text: {text}"  # same as Ollama's

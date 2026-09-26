@@ -9,6 +9,7 @@ from app.api.errors import install_error_handlers
 from app.api.middleware import RequestContextMiddleware
 from app.api.state import AppState, get_services
 from app.api.v1 import admin, chat, health, providers
+from app.api.v1.admin.settings import apply_stored_policy
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.evaluation.runner import EvalRunner
@@ -55,12 +56,18 @@ def create_app(
         events: EventStore = (
             FanOutEventStore([LogOnlyEventStore(), history]) if history else LogOnlyEventStore()
         )
+
+        async def build() -> Services:
+            services = await services_factory(settings, events)
+            apply_stored_policy(services, history)  # the admin's last model choices
+            return services
+
         state = AppState()
         api.state.app_state = state
         if load_in_background:
-            state.start(lambda: services_factory(settings, events))
+            state.start(build)
         else:
-            await state.load(lambda: services_factory(settings, events))
+            await state.load(build)
         async with AsyncExitStack() as stack:
             if mcp_server:
                 await stack.enter_async_context(mcp_server.session_manager.run())

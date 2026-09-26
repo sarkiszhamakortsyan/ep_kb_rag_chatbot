@@ -260,3 +260,34 @@ export const startEvalRun = async (
 export const cancelEvalRun = async (token: string, id: string) => {
   await adminPost(token, `/eval/${encodeURIComponent(id)}/cancel`);
 };
+
+export type ProviderSetting = {
+  name: string;
+  model: string | null;
+  enabled: boolean;
+  default: boolean;
+};
+export type AdminSettings = {
+  providers: ProviderSetting[];
+  embedding_provider: string;
+  embedding_model: string;
+};
+
+export const getAdminSettings = async (token: string) =>
+  (await (await adminFetch(token, "/settings")).json()) as AdminSettings;
+
+export async function updateAdminSettings(
+  token: string,
+  body: { enabled_providers: string[]; default_provider: string },
+): Promise<AdminSettings> {
+  const response = await fetch(`${BASE}/settings`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw await toApiError(response);
+  return (await response.json()) as AdminSettings;
+}
