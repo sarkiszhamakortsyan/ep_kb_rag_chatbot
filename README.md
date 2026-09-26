@@ -206,12 +206,12 @@ Details and raw numbers: **[`documentation/evaluation.md`](documentation/evaluat
 
 ```bash
 cd backend
-uv run pytest                    # 101 unit + API tests, offline (fakes, mock HTTP), 95% coverage with --cov
+uv run pytest                    # 102 unit + API tests, offline (fakes, mock HTTP), 95% coverage with --cov
 uv run pytest -m perf -s         # speed tests: vector search to 50k chunks, API throughput
 uv run pytest -m "integration or eval" -s                 # needs Ollama (docker compose up -d ollama)
 uv run python -m app.evaluation.answers --provider anthropic --show    # 18-question benchmark (~$0.20)
 uv run python -m app.evaluation.answers --provider ollama              # the same, locally
-cd ../frontend && npm test       # 14 Vitest + Testing Library tests
+cd ../frontend && npm test       # 17 Vitest + Testing Library tests
 ```
 
 CI (`.github/workflows/ci.yml`) runs the offline suites on every push: backend lint, types, tests, coverage and perf; frontend lint, types, tests and build; and a Docker image build.

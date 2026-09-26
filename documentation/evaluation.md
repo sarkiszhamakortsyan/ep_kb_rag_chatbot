@@ -6,12 +6,12 @@ Measured on 2026-09-25 on the development VM (4 vCPU, 15 GB RAM, no GPU). The Cl
 
 | Suite | Command (from `backend/` or `frontend/`) | Needs | Count | Result |
 |---|---|---|---|---|
-| Backend unit + API | `uv run pytest` | nothing (fakes, mock transports) | 101 | ✅ all pass, **95% line coverage** (`--cov`) |
+| Backend unit + API | `uv run pytest` | nothing (fakes, mock transports) | 102 | ✅ all pass, **95% line coverage** (`--cov`) |
 | Backend performance | `uv run pytest -m perf -s` | nothing | 5 | ✅ see "Speed" below |
 | Backend integration | `uv run pytest -m integration` | Ollama | 2 | ✅ |
 | Retrieval benchmark | `uv run pytest -m eval -s` or `uv run python -m app.evaluation.retrieval --k 6` | Ollama | 4 tests / 18 questions | ✅ |
 | Answer benchmark | `uv run python -m app.evaluation.answers --provider anthropic` (or `ollama`) | Ollama (+ `ANTHROPIC_API_KEY` for Claude, about $0.20 per run) | 18 questions | ✅ Claude 18/18, local `ministral-3:3b` 17/18 |
-| Frontend | `npm test` | nothing | 14 | ✅ |
+| Frontend | `npm test` | nothing | 17 | ✅ |
 | Browser E2E (manual) | headless Chromium against `docker compose up` | full stack | 3 questions, reset, `/admin` | ✅ (Phases 6–7) |
 
 CI (`.github/workflows/ci.yml`) runs the offline suites on every push:

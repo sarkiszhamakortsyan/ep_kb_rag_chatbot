@@ -15,6 +15,8 @@ Mark every idea after you finish.
 - Add hidden tab with response history.
 - Add hidden tab with unit, speed, and performance test.
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
+- Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README)
+- Option to use it over a CLI. (added 2026-09-26, from the README)
 
 ---
 
@@ -72,3 +74,94 @@ docker-compose.yml     backend, frontend, ollama (+ ollama-init), volumes: model
 ```
 
 **The rule for the MVP**: build the interfaces and the `ChatResult`/`usage`/`timings` plumbing now, because it's cheap. Do **not** build SQLite, the admin endpoints, or the admin UI until an idea is picked up.
+
+---
+
+## Implementation plan (2026-09-26)
+
+The list above has nine ideas. The README list adds two (MCP server, CLI) that weren't here before, so they are now on the list too. This plan covers all of them, in the order I recommend. Each phase is small enough to review on its own and ends like the build phases: tests green, docs updated, a report, and your review before the next one.
+
+### Where each idea stands today
+
+| # | Idea | Already done | Missing |
+|---|---|---|---|
+| 1 | Statistics menu | Every turn produces a `ChatResult` with usage, timings, provider, top score and refusal. The `EventStore` hook is called once per turn (it only logs) | Storage, admin API, Stats tab |
+| 2 | Costs menu + optimisation | Token usage per turn (Anthropic and Ollama), prompt caching of the system prompt | Price table, cost per turn, Costs tab, optimisation hints |
+| 3 | Professional answers, detail on request | The system prompt enforces a professional, concise, cited style. `options` in the request exists | `options.detail` and a "More detail" button |
+| 4 | Several languages | Answers come in the question's language (the German eval question passes), and the embeddings are multilingual | `options.language` and a language selector |
+| 5 | Response history | `conversation_id` and `message_id` on every response | Storage, History tab. Multi-turn follow-ups are a separate step (phase 16) |
+| 6 | Tests tab | The benchmarks are an importable module (`app/evaluation/`) with JSON summaries | Admin endpoint to run them, stored results, Tests tab |
+| 7 | Enable/disable models | `ENABLED_LLM_PROVIDERS`, per-question model picker, `/api/v1/providers` | Runtime switch in the admin area; "Claude only" without Ollama needs a non-Ollama embedding provider |
+| 8 | MCP server | The pipeline and retrieval are reusable services (`app/services.py`) | An MCP server exposing them as tools |
+| 9 | CLI | The streaming API | A command-line client |
+
+### Recommended order
+
+The admin features (#1, #2, #5, #6) share one foundation: a database for chat events, admin authentication and the admin page shell. That foundation comes first and is built once. Quick, independent features come next, and the biggest infrastructure change (Claude only, without Ollama) comes last.
+
+#### Phase 10: admin foundation + response history (#5). Size: M
+- **Storage:** SQLite (a file in a Docker volume, no new service) behind the existing `EventStore` interface: `SqliteEventStore` with a `turns` table. It holds the time, conversation and message ids, question, answer, citations (JSON), provider, model, language, refusal and reason, top score, token usage and timings. Schema migrations use plain versioned SQL files.
+- **Privacy:** questions can contain customer data, so recording is configurable (`HISTORY_ENABLED`, default on) with a retention period (`HISTORY_RETENTION_DAYS`, default 90) and a purge on startup.
+- **Admin API:** `/api/v1/admin/*`, protected by `ADMIN_TOKEN`. When the token isn't set, the admin API is switched off (404). Endpoints: `GET /admin/history` (paged, filter by date, provider, refused, text search) and `GET /admin/history/{message_id}`.
+- **Admin UI:** `/admin` becomes a real page. It asks for the token once (kept in session storage) and has a tab bar (History now; Stats, Costs and Tests added by later phases). A keyboard shortcut in the chat (Ctrl+Shift+A) opens it. Hiding a page isn't security; the token is.
+- **History tab:** a table of turns (time, question, model, time taken, refused), a detail view with the full answer and its sources, and CSV export.
+- **Tests:** repository tests on a temporary SQLite file, admin auth tests (no token, wrong token, disabled), API tests, frontend tests for the tab.
+
+#### Phase 11: statistics (#1). Size: S
+- `GET /api/v1/admin/stats?from=&to=`: questions per day, refusal rate (split by reason), answer time p50/p95 per model, share per model, most cited documents and sections, and a list of recently refused questions. That last list shows which documentation is missing, the most useful number for a knowledge-base owner.
+- **Stats tab:** a few KPI cards plus simple charts (one small chart library, or plain SVG).
+- Computed with SQL from the `turns` table, so no new data is needed.
+
+#### Phase 12: costs + optimisation hints (#2). Size: S–M
+- **Price table in configuration:** $ per million input, output and cache-read tokens per model, with Anthropic list prices as defaults. Local models are $0, with an optional estimated compute cost per hour.
+- **Cost:** each turn's cost is computed and stored. `GET /admin/costs` shows totals per day and model, cost per question, and the share saved by the prompt cache.
+- **Optimisation hints:** rule-based, computed from the data. Examples: "X% of questions are refused before the LLM (free)", "a smaller Claude model would have cost $Y for the same questions", "the prompt cache saves Z%".
+- **Optional "Ask Claude for suggestions" button:** sends only the aggregated numbers, never questions or answers, and shows its own cost before running.
+- Further savings, each measured with the answer benchmark before adoption:
+  - a semantic answer cache, which reuses the vector store on past questions
+  - a lower `TOP_K`
+  - routing simple questions to a cheaper model
+
+#### Phase 13: tests tab (#6). Size: S
+- `POST /api/v1/admin/eval` starts the retrieval benchmark and optionally the answer benchmark, for a chosen model, as a background job. Only one runs at a time, and a Claude run shows its estimated cost first.
+- Results are stored in SQLite. `GET /admin/eval` lists the runs, and the tab shows pass rate, recall, p50/p95 and failed questions, compared with the previous run.
+- The web UI calls the evaluation module and never runs `pytest` or shell commands.
+
+#### Phase 14: detail level + language (#3, #4). Size: S
+- `options.detail = "concise" | "detailed"` chooses the prompt template (`system.md` or a new `system_detailed.md`). Each answer gets a **More detail** button, which re-asks the same question in detailed mode.
+- `options.language = "auto" | "en" | "de" | …` adds one line to the prompt ("Answer in German"). `auto` stays the default and keeps today's behaviour. The header gets a language selector.
+- **Tests:** add a few eval questions per language and a detailed-mode check. The answer benchmark must stay at 18/18 on Claude and 17/18 on the local model.
+
+#### Phase 15: CLI (#9). Size: S
+- `omnicorp-kb` is a small Python command installed with the backend package. It talks to the HTTP API, so it works against the Docker stack.
+- `omnicorp-kb ask "question" [--model anthropic|ollama] [--json]` streams the answer and then prints the sources. Plain `omnicorp-kb` opens an interactive session, where `/new` starts a new conversation and `/model` switches the model. Further commands: `omnicorp-kb health` and `omnicorp-kb providers`.
+- Colours are turned off automatically when output goes to a file. Exit codes: 0 answered, 2 not covered, 1 error, so scripts can use it.
+- **Tests:** the CLI against a mocked API.
+
+#### Phase 16: MCP server (#8). Size: M
+- **Answer to the question:** yes. The chatbot can be offered as an **MCP server**, so assistants such as Claude Desktop or Claude Code can use the knowledge base directly. Two tools:
+  - `search_knowledge_base(query, k)` returns the matching sections with document, section and score. The calling assistant writes the answer itself.
+  - `ask_knowledge_base(question, model?)` runs our full pipeline and returns the answer with citations. Answers stay under our rules: sources only, refusals, citations.
+  - The KB articles are also offered as MCP **resources** (`kb://kb-003`) so a client can open the full source document.
+- **Transport:** built with the official MCP Python SDK.
+  - stdio: the client starts `omnicorp-kb mcp`.
+  - streamable HTTP: mounted in the existing backend under `/mcp`, protected by a token, so one Docker stack serves the web UI, the API and MCP.
+- **Tests:** the tools called through the SDK's in-memory client. The README gets setup snippets for Claude Desktop and Claude Code.
+
+#### Phase 17: model switches and "Claude only" (#7). Size: M–L
+- **Admin switches:** a Settings tab to switch providers on and off at runtime (stored in SQLite, applied without a restart), and to choose the default model.
+- **"Claude only" also removes Ollama from the embeddings**, which Anthropic doesn't provide. Two options:
+  1. **In-process embeddings** of the same `embeddinggemma` model inside the backend (`sentence-transformers` or an ONNX runtime). No Ollama container is needed and the index stays the same. The cost is a backend image about 1 GB larger and slower cold starts.
+  2. **Voyage AI** (Anthropic's recommended embedding partner): a small image, but an extra paid API key and a full re-index.
+- **Recommendation:** option 1, keeping Ollama as an optional Compose profile for local generation. The Phase 3 rule already covers the switch: the fingerprint includes the embedding model, so the index rebuilds itself.
+
+#### Phase 18: follow-up questions (the rest of #5). Size: M
+- Turns now live in SQLite (phase 10), so the pipeline can rewrite a follow-up ("and on Enterprise?") into a stand-alone question using the last turns before retrieval. That takes one short extra LLM call; on the local model it adds about 15–20 s.
+- **Tests:** a small multi-turn eval set.
+
+### Decisions needed before starting
+
+1. **Order:** the recommended order starts with the admin foundation. An alternative is to do the quick wins first (phases 14 and 15, about half a day each).
+2. **History privacy:** store full questions and answers (the recommendation, with a 90-day retention period), or only metrics without text.
+3. **Charts:** a small chart library (for example Recharts, about 100 KB) or hand-made SVG charts (no dependency, simpler charts).
+4. **"Claude only" embeddings:** in-process (recommended) or Voyage AI.
