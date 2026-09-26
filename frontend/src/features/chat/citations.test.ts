@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { linkCitations } from "./citations";
+import { linkCitations, relevance } from "./citations";
 
 describe("linkCitations", () => {
   const known = new Set([1, 2, 3]);
@@ -16,5 +16,14 @@ describe("linkCitations", () => {
 
   it("leaves unknown numbers and non-markers alone", () => {
     expect(linkCitations("Invented [9]. Array [x].", "m", known)).toBe("Invented [9]. Array [x].");
+  });
+});
+
+describe("relevance", () => {
+  it("maps similarity scores to calibrated levels", () => {
+    expect(relevance(0.74)).toBe("high");
+    expect(relevance(0.55)).toBe("high");
+    expect(relevance(0.5)).toBe("medium");
+    expect(relevance(0.4)).toBe("low");
   });
 });

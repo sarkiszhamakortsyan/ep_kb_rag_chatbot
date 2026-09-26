@@ -1,0 +1,27 @@
+{
+  "questions": 18,
+  "passed": 16,
+  "answer_accuracy": 0.867,
+  "refusal_accuracy": 1.0,
+  "key_fact_coverage": 0.92,
+  "failed_ids": [
+    "q11",
+    "q13"
+  ],
+  "model": "qwen3.5:4b",
+  "total_latency": {
+    "p50_ms": 119336.7,
+    "p95_ms": 172297.4,
+    "max_ms": 172297.4
+  },
+  "time_to_first_token": {
+    "p50_ms": 80199.0,
+    "p95_ms": 137874.7,
+    "max_ms": 137874.7
+  },
+  "tokens": {
+    "input": 22030,
+    "cache_read": 0,
+    "output": 1968
+  }
+}

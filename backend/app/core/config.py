@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
-    ollama_chat_model: str = "gemma3:4b"
+    ollama_chat_model: str = "ministral-3:3b"
     ollama_embed_model: str = "embeddinggemma"
     ollama_num_ctx: int = Field(default=4096, ge=512)
     ollama_keep_alive: str = "30m"

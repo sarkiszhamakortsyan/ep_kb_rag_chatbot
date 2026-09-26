@@ -61,7 +61,7 @@ On CPU, chat workloads are limited to about 3–4B-parameter models. Anything la
 
 | Model (Ollama tag) | Size | Why / why not |
 |---|---|---|
-| **`gemma3:4b`** ✅ default | ~3.3 GB | Strong instruction following for its size, 128K context, 140+ languages (covers the multi-language feature), no "thinking" tokens to wait for on CPU |
+| **`gemma3:4b`** (initial default, replaced by `ministral-3:3b`, see the 2026-09-26 addendum) | ~3.3 GB | Strong instruction following for its size, 128K context, 140+ languages (covers the multi-language feature), no "thinking" tokens to wait for on CPU |
 | `qwen3:4b` (alternative) | ~2.6 GB | Very good reasoning and multilingual support. It has a thinking mode, which **must be disabled** (`think=false`), or CPU latency explodes. Good second choice to benchmark |
 | `llama3.2:3b` | ~2.0 GB | Fastest and very popular, but officially supports only 8 languages and follows grounding/citation rules less reliably |
 | `phi4-mini` (3.8B) | ~2.5 GB | Good reasoning, weaker multilingual |
@@ -97,9 +97,9 @@ There are two different Claude credentials, and they have different rules:
 |---|---|
 | Backend | Python 3.12, FastAPI, Pydantic, raw `ollama` + `anthropic` SDKs, pytest |
 | Frontend | Vite + React + TypeScript + TailwindCSS, SSE streaming, nginx container |
-| Local LLM | Ollama `gemma3:4b` (alt. `qwen3:4b`, `think=false`), configurable |
+| Local LLM | Ollama `ministral-3:3b` since 2026-09-26, initially `gemma3:4b` (alt. `qwen3.5:4b`, `think=false`), configurable |
 | Embeddings | Ollama `embeddinggemma` (alt. `nomic-embed-text`), always local |
-| Claude | `ANTHROPIC_API_KEY` BYOK via Messages API (`claude-sonnet-5` default). Optional personal-use Agent SDK provider for subscription credit |
+| Claude | `ANTHROPIC_API_KEY` BYOK via Messages API (default later changed from `claude-sonnet-5` to `claude-opus-5`, see the Phase 2 addendum). Optional personal-use Agent SDK provider for subscription credit |
 | Provider switch | `LLM_PROVIDER` env var behind an `LLMProvider` interface |
 
 ### Sources
@@ -122,3 +122,26 @@ Idea #7 ("work only with Claude, stop using Ollama") changes one earlier assumpt
   1. expose the host CPU to the VM (e.g. `cpu: host` in Proxmox/libvirt), which is expected to be 5–10× faster
   2. use a smaller model (`gemma3:1b`, `qwen3:1.7b`) and fewer or shorter chunks
   3. use Claude for generation and keep Ollama only for embeddings (embeddings are also slow on this CPU, about 0.7–1 s per query and about 6 s per chunk at index build, but the index is cached)
+
+### Addendum (2026-09-25): local model after the VM CPU change
+
+With the host CPU exposed (i5-8300H, AVX2), `gemma3:4b` answers RAG questions in about 80 s and passes 14/18 of the evaluation set, against 18/18 for `claude-opus-5`. It made one unsupported claim (LDAP). Embeddings are about 20× faster (50 ms per query, 16 s for the full index). The decision stands: Ollama is the zero-cost default and provides the embeddings; Claude is recommended for answer quality and speed. Details are in `documentation/evaluation.md`.
+
+### Addendum (2026-09-26): benchmark of newer local models, default changed to `ministral-3:3b`
+
+Six local chat models were compared on the host CPU with the full answer benchmark: the same 18 questions, retrieval (`embeddinggemma`, k = 6) and prompt for each. The candidates were the current default and newer small models from the Ollama library:
+
+| Model | Passed | Unanswerable refused | Full answer p50 | Notes |
+|---|---|---|---|---|
+| **`ministral-3:3b`** ✅ new default | **15 and 16 / 18** (two runs) | 3 / 3 | **about 61–63 s** | Apache-2.0; answered the German question in German |
+| `qwen3.5:4b` (`think=false`) | 16 / 18 | 3 / 3 | 119 s | Best answers, but twice as slow |
+| `gemma3:4b` (previous default) | 14 / 18 | 2 / 3 | 79 s | The only model with an unsupported claim (LDAP) |
+| `llama3.2:3b` | 12 / 18 | 3 / 3 | 48 s | Fastest, but misses key facts |
+| `granite4.2:3b` | 10 / 18 | 3 / 3 | 61 s | |
+| `phi4-mini` (3.8B) | 9 / 18 | 3 / 3 | 66 s | |
+
+**Decision:** `ministral-3:3b` becomes the default. It beats `gemma3:4b` on quality (no unsupported claims) and on speed, and matches `qwen3.5:4b`'s quality in half the time. Its remaining misses are incomplete answers, plus one arithmetic slip in run 1 (a 98.7% uptime got the 10% credit instead of 25%), which run 2 answered correctly. `qwen3.5:4b` is documented as the option when quality matters more than speed. Claude remains the recommendation for demos. Details and raw results: `documentation/evaluation.md` and `documentation/eval/ollama-models/`.
+
+Follow-up the same day:
+- **Prompt fix:** a prompt rule to keep the sources' specific numbers and terms raised `ministral-3:3b` to 17/18, and Claude stayed at 18/18.
+- **Embeddings:** four alternative embedding set-ups gave no better ranking, so `embeddinggemma` stays (`documentation/evaluation.md`).

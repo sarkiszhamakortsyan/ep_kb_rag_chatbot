@@ -7,18 +7,18 @@
   "failed_ids": [],
   "model": "claude-opus-5",
   "total_latency": {
-    "p50_ms": 4838.4,
-    "p95_ms": 11507.2,
-    "max_ms": 11507.2
+    "p50_ms": 3845.3,
+    "p95_ms": 10786.5,
+    "max_ms": 10786.5
   },
   "time_to_first_token": {
-    "p50_ms": 2603.5,
-    "p95_ms": 9856.6,
-    "max_ms": 9856.6
+    "p50_ms": 1374.5,
+    "p95_ms": 6787.6,
+    "max_ms": 6787.6
   },
   "tokens": {
     "input": 23091,
-    "cache_read": 8784,
-    "output": 4669
+    "cache_read": 10192,
+    "output": 4919
   }
 }

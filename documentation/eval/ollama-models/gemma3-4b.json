@@ -1,0 +1,29 @@
+{
+  "questions": 18,
+  "passed": 14,
+  "answer_accuracy": 0.8,
+  "refusal_accuracy": 0.667,
+  "key_fact_coverage": 0.88,
+  "failed_ids": [
+    "q07",
+    "q11",
+    "q12",
+    "q17"
+  ],
+  "model": "gemma3:4b",
+  "total_latency": {
+    "p50_ms": 78513.2,
+    "p95_ms": 100579.6,
+    "max_ms": 100579.6
+  },
+  "time_to_first_token": {
+    "p50_ms": 59010.3,
+    "p95_ms": 80461.2,
+    "max_ms": 80461.2
+  },
+  "tokens": {
+    "input": 21998,
+    "cache_read": 0,
+    "output": 1156
+  }
+}

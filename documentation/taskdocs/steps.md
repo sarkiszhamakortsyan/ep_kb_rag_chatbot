@@ -136,12 +136,12 @@ Changes in this phase:
 - `backend/Dockerfile` (multi-stage, uv, non-root user).
 - `frontend/Dockerfile`: builds the app, then serves it with nginx. nginx also proxies `/api` to the backend, so the browser never has CORS issues.
 - `docker-compose.yml`:
-  - Services: `backend`, `frontend`, and `ollama` (under the `ollama` profile).
+  - Services: `backend`, `frontend`, and `ollama` (planned under an `ollama` profile; **implemented without a profile**, see the Phase 7 result above).
   - `ollama-init` is a one-shot service that pulls the two models.
   - Named volumes for the Ollama models and the vector index.
   - Healthchecks and `depends_on` conditions, and settings read from `.env`.
 - Two run modes documented:
-  - `docker compose --profile ollama up`: fully local
+  - `docker compose up`: fully local (Ollama always runs)
   - `docker compose up` with `LLM_PROVIDER=anthropic`: Claude, with embeddings still from Ollama until the in-process embedding option from idea #7 exists. The limitation is documented.
 - **Done when**: a fresh clone plus `cp .env.example .env` plus the compose command gives a working chat at `http://localhost:8080`.
 
@@ -154,7 +154,11 @@ Changes in this phase:
 - Optional GitHub Actions workflow: lint + unit tests for the backend and frontend.
 - **Done when**: all unit tests are green in CI, and the eval baseline numbers are recorded in the README.
 
-### Phase 9: Documentation & AI-log export (mandatory deliverable)
+### Phase 9: Documentation & AI-log export (mandatory deliverable) ✅ (2026-09-25)
+
+The README was rewritten with: quick start, architecture (Mermaid), API with examples, decisions and trade-offs, testing and results (Claude 18/18, local `gemma3:4b` 14/18 after the VM CPU change), configuration, structure, limitations, and AI-assistant usage. The original brief and checklist are kept at the end.
+
+**Decision:** follow-up questions without context are documented as a known limitation, not implemented. Multi-turn context belongs to the response-history idea (#5).
 - README sections:
   - overview and architecture diagram (Mermaid)
   - API design, with request/response examples
@@ -171,3 +175,7 @@ Changes in this phase:
 
 ### After the MVP
 Pick ideas from `ideas.md` one at a time, using the extension points already in place. Mark each one done there when finished.
+
+### Follow-up (2026-09-26): local model benchmark
+
+Six small Ollama models were benchmarked on the host CPU with the answer benchmark. `ministral-3:3b` became the default local model: 16/18 (15/18 in a second run) at about 61 s per answer, against 14/18 at 79 s for `gemma3:4b`. Results: `documentation/evaluation.md`, decision: `research.md` (2026-09-26 addendum). A follow-up prompt rule (keep the sources' specific numbers and terms) raised it to 17/18, with Claude still at 18/18. An embedding comparison kept `embeddinggemma`. The source cards now show a calibrated relevance level instead of the raw "% match", and the index fingerprint now includes the embedding prompt.

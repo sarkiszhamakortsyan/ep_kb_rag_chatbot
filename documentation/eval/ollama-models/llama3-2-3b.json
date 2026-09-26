@@ -1,0 +1,31 @@
+{
+  "questions": 18,
+  "passed": 12,
+  "answer_accuracy": 0.6,
+  "refusal_accuracy": 1.0,
+  "key_fact_coverage": 0.84,
+  "failed_ids": [
+    "q03",
+    "q07",
+    "q09",
+    "q11",
+    "q12",
+    "q13"
+  ],
+  "model": "llama3.2:3b",
+  "total_latency": {
+    "p50_ms": 48493.7,
+    "p95_ms": 68432.3,
+    "max_ms": 68432.3
+  },
+  "time_to_first_token": {
+    "p50_ms": 32834.7,
+    "p95_ms": 64504.4,
+    "max_ms": 64504.4
+  },
+  "tokens": {
+    "input": 21137,
+    "cache_read": 0,
+    "output": 893
+  }
+}
