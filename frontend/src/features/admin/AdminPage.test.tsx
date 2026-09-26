@@ -22,7 +22,15 @@ const detail = {
   ...turn,
   answer: "Backups are kept for **35 days** [1].",
   citations: [
-    { number: 1, chunk_id: "kb-003#001", doc_id: "kb-003", title: "Data policy", section: "Backups", snippet: "…", score: 0.63 },
+    {
+      number: 1,
+      chunk_id: "kb-003#001",
+      doc_id: "kb-003",
+      title: "Data policy",
+      section: "Backups",
+      snippet: "…",
+      score: 0.63,
+    },
   ],
   language: null,
   stop_reason: "end_turn",
@@ -52,27 +60,86 @@ const stats = {
     { day: "2026-09-26", answered: 2, refused: 1 },
   ],
   per_model: [
-    { provider: "anthropic", model: "claude-opus-5", questions: 3, refused: 0, p50_ms: 3800, p95_ms: 5200, ttft_p50_ms: 1400 },
-    { provider: null, model: null, questions: 1, refused: 1, p50_ms: 60, p95_ms: 60, ttft_p50_ms: null },
+    {
+      provider: "anthropic",
+      model: "claude-opus-5",
+      questions: 3,
+      refused: 0,
+      p50_ms: 3800,
+      p95_ms: 5200,
+      ttft_p50_ms: 1400,
+    },
+    {
+      provider: null,
+      model: null,
+      questions: 1,
+      refused: 1,
+      p50_ms: 60,
+      p95_ms: 60,
+      ttft_p50_ms: null,
+    },
   ],
-  top_documents: [{ doc_id: "kb-003", title: "Data policy", section: null, citations: 3 }],
-  top_sections: [{ doc_id: "kb-003", title: "Data policy", section: "Backups", citations: 2 }],
+  top_documents: [
+    { doc_id: "kb-003", title: "Data policy", section: null, citations: 3 },
+  ],
+  top_sections: [
+    {
+      doc_id: "kb-003",
+      title: "Data policy",
+      section: "Backups",
+      citations: 2,
+    },
+  ],
   recent_refused: [
-    { created_at: "2026-09-26T12:00:00.000+00:00", message_id: "m1", question: "What does Enterprise cost?", reason: "low_score" },
+    {
+      created_at: "2026-09-26T12:00:00.000+00:00",
+      message_id: "m1",
+      question: "What does Enterprise cost?",
+      reason: "low_score",
+    },
   ],
+};
+
+const costs = {
+  date_from: "2026-08-28",
+  date_to: "2026-09-26",
+  questions: 4,
+  total_usd: 0.0301,
+  usd_per_question: 0.0075,
+  cache_savings_usd: 0.0004,
+  cache_share: 0.3,
+  per_day: [{ day: "2026-09-26", usd: 0.0301 }],
+  per_model: [
+    { provider: "anthropic", model: "claude-opus-5", questions: 3, input_tokens: 3000, output_tokens: 300,
+      cache_read_tokens: 1000, cache_write_tokens: 0, usd: 0.0301, priced: true },
+  ],
+  what_if: [
+    { model: "claude-opus-5", usd: 0.0301 },
+    { model: "claude-haiku-4-5", usd: 0.006 },
+  ],
+  hints: [{ kind: "saving", title: "A smaller Claude model would cost 80% less", detail: "Run the benchmark first." }],
 };
 
 function mockAdminApi() {
   const fetchMock = vi.fn((url: string, init?: RequestInit) => {
     const auth = new Headers(init?.headers).get("Authorization");
     if (auth !== `Bearer ${TOKEN}`) {
-      return Promise.resolve(jsonResponse({ error: { code: "unauthorized", message: "no" } }, 401));
+      return Promise.resolve(
+        jsonResponse({ error: { code: "unauthorized", message: "no" } }, 401),
+      );
     }
     if (url.endsWith("/session")) return Promise.resolve(jsonResponse(session));
     if (url.includes("/stats")) return Promise.resolve(jsonResponse(stats));
-    if (url.includes("/history/m1")) return Promise.resolve(jsonResponse(detail));
+    if (url.includes("/costs/advice")) {
+      return Promise.resolve(jsonResponse({ advice: "- **Use Haiku** for simple questions.", model: "claude-opus-5", usd: 0.012 }));
+    }
+    if (url.includes("/costs")) return Promise.resolve(jsonResponse(costs));
+    if (url.includes("/history/m1"))
+      return Promise.resolve(jsonResponse(detail));
     if (url.includes("/history")) {
-      return Promise.resolve(jsonResponse({ items: [turn], total: 1, limit: 25, offset: 0 }));
+      return Promise.resolve(
+        jsonResponse({ items: [turn], total: 1, limit: 25, offset: 0 }),
+      );
     }
     return Promise.resolve(jsonResponse({}, 404));
   });
@@ -97,12 +164,21 @@ describe("AdminPage", () => {
   it("explains when the admin area is switched off", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.resolve(jsonResponse({ error: { code: "admin_disabled", message: "off" } }, 404))),
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(
+            { error: { code: "admin_disabled", message: "off" } },
+            404,
+          ),
+        ),
+      ),
     );
     const user = userEvent.setup();
     render(<AdminPage />);
     await user.type(screen.getByLabelText("Admin token"), "anything{Enter}");
-    expect(await screen.findByRole("alert")).toHaveTextContent("Set ADMIN_TOKEN");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Set ADMIN_TOKEN",
+    );
   });
 
   it("signs in, lists the history and opens a turn", async () => {
@@ -112,17 +188,27 @@ describe("AdminPage", () => {
     await user.type(screen.getByLabelText("Admin token"), `${TOKEN}{Enter}`);
 
     // Statistics is the first tab.
-    expect(await screen.findByRole("heading", { name: "Usage statistics" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Usage statistics" }),
+    ).toBeInTheDocument();
     expect(await screen.findByText("75%")).toBeInTheDocument(); // answered share
     expect(screen.getByText("What does Enterprise cost?")).toBeInTheDocument();
     expect(screen.getByText("No model (refused early)")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Questions per day: 4 in 2 days" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Questions per day: 4 in 2 days" }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("link", { name: "History" }));
     expect(window.location.pathname).toBe("/admin/history");
-    expect(await screen.findByRole("heading", { name: "Response history" })).toBeInTheDocument();
-    expect(screen.getByText("Kept for 90 days.", { exact: false })).toBeInTheDocument();
-    const row = await screen.findByRole("button", { name: "How long are backups kept?" });
+    expect(
+      await screen.findByRole("heading", { name: "Response history" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Kept for 90 days.", { exact: false }),
+    ).toBeInTheDocument();
+    const row = await screen.findByRole("button", {
+      name: "How long are backups kept?",
+    });
     const table = screen.getByRole("table");
     expect(within(table).getByText("Claude Opus")).toBeInTheDocument();
     expect(within(table).getByText("Answered")).toBeInTheDocument();
@@ -150,5 +236,24 @@ describe("AdminPage", () => {
     await user.click(await screen.findByRole("button", { name: "Sign out" }));
     expect(screen.getByLabelText("Admin token")).toBeInTheDocument();
     expect(sessionStorage.getItem("omnicorp-admin-token")).toBeNull();
+  });
+
+  it("shows costs, what-if prices, hints and Claude's advice", async () => {
+    const fetchMock = mockAdminApi();
+    sessionStorage.setItem("omnicorp-admin-token", TOKEN);
+    window.history.pushState(null, "", "/admin/costs");
+    const user = userEvent.setup();
+    render(<AdminPage />);
+
+    expect(await screen.findByRole("heading", { name: "Costs" })).toBeInTheDocument();
+    expect(await screen.findByText("A smaller Claude model would cost 80% less")).toBeInTheDocument();
+    expect(screen.getAllByText("$0.0301").length).toBeGreaterThan(0);
+    expect(screen.getByText("(-80%)")).toBeInTheDocument(); // Haiku vs actual
+
+    await user.click(screen.getByRole("button", { name: "Ask Claude for suggestions" }));
+    expect(await screen.findByText("Use Haiku")).toBeInTheDocument();
+    expect(screen.getByText(/this advice cost \$0\.0120/)).toBeInTheDocument();
+    const adviceCall = fetchMock.mock.calls.find(([url]) => url.includes("/costs/advice"))!;
+    expect(adviceCall[1]?.method).toBe("POST");
   });
 });

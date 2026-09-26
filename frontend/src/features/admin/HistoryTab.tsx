@@ -1,6 +1,11 @@
 import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { exportHistory, listHistory, type HistoryPage, type HistoryQuery } from "../../api/admin";
+import {
+  exportHistory,
+  listHistory,
+  type HistoryPage,
+  type HistoryQuery,
+} from "../../api/admin";
 import { ApiError } from "../../api/client";
 import { modelName } from "../chat/providers";
 import { formatDateTime, formatSeconds } from "./format";
@@ -10,7 +15,11 @@ const PAGE_SIZE = 25;
 const FIELD =
   "h-9 rounded-lg border border-line bg-surface px-2.5 text-sm text-ink hover:border-line-strong focus:border-brand focus:outline-none";
 
-type Props = { token: string; retentionDays: number; onUnauthorized: () => void };
+type Props = {
+  token: string;
+  retentionDays: number;
+  onUnauthorized: () => void;
+};
 
 export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
   const [search, setSearch] = useState("");
@@ -41,7 +50,10 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
       .catch((err: unknown) => {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 401) onUnauthorized();
-        else setError(err instanceof Error ? err.message : "Could not load the history.");
+        else
+          setError(
+            err instanceof Error ? err.message : "Could not load the history.",
+          );
       });
     return () => {
       cancelled = true;
@@ -63,7 +75,12 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
     URL.revokeObjectURL(url);
   };
 
-  const status = filters.refused === undefined ? "" : filters.refused ? "refused" : "answered";
+  const status =
+    filters.refused === undefined
+      ? ""
+      : filters.refused
+        ? "refused"
+        : "answered";
 
   return (
     <section aria-labelledby="history-title">
@@ -73,7 +90,8 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
             Response history
           </h2>
           <p className="mt-1 text-sm text-ink-muted">
-            Every question and answer from the chat. Kept for {retentionDays} days.
+            Every question and answer from the chat. Kept for {retentionDays}{" "}
+            days.
           </p>
         </div>
         <button
@@ -90,7 +108,10 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
       <div className="mb-3 flex flex-wrap gap-2">
         <label className="relative min-w-56 flex-1">
           <span className="sr-only">Search questions and answers</span>
-          <Search aria-hidden className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-ink-faint" />
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-ink-faint"
+          />
           <input
             type="search"
             value={search}
@@ -103,7 +124,9 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
           <span className="sr-only">Model</span>
           <select
             value={filters.provider ?? ""}
-            onChange={(e) => setFilter({ provider: e.target.value || undefined })}
+            onChange={(e) =>
+              setFilter({ provider: e.target.value || undefined })
+            }
             className={FIELD}
           >
             <option value="">All models</option>
@@ -116,7 +139,14 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
           <span className="sr-only">Status</span>
           <select
             value={status}
-            onChange={(e) => setFilter({ refused: e.target.value === "" ? undefined : e.target.value === "refused" })}
+            onChange={(e) =>
+              setFilter({
+                refused:
+                  e.target.value === ""
+                    ? undefined
+                    : e.target.value === "refused",
+              })
+            }
             className={FIELD}
           >
             <option value="">All answers</option>
@@ -145,7 +175,10 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
       </div>
 
       {error && (
-        <p role="alert" className="mb-3 rounded-lg border border-danger-line bg-danger-soft p-3 text-sm text-danger-ink">
+        <p
+          role="alert"
+          className="mb-3 rounded-lg border border-danger-line bg-danger-soft p-3 text-sm text-danger-ink"
+        >
           {error}
         </p>
       )}
@@ -169,7 +202,9 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
                 onClick={() => setSelected(t.message_id)}
                 className="cursor-pointer border-b border-line last:border-0 hover:bg-subtle"
               >
-                <td className="px-4 py-2.5 whitespace-nowrap text-ink-muted">{formatDateTime(t.created_at)}</td>
+                <td className="px-4 py-2.5 whitespace-nowrap text-ink-muted">
+                  {formatDateTime(t.created_at)}
+                </td>
                 <td className="max-w-md px-4 py-2.5">
                   <button
                     type="button"
@@ -188,19 +223,28 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
                 <td className="px-4 py-2.5">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
-                      t.refused ? "bg-warning-soft text-warning-ink" : "bg-success-soft text-success-ink"
+                      t.refused
+                        ? "bg-warning-soft text-warning-ink"
+                        : "bg-success-soft text-success-ink"
                     }`}
                   >
                     {t.refused ? "Not covered" : "Answered"}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 text-right text-ink-muted">{t.sources}</td>
-                <td className="px-4 py-2.5 text-right whitespace-nowrap text-ink-muted">{formatSeconds(t.total_ms)}</td>
+                <td className="px-4 py-2.5 text-right text-ink-muted">
+                  {t.sources}
+                </td>
+                <td className="px-4 py-2.5 text-right whitespace-nowrap text-ink-muted">
+                  {formatSeconds(t.total_ms)}
+                </td>
               </tr>
             ))}
             {page && page.items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-ink-muted">
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center text-ink-muted"
+                >
                   No questions match these filters yet.
                 </td>
               </tr>
@@ -212,7 +256,8 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
       {page && page.total > 0 && (
         <div className="mt-3 flex items-center justify-between text-sm text-ink-muted">
           <span>
-            {offset + 1}–{Math.min(offset + PAGE_SIZE, page.total)} of {page.total}
+            {offset + 1}–{Math.min(offset + PAGE_SIZE, page.total)} of{" "}
+            {page.total}
           </span>
           <div className="flex gap-1">
             <button
@@ -237,7 +282,13 @@ export function HistoryTab({ token, retentionDays, onUnauthorized }: Props) {
         </div>
       )}
 
-      {selected && <TurnPanel token={token} messageId={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <TurnPanel
+          token={token}
+          messageId={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </section>
   );
 }

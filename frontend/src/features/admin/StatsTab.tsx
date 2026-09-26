@@ -1,19 +1,23 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { getStats, type UsageStats } from "../../api/admin";
 import { ApiError } from "../../api/client";
 import { modelName } from "../chat/providers";
-import { DailyChart } from "./DailyChart";
-import { formatDateTime, formatSeconds } from "./format";
+import { RangePicker } from "./RangePicker";
+import { Card, Empty, Kpi } from "./ui";
+import { ChartLegend, DailyChart, type Series } from "./DailyChart";
+import { formatDateTime, formatSeconds, lastDays } from "./format";
 import { TurnPanel } from "./TurnPanel";
 
-const RANGES = [7, 30, 90];
+const QUESTION_SERIES: Series[] = [
+  { label: "Answered", className: "fill-brand" },
+  { label: "Not covered", className: "fill-warning-ink/70" },
+];
 const REASONS: Record<string, string> = {
   low_score: "no matching documentation (before the model)",
   no_citations: "the model found no answer in the sources",
   model_refusal: "declined by the model",
 };
 
-const isoDay = (d: Date) => d.toISOString().slice(0, 10);
 const percent = (part: number, whole: number) =>
   whole ? `${Math.round((part / whole) * 100)}%` : "–";
 
@@ -27,9 +31,7 @@ export function StatsTab({ token, onUnauthorized }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    const to = new Date();
-    const from = new Date(to.getTime() - (days - 1) * 86_400_000);
-    getStats(token, { from: isoDay(from), to: isoDay(to) })
+    getStats(token, lastDays(days))
       .then((s) => {
         if (!cancelled) {
           setStats(s);
@@ -67,27 +69,7 @@ export function StatsTab({ token, onUnauthorized }: Props) {
             How the assistant is used, and where the documentation has gaps.
           </p>
         </div>
-        <div
-          role="group"
-          aria-label="Time range"
-          className="inline-flex rounded-lg border border-line bg-surface p-0.5"
-        >
-          {RANGES.map((n) => (
-            <button
-              key={n}
-              type="button"
-              aria-pressed={days === n}
-              onClick={() => setDays(n)}
-              className={`h-8 rounded-md px-3 text-sm ${
-                days === n
-                  ? "bg-brand-soft font-medium text-brand-ink"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              {n} days
-            </button>
-          ))}
-        </div>
+        <RangePicker days={days} onChange={setDays} />
       </div>
 
       {error && (
@@ -126,11 +108,15 @@ export function StatsTab({ token, onUnauthorized }: Props) {
           </div>
 
           <Card title="Questions per day">
-            <DailyChart days={stats.per_day} />
-            <div className="mt-2 flex gap-4 text-xs text-ink-muted">
-              <Legend className="bg-brand" label="Answered" />
-              <Legend className="bg-warning-ink/70" label="Not covered" />
-            </div>
+            <DailyChart
+              days={stats.per_day.map((d) => ({
+                day: d.day,
+                values: [d.answered, d.refused],
+              }))}
+              series={QUESTION_SERIES}
+              label={`Questions per day: ${stats.questions} in ${stats.per_day.length} days`}
+            />
+            <ChartLegend series={QUESTION_SERIES} />
           </Card>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -282,59 +268,4 @@ export function StatsTab({ token, onUnauthorized }: Props) {
       )}
     </section>
   );
-}
-
-function Kpi({
-  label,
-  value,
-  note,
-  tone,
-}: {
-  label: string;
-  value: string;
-  note: string;
-  tone?: "warning";
-}) {
-  return (
-    <div className="rounded-xl border border-line bg-surface p-4 shadow-sm">
-      <p className="text-xs font-medium text-ink-muted">{label}</p>
-      <p
-        className={`mt-1 text-2xl font-semibold tracking-tight ${tone === "warning" ? "text-warning-ink" : "text-ink"}`}
-      >
-        {value}
-      </p>
-      <p className="mt-0.5 text-xs text-ink-faint">{note}</p>
-    </div>
-  );
-}
-
-function Card({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="min-w-0 rounded-xl border border-line bg-surface p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      {subtitle && <p className="mt-0.5 text-xs text-ink-faint">{subtitle}</p>}
-      <div className="mt-3">{children}</div>
-    </div>
-  );
-}
-
-function Legend({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`size-2.5 rounded-sm ${className}`} />
-      {label}
-    </span>
-  );
-}
-
-function Empty({ text = "No data in this period." }: { text?: string }) {
-  return <p className="py-4 text-center text-sm text-ink-faint">{text}</p>;
 }

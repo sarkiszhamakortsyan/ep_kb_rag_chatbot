@@ -1,3 +1,4 @@
+import dataclasses
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -167,3 +168,35 @@ async def test_usage_stats_on_an_empty_history(history: SqliteHistory) -> None:
     stats = await history.stats(date(2026, 9, 26), date(2026, 9, 26))
     assert stats.questions == 0 and stats.p50_ms is None
     assert stats.top_documents == [] and len(stats.per_day) == 1
+
+
+async def test_cost_report(history: SqliteHistory) -> None:
+    from app.core.pricing import PriceTable
+
+    opus = result("a", "Question one", provider="anthropic")
+    await history.record(dataclasses.replace(opus, model="claude-opus-5"))
+    await history.record(dataclasses.replace(opus, message_id="b", model="claude-opus-5"))  # repeat
+    await history.record(result("c"))  # local model
+    await history.record(result("d", "Weather?", refused=True, provider=None))
+    low = dataclasses.replace(
+        result("e", "Cake?", refused=True, provider=None), refusal_reason="low_score"
+    )
+    await history.record(low)
+
+    report = await history.costs(date(2026, 9, 26), date(2026, 9, 26), PriceTable(), top_k=6)
+
+    # Each Claude turn: 1200 x $5 + 60 x $25 + 10 x $0.50 per million = $0.007505
+    assert report.questions == 5
+    assert report.total_usd == pytest.approx(2 * 0.007505)
+    assert report.usd_per_question == pytest.approx(2 * 0.007505 / 5)
+    assert report.per_day[0].usd == pytest.approx(0.01501)
+    assert report.per_model[0].model == "claude-opus-5" and report.per_model[0].questions == 2
+    assert report.cache_share == pytest.approx(10 / 1210)
+    assert report.cache_savings_usd == pytest.approx(2 * 10 * 4.5 / 1_000_000)
+    haiku = next(w for w in report.what_if if w.model == "claude-haiku-4-5")
+    assert haiku.usd == pytest.approx(report.total_usd / 5)
+    titles = " | ".join(h.title for h in report.hints)
+    assert "smaller Claude model would cost 80% less" in titles
+    assert "1 repeated question" in titles
+    assert "1 question refused at no cost" in titles
+    assert "1 question answered by the local model" in titles

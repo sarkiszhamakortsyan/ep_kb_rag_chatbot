@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from app.core.pricing import ModelPrice, PriceTable
 from app.rag.chunking import ChunkingConfig
 
 LLMProviderName = Literal["ollama", "anthropic"]
@@ -69,6 +70,12 @@ class Settings(BaseSettings):
     history_retention_days: int = Field(default=90, ge=1)
     database_path: Path = Path("data/db/history.sqlite")
 
+    # Costs tab (ideas.md #2): USD per million tokens, as JSON, e.g. MODEL_PRICES=
+    # {"claude-opus-5": {"input": 5, "output": 25, "cache_read": 0.5, "cache_write": 6.25}}
+    model_prices: dict[str, ModelPrice] = {}
+    # Optional cost of running the local model, e.g. a GPU server's price per hour (USD).
+    local_cost_per_hour: float = Field(default=0.0, ge=0)
+
     @field_validator("enabled_llm_providers", "cors_origins", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
@@ -91,6 +98,9 @@ class Settings(BaseSettings):
                 f"{self.enabled_llm_providers}"
             )
         return self
+
+    def price_table(self) -> PriceTable:
+        return PriceTable(self.model_prices, self.local_cost_per_hour)
 
     def chunking(self) -> ChunkingConfig:
         return ChunkingConfig(

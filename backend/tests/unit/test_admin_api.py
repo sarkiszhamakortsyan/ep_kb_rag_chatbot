@@ -177,3 +177,40 @@ def test_stats_rejects_bad_ranges(client: TestClient) -> None:
         assert response.status_code == 422
         assert response.json()["error"]["code"] == "invalid_range"
     assert client.get("/api/v1/admin/stats").status_code == 401
+
+
+# --- costs ------------------------------------------------------------------------------------
+
+
+def test_costs_endpoint(client: TestClient) -> None:
+    ask(client, "How long are backups kept?")  # local model: $0
+    body = client.get("/api/v1/admin/costs", headers=AUTH).json()
+    assert body["questions"] == 1 and body["total_usd"] == 0
+    assert len(body["per_day"]) == 30
+    assert {w["model"] for w in body["what_if"]} >= {"claude-opus-5", "claude-haiku-4-5"}
+    assert any("local model" in h["title"] for h in body["hints"])
+
+
+def test_cost_advice_sends_only_aggregates(tmp_path: Path) -> None:
+    advisor = FakeLLM("- Use a smaller model.", name="anthropic", model="claude-opus-5")
+
+    async def services(settings: Settings, events: EventStore) -> Services:
+        return await create_services(
+            settings,
+            events,
+            llm_factories={
+                "ollama": lambda s: FakeLLM("Backups are retained for 35 days [1].", name="ollama"),
+                "anthropic": lambda s: advisor,
+            },
+            embedding_factories={"ollama": lambda s: FakeEmbedder()},
+        )
+
+    settings = make_settings(tmp_path, enabled_llm_providers=["ollama", "anthropic"])
+    with TestClient(create_app(settings, services, load_in_background=False)) as client:
+        ask(client, "A secret customer question")
+        body = client.post("/api/v1/admin/costs/advice", headers=AUTH).json()
+
+    assert body["advice"] == "- Use a smaller model." and body["model"] == "claude-opus-5"
+    assert body["usd"] > 0
+    sent = advisor.calls[0][1][0].content
+    assert '"questions": 1' in sent and "secret customer question" not in sent

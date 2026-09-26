@@ -1,9 +1,17 @@
-import { ArrowLeft, ChartColumn, History, LogOut, type LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  ChartColumn,
+  History,
+  LogOut,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { getAdminSession, type AdminSession } from "../../api/admin";
 import { LogoMark } from "../chat/LogoMark";
 import { HistoryTab } from "./HistoryTab";
 import { SignIn } from "./SignIn";
+import { CostsTab } from "./CostsTab";
 import { StatsTab } from "./StatsTab";
 
 // The token is kept for this browser tab only (sessionStorage), never in localStorage.
@@ -26,15 +34,19 @@ function storeToken(token: string | null) {
   }
 }
 
-type TabId = "stats" | "history";
+type TabId = "stats" | "costs" | "history";
 type Tab = { id: TabId; label: string; icon: LucideIcon };
 const TABS: Tab[] = [
   { id: "stats", label: "Statistics", icon: ChartColumn },
+  { id: "costs", label: "Costs", icon: Wallet },
   { id: "history", label: "History", icon: History },
 ];
 
 // Each tab has its own address (/admin/stats, /admin/history), so back/forward and bookmarks work.
-const tabFromPath = (): TabId => (window.location.pathname.startsWith("/admin/history") ? "history" : "stats");
+const tabFromPath = (): TabId => {
+  const tab = window.location.pathname.split("/")[2];
+  return tab === "history" || tab === "costs" ? tab : "stats";
+};
 
 /** Hidden admin area (/admin, or Ctrl+Shift+A in the chat). The ADMIN_TOKEN protects the data. */
 export function AdminPage() {
@@ -75,17 +87,18 @@ export function AdminPage() {
     setSession(null);
   }, []);
 
-  if (!token || !session) return <SignIn onSignIn={signIn} checking={Boolean(token)} />;
+  if (!token || !session)
+    return <SignIn onSignIn={signIn} checking={Boolean(token)} />;
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas">
       <header className="sticky top-0 z-10 border-b border-line bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:gap-3 sm:px-4">
           <LogoMark className="size-8 shrink-0" />
-          <h1 className="text-[15px] font-semibold text-ink">
+          <h1 className="hidden text-[15px] font-semibold text-ink sm:block">
             OmniCorp <span className="font-normal text-ink-muted">Admin</span>
           </h1>
-          <nav aria-label="Admin sections" className="ml-4 flex gap-1">
+          <nav aria-label="Admin sections" className="flex gap-0.5 sm:ml-4 sm:gap-1">
             {TABS.map(({ id, label, icon: Icon }) => (
               <a
                 key={id}
@@ -96,7 +109,9 @@ export function AdminPage() {
                 }}
                 aria-current={tab === id ? "page" : undefined}
                 className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm ${
-                  tab === id ? "bg-brand-soft font-medium text-brand-ink" : "text-ink-muted hover:bg-subtle"
+                  tab === id
+                    ? "bg-brand-soft font-medium text-brand-ink"
+                    : "text-ink-muted hover:bg-subtle"
                 }`}
               >
                 <Icon aria-hidden className="size-4" />
@@ -126,12 +141,19 @@ export function AdminPage() {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         {!session.history_enabled ? (
           <p className="rounded-xl border border-line bg-surface p-6 text-sm text-ink-muted">
-            The response history is switched off (<code>HISTORY_ENABLED=false</code>), so there is nothing to show.
+            The response history is switched off (
+            <code>HISTORY_ENABLED=false</code>), so there is nothing to show.
           </p>
         ) : tab === "stats" ? (
           <StatsTab token={token} onUnauthorized={signOut} />
+        ) : tab === "costs" ? (
+          <CostsTab token={token} onUnauthorized={signOut} />
         ) : (
-          <HistoryTab token={token} retentionDays={session.history_retention_days} onUnauthorized={signOut} />
+          <HistoryTab
+            token={token}
+            retentionDays={session.history_retention_days}
+            onUnauthorized={signOut}
+          />
         )}
       </main>
     </div>

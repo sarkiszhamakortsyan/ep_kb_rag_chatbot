@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { DayCount } from "../../api/admin";
 
 const HEIGHT = 160;
 const PAD_BOTTOM = 22;
-const PAD_LEFT = 28;
+const PAD_LEFT = 44;
 
 const shortDay = (day: string) =>
   new Date(`${day}T00:00:00Z`).toLocaleDateString(undefined, {
@@ -12,8 +11,18 @@ const shortDay = (day: string) =>
     timeZone: "UTC",
   });
 
-/** Stacked bars per day (answered + not covered). Plain SVG: no chart library needed. */
-export function DailyChart({ days }: { days: DayCount[] }) {
+export type DayValues = { day: string; values: number[] };
+export type Series = { label: string; className: string };
+
+type Props = {
+  days: DayValues[];
+  series: Series[]; // one per entry in `values`, stacked bottom-up
+  label: string; // accessible summary
+  format?: (value: number) => string;
+};
+
+/** Stacked bars per day. Plain SVG: no chart library needed. */
+export function DailyChart({ days, series, label, format = String }: Props) {
   // Drawn at the container's real width, so text keeps its size on any screen.
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(640);
@@ -27,11 +36,14 @@ export function DailyChart({ days }: { days: DayCount[] }) {
     return () => observer.disconnect();
   }, []);
 
-  const max = Math.max(1, ...days.map((d) => d.answered + d.refused));
+  const sum = (d: DayValues) => d.values.reduce((a, b) => a + b, 0);
+  const peak = Math.max(0, ...days.map(sum));
+  const integers = days.every((d) => d.values.every(Number.isInteger));
+  const max = peak > 0 ? peak : 1;
   const ticks =
-    max <= 4
+    integers && max <= 4
       ? Array.from({ length: max + 1 }, (_, i) => i)
-      : [0, Math.round(max / 2), max];
+      : [0, max / 2, max];
   const slot = (width - PAD_LEFT) / days.length;
   const bar = Math.max(3, Math.min(22, slot * 0.65));
   const plot = HEIGHT - PAD_BOTTOM;
@@ -39,7 +51,6 @@ export function DailyChart({ days }: { days: DayCount[] }) {
   const labelEvery = Math.ceil(
     days.length / Math.max(2, Math.floor(width / 70)),
   );
-  const total = days.reduce((sum, d) => sum + d.answered + d.refused, 0);
 
   return (
     <div ref={ref}>
@@ -49,7 +60,7 @@ export function DailyChart({ days }: { days: DayCount[] }) {
         viewBox={`0 0 ${width} ${HEIGHT}`}
         className="block"
         role="img"
-        aria-label={`Questions per day: ${total} in ${days.length} days`}
+        aria-label={label}
       >
         {ticks.map((t) => (
           <g key={t}>
@@ -67,37 +78,32 @@ export function DailyChart({ days }: { days: DayCount[] }) {
               textAnchor="end"
               className="fill-ink-faint text-[10px]"
             >
-              {t}
+              {format(t)}
             </text>
           </g>
         ))}
         {days.map((d, i) => {
           const x = PAD_LEFT + i * slot + (slot - bar) / 2;
-          const answeredTop = y(d.answered);
-          const refusedTop = y(d.answered + d.refused);
+          let base = 0;
           return (
             <g key={d.day}>
-              <title>{`${shortDay(d.day)}: ${d.answered} answered, ${d.refused} not covered`}</title>
-              {d.answered > 0 && (
-                <rect
-                  x={x}
-                  y={answeredTop}
-                  width={bar}
-                  height={plot - answeredTop}
-                  rx={2}
-                  className="fill-brand"
-                />
-              )}
-              {d.refused > 0 && (
-                <rect
-                  x={x}
-                  y={refusedTop}
-                  width={bar}
-                  height={answeredTop - refusedTop}
-                  rx={2}
-                  className="fill-warning-ink/70"
-                />
-              )}
+              <title>{`${shortDay(d.day)}: ${series.map((s, k) => `${s.label} ${format(d.values[k])}`).join(", ")}`}</title>
+              {d.values.map((v, k) => {
+                const top = y(base + v);
+                const bottom = y(base);
+                base += v;
+                return v > 0 ? (
+                  <rect
+                    key={k}
+                    x={x}
+                    y={top}
+                    width={bar}
+                    height={bottom - top}
+                    rx={2}
+                    className={series[k].className}
+                  />
+                ) : null;
+              })}
               {i % labelEvery === 0 && (
                 <text
                   x={x + bar / 2}
@@ -112,6 +118,21 @@ export function DailyChart({ days }: { days: DayCount[] }) {
           );
         })}
       </svg>
+    </div>
+  );
+}
+
+export function ChartLegend({ series }: { series: Series[] }) {
+  return (
+    <div className="mt-2 flex gap-4 text-xs text-ink-muted">
+      {series.map((s) => (
+        <span key={s.label} className="inline-flex items-center gap-1.5">
+          <span
+            className={`size-2.5 rounded-sm ${s.className.replace("fill-", "bg-")}`}
+          />
+          {s.label}
+        </span>
+      ))}
     </div>
   );
 }

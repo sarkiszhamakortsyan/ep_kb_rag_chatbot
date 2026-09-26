@@ -1,16 +1,12 @@
 from dataclasses import asdict
-from datetime import UTC, date, datetime, timedelta
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.api.errors import InvalidRangeError
-from app.api.v1.admin.common import ADMIN_ERRORS, History
+from app.api.v1.admin.common import ADMIN_ERRORS, DateRange, History
 
 router = APIRouter()
-
-MAX_RANGE_DAYS = 366
 
 
 class DayCountOut(BaseModel):
@@ -60,14 +56,6 @@ class StatsOut(BaseModel):
 
 
 @router.get("/stats", response_model=StatsOut, responses=ADMIN_ERRORS)
-async def usage_stats(
-    history: History,
-    date_from: Annotated[date | None, Query(alias="from")] = None,
-    date_to: Annotated[date | None, Query(alias="to")] = None,
-) -> Any:
+async def usage_stats(history: History, dates: DateRange) -> Any:
     """Usage statistics for a UTC date range (default: the last 30 days)."""
-    to = date_to or datetime.now(UTC).date()
-    start = date_from or to - timedelta(days=29)
-    if start > to or (to - start).days >= MAX_RANGE_DAYS:
-        raise InvalidRangeError(f"'from' must be before 'to', at most {MAX_RANGE_DAYS} days apart.")
-    return asdict(await history.stats(start, to))
+    return asdict(await history.stats(*dates))

@@ -9,7 +9,7 @@ Ideas that can be implement in addition in the Chatbot
 Mark every idea after you finish.
 
 - Create a hidden menu with statistics about the usage. ✅ (dev-features, phase 11)
-- Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them.
+- Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them. ✅ (dev-features, phase 12)
 - Method to write the response in professional language, clear and accurate. Provide more details only when requested.
 - Option to Question / Answer in different languages.
 - Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions come in phase 18)
@@ -112,7 +112,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 - **Stats tab:** a few KPI cards plus simple charts (one small chart library, or plain SVG).
 - Computed with SQL from the `turns` table, so no new data is needed.
 
-#### Phase 12: costs + optimisation hints (#2). Size: S–M
+#### Phase 12: costs + optimisation hints (#2). Size: S–M ✅ (2026-09-26)
 - **Price table in configuration:** $ per million input, output and cache-read tokens per model, with Anthropic list prices as defaults. Local models are $0, with an optional estimated compute cost per hour.
 - **Cost:** each turn's cost is computed and stored. `GET /admin/costs` shows totals per day and model, cost per question, and the share saved by the prompt cache.
 - **Optimisation hints:** rule-based, computed from the data. Examples: "X% of questions are refused before the LLM (free)", "a smaller Claude model would have cost $Y for the same questions", "the prompt cache saves Z%".
@@ -186,4 +186,16 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
   - It shows the totals, a plain-SVG daily chart that measures its container so text keeps its size, a models table, the most cited documents and sections, and the documentation gaps, which open the answer details.
 - **Tests:** backend 124 (4 new), frontend 21 (the admin test now covers both tabs).
 - **Checked end to end:** with 11 mixed questions (Claude, local, early refusals), with screenshots on desktop, in dark mode and on mobile. A mobile overflow was found and fixed.
+
+**Phase 12 ✅ (2026-09-26): costs and optimisation hints.**
+- **Backend:**
+  - `app/core/pricing.py`: list prices (USD/MTok for input, output, cache read, cache write) with `MODEL_PRICES` overrides and `LOCAL_COST_PER_HOUR`.
+  - `compute_costs` (`app/stores/history/costs.py`): totals, per day and per model, a what-if with each Claude model, cache savings, and data-driven hints.
+  - `GET /api/v1/admin/costs`, and `POST /api/v1/admin/costs/advice`, which sends only aggregated figures to Claude with the `cost_advice.md` prompt and reports its own cost.
+- **Decision:** costs are computed when the report is built, not stored per turn, so a price correction also fixes past periods. The token counts that matter are stored.
+- **Frontend:**
+  - The Costs tab has KPI cards, a daily cost chart, a model table, the what-if comparison, hints, and the "Ask Claude for suggestions" button.
+  - The chart, range picker and cards became shared components (`DailyChart`, `RangePicker`, `ui.tsx`).
+- **Tests:** backend 130 (6 new: pricing, cost report, endpoints; the advice test checks that no question text is sent), frontend 22.
+- **Checked end to end:** a real advice call cost $0.025 (the note was corrected from "one question"). The mobile header and the plural wording in the hints were fixed after the screenshots.
 

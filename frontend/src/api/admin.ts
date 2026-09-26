@@ -5,7 +5,10 @@ import type { Citation } from "./types";
 
 const BASE = "/api/v1/admin";
 
-export type AdminSession = { history_enabled: boolean; history_retention_days: number };
+export type AdminSession = {
+  history_enabled: boolean;
+  history_retention_days: number;
+};
 
 export type TurnSummary = {
   created_at: string;
@@ -38,7 +41,12 @@ export type TurnDetail = Omit<TurnSummary, "sources"> & {
   total_ms: number;
 };
 
-export type HistoryPage = { items: TurnSummary[]; total: number; limit: number; offset: number };
+export type HistoryPage = {
+  items: TurnSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+};
 
 export type HistoryQuery = {
   q?: string;
@@ -60,7 +68,9 @@ function query(params: HistoryQuery): string {
 }
 
 async function adminFetch(token: string, path: string): Promise<Response> {
-  const response = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  const response = await fetch(`${BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (!response.ok) throw await toApiError(response);
   return response;
 }
@@ -69,14 +79,23 @@ export const getAdminSession = async (token: string) =>
   (await (await adminFetch(token, "/session")).json()) as AdminSession;
 
 export const listHistory = async (token: string, params: HistoryQuery) =>
-  (await (await adminFetch(token, `/history${query(params)}`)).json()) as HistoryPage;
+  (await (
+    await adminFetch(token, `/history${query(params)}`)
+  ).json()) as HistoryPage;
 
 export const getTurn = async (token: string, messageId: string) =>
-  (await (await adminFetch(token, `/history/${encodeURIComponent(messageId)}`)).json()) as TurnDetail;
+  (await (
+    await adminFetch(token, `/history/${encodeURIComponent(messageId)}`)
+  ).json()) as TurnDetail;
 
 /** The CSV file for the current filters (downloaded via a blob, since it needs the token). */
 export const exportHistory = async (token: string, params: HistoryQuery) =>
-  (await adminFetch(token, `/history/export.csv${query({ ...params, limit: undefined, offset: undefined })}`)).blob();
+  (
+    await adminFetch(
+      token,
+      `/history/export.csv${query({ ...params, limit: undefined, offset: undefined })}`,
+    )
+  ).blob();
 
 export type DayCount = { day: string; answered: number; refused: number };
 export type ModelStats = {
@@ -88,8 +107,18 @@ export type ModelStats = {
   p95_ms: number | null;
   ttft_p50_ms: number | null;
 };
-export type SourceCount = { doc_id: string; title: string; section: string | null; citations: number };
-export type RefusedQuestion = { created_at: string; message_id: string; question: string; reason: string | null };
+export type SourceCount = {
+  doc_id: string;
+  title: string;
+  section: string | null;
+  citations: number;
+};
+export type RefusedQuestion = {
+  created_at: string;
+  message_id: string;
+  question: string;
+  reason: string | null;
+};
 
 export type UsageStats = {
   date_from: string;
@@ -107,5 +136,68 @@ export type UsageStats = {
   recent_refused: RefusedQuestion[];
 };
 
-export const getStats = async (token: string, range: { from: string; to: string }) =>
-  (await (await adminFetch(token, `/stats${query(range)}`)).json()) as UsageStats;
+export const getStats = async (
+  token: string,
+  range: { from: string; to: string },
+) =>
+  (await (
+    await adminFetch(token, `/stats${query(range)}`)
+  ).json()) as UsageStats;
+
+export type ModelCost = {
+  provider: string | null;
+  model: string | null;
+  questions: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  usd: number;
+  priced: boolean;
+};
+export type CostHint = {
+  kind: "saving" | "info";
+  title: string;
+  detail: string;
+};
+
+export type CostReport = {
+  date_from: string;
+  date_to: string;
+  questions: number;
+  total_usd: number;
+  usd_per_question: number | null;
+  cache_savings_usd: number;
+  cache_share: number | null;
+  per_day: { day: string; usd: number }[];
+  per_model: ModelCost[];
+  what_if: { model: string; usd: number }[];
+  hints: CostHint[];
+};
+
+export type CostAdvice = {
+  advice: string;
+  model: string | null;
+  usd: number | null;
+};
+
+export const getCosts = async (
+  token: string,
+  range: { from: string; to: string },
+) =>
+  (await (
+    await adminFetch(token, `/costs${query(range)}`)
+  ).json()) as CostReport;
+
+/** Asks Claude for advice on the aggregated figures (about $0.02–0.03 with Claude Opus). */
+export async function getCostAdvice(
+  token: string,
+  range: { from: string; to: string },
+): Promise<CostAdvice> {
+  const response = await fetch(`${BASE}/costs/advice${query(range)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw await toApiError(response);
+  return (await response.json()) as CostAdvice;
+}

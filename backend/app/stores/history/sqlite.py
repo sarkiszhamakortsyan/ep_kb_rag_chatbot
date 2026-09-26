@@ -18,7 +18,9 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from app.core.pricing import PriceTable
 from app.stores.events.base import EventStore
+from app.stores.history.costs import CostReport, compute_costs
 from app.stores.history.stats import UsageStats, compute_stats
 
 if TYPE_CHECKING:
@@ -200,6 +202,16 @@ class SqliteHistory(EventStore):
     def _stats(self, date_from: date, date_to: date) -> UsageStats:
         with self._lock:
             return compute_stats(self._connection(), date_from, date_to)
+
+    async def costs(
+        self, date_from: date, date_to: date, prices: PriceTable, *, top_k: int
+    ) -> CostReport:
+        """Estimated costs for the inclusive UTC date range, with optimisation hints."""
+        return await asyncio.to_thread(self._costs, date_from, date_to, prices, top_k)
+
+    def _costs(self, date_from: date, date_to: date, prices: PriceTable, top_k: int) -> CostReport:
+        with self._lock:
+            return compute_costs(self._connection(), date_from, date_to, prices, top_k=top_k)
 
     def iter_turns(self, filters: HistoryFilter) -> Iterator[Turn]:
         """All matching turns, newest first (for CSV export; runs in the caller's thread)."""
