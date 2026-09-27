@@ -49,6 +49,7 @@ Open **http://localhost:8080**.
 - **Using Claude (recommended on machines without a GPU):** set `ANTHROPIC_API_KEY=...` in `.env`, then run `docker compose up -d`. Pick *anthropic* in the **Model** selector, or set `LLM_PROVIDER=anthropic` to make it the default. Ollama still runs, because it provides the embeddings.
 - **Check the status:** `curl localhost:8080/api/v1/health`. The backend container isn't published: the UI's nginx forwards `/api/*` to it. For the interactive Swagger UI (`/docs`), run the backend locally (see below) and open `http://localhost:8000/docs`.
 - **Stop:** `docker compose down` (add `-v` to also delete the models and the index).
+- **Port already in use?** `docker compose up` fails when port 8080 (web UI) or 11434 (Ollama) is taken. Start with `python3 scripts/start.py docker` instead (add `--claude-only` for Claude-only mode): it checks both ports, takes the next free one when a port is busy, and prints the URLs in use. See [Ports](#ports).
 
 ### Local development (without Docker for the app)
 
@@ -57,6 +58,41 @@ docker compose up -d ollama ollama-init          # Ollama on 127.0.0.1:11434
 cd backend  && uv sync && uv run uvicorn app.main:api --reload    # :8000, Swagger at /docs
 cd frontend && npm ci && npm run dev                               # :5173, proxies /api -> :8000
 ```
+
+Or start both servers with one command, on free ports: `python3 scripts/start.py dev` (after `uv sync` and `npm ci`). Ctrl+C stops both.
+
+### Ports
+
+`scripts/start.py` (Python standard library only) checks every port before starting. A busy port is replaced by the next free one, and the script prints what it chose:
+
+```text
+Port check:
+  ! Backend: port 8000 is already in use, using 8001 instead
+  ! Frontend: port 5173 is already in use, using 5174 instead
+========================================================================
+  OmniCorp KB chatbot is running (local development)
+------------------------------------------------------------------------
+  Chat UI      http://localhost:5174
+  Admin area   http://localhost:5174/admin
+  Backend API  http://localhost:8001/api/v1/health
+  Swagger UI   http://localhost:8001/docs
+  Ollama       http://localhost:11434
+  CLI          cd backend && uv run python -m app.cli --url http://localhost:8001
+------------------------------------------------------------------------
+  Note: Backend uses port 8001 because 8000 is already in use.
+  Note: Frontend uses port 5174 because 5173 is already in use.
+========================================================================
+```
+
+| Mode | Ports (preferred) | Set in `.env` or the environment |
+|---|---|---|
+| `start.py dev` | backend 8000, frontend 5173 | `BACKEND_PORT`, `FRONTEND_DEV_PORT` |
+| `start.py docker` | web UI 8080, Ollama 11434 | `FRONTEND_PORT`, `OLLAMA_PORT` |
+
+- In dev mode, Vite forwards `/api` to the chosen backend port (`API_PROXY_TARGET`). If Ollama runs in Docker on another port, the backend is pointed at it.
+- In Docker mode, a port that this project's own running container already holds counts as free, so starting again doesn't move the stack. Once the preferred port is free again, the next start moves back to it.
+- The CLI defaults to `http://localhost:8080`, so pass the printed `--url` when a port was moved.
+- Plain `docker compose up` doesn't check ports. It uses `FRONTEND_PORT`/`OLLAMA_PORT` from `.env`.
 
 ---
 
@@ -433,7 +469,8 @@ All settings are environment variables, read from `.env` (see [`.env.example`](.
 | `OLLAMA_TIMEOUT_S` | `300` | Maximum wait for the first token |
 | `TOP_K` / `MIN_SCORE` | `6` / `0.35` | Chunks sent to the LLM; refusal threshold (calibrated) |
 | `CHUNK_MAX_WORDS` / `CHUNK_OVERLAP_WORDS` | `300` / `45` | Chunk size; changing them rebuilds the index |
-| `FRONTEND_PORT` | `8080` | Web UI port |
+| `FRONTEND_PORT` / `OLLAMA_PORT` | `8080` / `11434` | Host ports of the web UI and Ollama (Docker). `scripts/start.py` moves to the next free port when one is busy |
+| `BACKEND_PORT` / `FRONTEND_DEV_PORT` | `8000` / `5173` | Preferred ports for `scripts/start.py dev` |
 | `ADMIN_TOKEN` | – | Enables the admin area (dev-features); empty = switched off |
 | `HISTORY_ENABLED` / `HISTORY_RETENTION_DAYS` | `true` / `90` | Store questions and answers for the admin area, and for how long |
 | `EMBEDDING_PROVIDER` / `LOCAL_EMBED_MODEL` | `ollama` / `google/embeddinggemma-300m` | `local` runs the embeddings inside the backend (dev-features, used by `docker-compose.claude-only.yml`) |
