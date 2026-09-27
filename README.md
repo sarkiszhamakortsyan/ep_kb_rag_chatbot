@@ -562,12 +562,12 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <b>- [x] Choose AI assistant - Claude</b><br />
 <b>- [x] Make sure you log all the communication with the AI Assistant</b> (automatic export to `documentation/ai-logs/`)<br />
 <b>- [x] Create a plan step by step</b><br />
-- [ ] Create a hidden menu with statistics (planned; data is already recorded per turn)<br />
+<b>- [x] Create a hidden menu with statistics</b> (dev-features: admin Statistics tab)<br />
 <b>- [x] Create documentation</b> (this README, `documentation/`)<br />
-- [ ] Check if its possible to have hidden menu with casts. Check for a method / AI suggestions how to optimize them (planned; token usage is already recorded per turn)<br />
+<b>- [x] Check if its possible to have hidden menu with casts. Check for a method / AI suggestions how to optimize them</b> (dev-features: admin Costs tab)<br />
 <b>- [x] Professional language in the response</b> (enforced by the system prompt; "more detail on request" is planned)<br />
-- [ ] Option to Question / Answer in different language (partly: answers come in the question's language; a language selector is planned)<br />
-- [ ] Add response history (planned)<br />
+<b>- [x] Option to Question / Answer in different language</b> (dev-features: answer-language selector)<br />
+<b>- [x] Add response history</b> (dev-features: admin History tab, plus follow-up questions)<br />
 <b>- [x] If the client insists to have the answer (if there is no in documentation) choose what to do - like forward to human, or disregard in polite way</b> (polite refusal that points to an Internal SME Request)<br />
 <b>- [x] Unit, speed, and performance test</b> (see `documentation/evaluation.md`)<br />
 <b>- [x] Proceed with the plan</b><br />
@@ -579,5 +579,5 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Option to Question / Answer in different languages. *(dev-features: answer-language selector)*
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
 - [x] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. *(dev-features: Settings tab, Claude-only compose mode)*
-- [x] Check if we can build the hole Chatbot in an MCP server. *(dev-features: MCP tools and resources, over HTTP and stdio)*
+- [x] Check if we can build the hole Chatbot in an MCP server. *(dev-mcp: MCP tools and resources, over HTTP and stdio)*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
