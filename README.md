@@ -643,6 +643,6 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Option to Question / Answer in different languages. *(dev-features: answer-language selector)*
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
 - [x] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. *(dev-features: Settings tab, Claude-only compose mode)*
-- [x] Check if we can build the hole Chatbot in an MCP server. *(dev-mcp: MCP tools and resources, over HTTP and stdio)*
+- [x] Check if we can build the hole Chatbot in an MCP server. *(dev-mcp: MCP tools, resources and prompts over HTTP and stdio; Claude Desktop setup and `/kb` commands in [`mcp-claude-desktop.md`](documentation/mcp-claude-desktop.md))*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
 - [x] Select the model from the chat / prompt with `/<model>` commands, next to the model dropdown (UI and CLI). *(dev-features and dev-mcp: see "Choosing the model by typing")*
