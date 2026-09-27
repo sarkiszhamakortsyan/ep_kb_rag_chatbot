@@ -380,7 +380,7 @@ ssh user@vm cat /path/to/repo/scripts/install_claude_desktop_mcp.py \
   | python3 - --ssh user@vm --backend /path/to/repo/backend
 ```
 
-It checks that SSH works without a password prompt (Claude Desktop can't type one), backs up `claude_desktop_config.json` and adds the `omnicorp-kb` entry while keeping your other servers and Desktop's own settings. It then starts the server exactly as Claude Desktop will and lists its tools and prompts. Quit and restart Claude Desktop afterwards. The entry it writes for `--ssh` looks like this:
+It checks that SSH works without a password prompt (Claude Desktop can't type one), backs up `claude_desktop_config.json` and adds the `omnicorp-kb` entry while keeping your other servers and Desktop's own settings. It then starts the server exactly as Claude Desktop will, lists its tools and prompts, and installs the `/kb` skills (see 6.5). Quit and restart Claude Desktop afterwards. The entry it writes for `--ssh` looks like this:
 
 ```json
 "omnicorp-kb": {
@@ -439,16 +439,16 @@ With `--ssh`, the server runs on the VM, so Ollama must be reachable there (the 
 ### 6.5 Asking questions from Claude Desktop and Claude Code
 
 - **Just ask.** The server tells the client what it covers, so a plain question such as *"What is the first-response time for a P1 ticket on Enterprise?"* usually makes Claude call `ask_knowledge_base`. Adding *"use omnicorp-kb"* makes it certain, and *"with claude"*, *"with local"* or *"with ministral-3:3b"* picks the model.
-- **Commands (the server's prompts).**
-  - Claude Code and Claude Desktop's local Code sessions show them as slash commands. Type the question after the command:
+- **Short commands (skills).** The installer puts three skills into `~/.claude/skills`. Claude Desktop's Code sessions and Claude Code list them when you type `/`. Type the question after the command:
 
-    ```text
-    /mcp__omnicorp-kb__ask What is the first-response time for a P1 ticket on Enterprise?
-    /mcp__omnicorp-kb__ask_claude How long are backups kept?
-    /mcp__omnicorp-kb__ask_local Which webhook events exist?
-    ```
+  ```text
+  /kb What is the first-response time for a P1 ticket on Enterprise?
+  /kb-claude How long are backups kept?
+  /kb-local Which webhook events exist?
+  ```
 
-  - In a regular Claude Desktop chat, they are in the **+** menu under the server's name, and ask for the question in a small form.
+  `/kb` uses the server's default model, `/kb-claude` Claude and `/kb-local` the local model. Skip them with `--no-skills`.
+- **The server's prompts** (`ask`, `ask_claude`, `ask_local`) do the same for clients that offer MCP prompts. Claude Code shows them as `/mcp__omnicorp-kb__ask <question>`, and a regular Claude Desktop chat has them in the **+** menu. Claude Desktop's Code sessions don't: there `/mcp__omnicorp-kb__ask` gets *"isn't a command here"*, so use `/kb`.
 - **Checking that it was used:**
   - The answer has a collapsible `ask_knowledge_base` step above it, with the question and model sent and the raw reply (`answer`, `citations`, `refused`, `model`).
   - Each answer is also logged by the server (stderr) as a `chat_turn` line with the model, the cited documents and the timings. In Claude Desktop that log is `~/.config/Claude/logs/mcp-server-omnicorp-kb.log`: `grep chat_turn` it.

@@ -326,7 +326,7 @@ The knowledge base is also an **MCP server**, so AI assistants such as Claude Co
 | `ask_knowledge_base(question, model?, language?)` | The full pipeline: a cited answer, or `refused: true` when the documentation has no answer |
 | `search_knowledge_base(query, k?)` | The best-matching sections (document, section, text, score), for the assistant to answer from itself |
 | `kb://documents` · `kb://documents/{doc_id}` | The list of articles, and one article in full |
-| Prompts `ask`, `ask_claude`, `ask_local` | Ready-made requests, shown as commands: `/mcp__omnicorp-kb__ask_claude How long are backups kept?` in Claude Code, or the **+** menu in Claude Desktop |
+| Prompts `ask`, `ask_claude`, `ask_local` | Ready-made requests, shown as commands: `/mcp__omnicorp-kb__ask_claude How long are backups kept?` in Claude Code, or the **+** menu in a Claude Desktop chat. For Claude Desktop's Code sessions the installer adds the skills `/kb`, `/kb-claude` and `/kb-local` instead |
 
 `model` accepts the same names as the chat and the CLI: `anthropic`/`claude`, `ollama`/`local`, `ministral` or `ministral-3:3b`.
 
@@ -352,7 +352,7 @@ claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ --hea
   { "mcpServers": { "omnicorp-kb": { "command": "uv", "args": ["run", "--directory", "/path/to/repo/backend", "python", "-m", "app.mcp"] } } }
   ```
 
-  Or let `scripts/install_claude_desktop_mcp.py` write it. With `--ssh user@vm --backend /path/to/repo/backend` it sets Claude Desktop up to start the server on another machine over SSH, then checks the connection.
+  Or let `scripts/install_claude_desktop_mcp.py` write it. With `--ssh user@vm --backend /path/to/repo/backend` it sets Claude Desktop up to start the server on another machine over SSH, then checks the connection and installs the `/kb` skills.
 
 Step-by-step setup, testing and troubleshooting: [features guide, section 6](documentation/features-guide.md#6-mcp-server-dev-mcp-only).
 

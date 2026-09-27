@@ -14,6 +14,14 @@ It checks SSH without a password prompt (Claude Desktop cannot type one), backs 
 claude_desktop_config.json and adds or replaces the server entry (other servers and Desktop's
 own settings are kept), then starts the server exactly as Claude Desktop will and lists its
 tools and prompts. Restart Claude Desktop afterwards. Standard library only.
+
+It also installs three skills in ~/.claude/skills, so questions are one short command in
+Claude Desktop's Code sessions and in Claude Code (their slash menus list skills, while
+Desktop doesn't offer MCP prompts as commands):
+
+  /kb <question>          the server's default model
+  /kb-claude <question>   Claude writes the answer
+  /kb-local <question>    the local Ollama model writes the answer
 """
 
 import argparse
@@ -84,6 +92,50 @@ def check_server_machine(args: argparse.Namespace) -> None:
             f"  ssh-copy-id {args.ssh}, then run this again."
         )
     print(f"[ok] SSH to {args.ssh} works without a password prompt")
+
+
+SKILLS = {
+    "kb": ("the default model", "Leave out `model` (the server's default model answers).",
+           "with its default model"),
+    "kb-claude": ("Claude", 'Set `model` to "claude".', "and have Claude write the answer"),
+    "kb-local": ("the local model", 'Set `model` to "local" (Ollama).',
+                 "and have the local Ollama model write the answer"),
+}  # fmt: skip
+
+SKILL = """---
+name: {name}
+description: Ask the OmniCorp knowledge base ({server} MCP server) {purpose}. Answers strictly \
+from OmniCorp's internal documentation, with citations. Use when the user types /{name} followed \
+by a question.
+argument-hint: <question>
+---
+
+Answer the question below with the `ask_knowledge_base` tool of the `{server}` MCP server, \
+using {who}.
+
+- Pass the question unchanged as `question`. {model_rule}
+- Show the tool's `answer` as it is, then list the citations as "[n] title \u203a section (doc_id)".
+- Say which model answered (the `model` field).
+- If `refused` is true, say that the knowledge base doesn't cover the question. Don't answer \
+from general knowledge.
+- If the tool is not available or returns an error, say so and show the error; don't guess.
+
+Question: $ARGUMENTS
+"""
+
+
+def install_skills(args: argparse.Namespace) -> None:
+    root = Path(args.skills_dir).expanduser()
+    for name, (who, model_rule, purpose) in SKILLS.items():
+        path = root / name / "SKILL.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            SKILL.format(
+                name=name, server=args.name, who=who, model_rule=model_rule, purpose=purpose
+            ),
+            encoding="utf-8",
+        )
+    print(f"[ok] Skills /{', /'.join(SKILLS)} in {root}")
 
 
 def update_config(args: argparse.Namespace) -> Path:
@@ -192,6 +244,10 @@ def main() -> None:
     parser.add_argument(
         "--config", default=str(default_config()), help="claude_desktop_config.json"
     )
+    parser.add_argument(
+        "--skills-dir", default="~/.claude/skills", help="where to put the /kb skills"
+    )
+    parser.add_argument("--no-skills", action="store_true", help="don't install the /kb skills")
     args = parser.parse_args()
     if args.backend is None:
         if args.ssh or repo_backend is None or not repo_backend.is_dir():
@@ -202,6 +258,8 @@ def main() -> None:
     check_server_machine(args)
     update_config(args)
     handshake(args)
+    if not args.no_skills:
+        install_skills(args)
     print("\nDone. Quit Claude Desktop completely and start it again.")
 
 
