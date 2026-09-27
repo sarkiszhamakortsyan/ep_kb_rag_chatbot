@@ -279,6 +279,62 @@ docker compose exec backend python -m app.cli --url http://localhost:8000 ask "�
 - **Colours:** used only on a terminal, and never when `NO_COLOR` is set.
 - **Interactive mode:** it keeps the conversation id until `/new`.
 
+### Model switches and "Claude only"
+
+- **Settings tab** (`/admin/settings`):
+  - Switch answer models on or off and choose the default, without a restart. The chat's model picker updates immediately.
+  - The configuration stays the upper limit: only providers in `ENABLED_LLM_PROVIDERS` can be enabled.
+  - Choices are stored in SQLite and re-applied after a restart. They're ignored, with a warning in the log, if the configuration no longer allows them.
+- **Claude only, without any Ollama container:**
+
+  ```bash
+  docker compose -f docker-compose.yml -f docker-compose.claude-only.yml up -d --build
+  ```
+
+  - Anthropic has no embeddings API, so embeddings then run **inside the backend** with fastembed (ONNX Runtime, no PyTorch).
+  - It's the **same `embeddinggemma` model**: vectors are identical to Ollama's (cosine 1.000), and the retrieval benchmark gives the same recall 0.97 and the same scores, so the thresholds stay valid.
+  - The model (about 1.2 GB) is downloaded once into the `backend-models` volume. The first start takes about 1.5 minutes; after that it loads in about 2 s.
+  - A question embeds in about 50 ms.
+  - Checked with the Ollama container stopped: health ok, cited answers, a German answer, and early refusals.
+
+### Follow-up questions
+
+A follow-up like *"And on the Enterprise plan?"* now keeps its topic:
+1. **Rewrite:** when a question belongs to a conversation with earlier turns, the model first rewrites it into a self-contained question, using the last 3 turns. The prompt is `prompts/rewrite_question.md`, and it keeps the question's language.
+2. **Search and answer:** retrieval and the answer both use the rewritten question.
+3. **Transparency:** the chat shows it as *"Understood as: …"*, and the admin history stores it next to the original.
+
+Details:
+- **Where the earlier turns come from:** the SQLite history, or a small in-memory store when the history is switched off.
+- **First questions** skip the extra call. The benchmarks stay single-turn, so their numbers are unchanged.
+- **Cost:** the rewrite adds one short LLM call, about 1.3 s with Claude and 4–15 s with the local model. Its tokens are included in the turn's usage and costs.
+- **Measured** on a 5-conversation set (`tests/eval/followups.yaml`, one in German): every follow-up answered correctly in context, and almost none without it.
+
+  | Model | In context | Without context |
+  |---|---|---|
+  | Claude | **5/5** | 1/5 |
+  | `ministral-3:3b` | **5/5** | 0/5 |
+
+  Benchmark: `uv run python -m app.evaluation.followups --provider anthropic` (or `ollama`).
+
+### Choosing the model by typing
+
+The model can be chosen in the chat or the CLI by typing a command, as well as with the dropdown, which stays:
+
+| Type | What happens |
+|---|---|
+| `/claude` (or `/anthropic`) | Switches to Claude; the dropdown follows |
+| `/local` (or `/ollama`, `/ministral`) | Switches to the local model |
+| `/claude How long are backups kept?` | Asks **this question only** with Claude; the selection stays as it was |
+| `/models` (or `/help`) | Lists the models, their commands and the selected one |
+
+- **Where the names come from:** the provider name, a short name and the model family, built from the enabled models. Models switched off in the admin Settings tab aren't offered.
+- **Errors:** an unknown command (`/gpt`) or an unavailable model gets a hint, and nothing is sent.
+- **Suggestions:** typing `/` shows the available commands, and **Tab** completes the first one.
+- **Tagging:** a one-off question is tagged with its model, and **Regenerate** and **More detail** reuse that model.
+- **Paths are safe:** only a command word counts, so a question that starts with a path, such as `/v3/records:batch limits?`, is sent as a normal question.
+- **CLI:** the same commands work in the interactive session, and `ask "/claude How long are backups kept?"` works too. `--model` stays.
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -507,3 +563,4 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. *(dev-features: Settings tab, Claude-only compose mode)*
 - [ ] Check if we can build the hole Chatbot in an MCP server. *(done as a separate version: the `dev-mcp` branch)*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
+- [x] Select the model from the chat / prompt with `/<model>` commands, next to the model dropdown (UI and CLI). *(dev-features: see "Choosing the model by typing")*

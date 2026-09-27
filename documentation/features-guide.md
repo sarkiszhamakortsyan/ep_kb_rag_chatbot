@@ -5,7 +5,7 @@ This guide covers the optional features on the **`dev-features`** branch, built 
 **Contents**
 
 1. [Start the stack](#1-start-the-stack)
-2. [Chat features](#2-chat-features): more detail, answer language, follow-up questions
+2. [Chat features](#2-chat-features): more detail, answer language, follow-up questions, choosing the model by typing
 3. [Admin area](#3-admin-area): History, Statistics, Costs, Tests, Settings
 4. [Command-line client](#4-command-line-client)
 5. [Claude-only mode (no Ollama)](#5-claude-only-mode-no-ollama)
@@ -100,6 +100,30 @@ API: `"options": {"language": "fr"}`. An unsupported code returns 422.
 - **New conversation** (the pencil icon) starts fresh.
 
 **Cost:** one extra short model call per follow-up, about 1.3 s with Claude and 4–15 s with the local model. First questions don't make this call.
+
+### 2.4 Choose the model by typing
+
+**What it does:** you can choose the model by typing a command in the chat, as well as with the dropdown in the header, which stays.
+
+| Type | What happens |
+|---|---|
+| `/claude` or `/anthropic` | Switches to Claude. The dropdown follows, and a note confirms the switch |
+| `/local`, `/ollama` or `/ministral` | Switches to the local model |
+| `/claude How long are backups kept?` | Asks **only this question** with Claude. The question is tagged *Claude Opus · cloud*, and the selection stays |
+| `/models` or `/help` | Lists the models, their commands and the selected one |
+
+**Use it:**
+- Type `/` to see the commands, and press **Tab** to complete the first one.
+- The command names are built from the enabled models, so a model switched off in the admin **Settings** tab isn't offered.
+
+**Check it:**
+- **Switch:** with the local model selected, type `/claude`. The dropdown changes to *Claude Opus · cloud*, and a note appears.
+- **One-off question:** type `/local` to switch back, then `/claude How long are backups kept?`.
+  - The answer's footer says *Claude Opus*.
+  - The dropdown still shows the local model.
+  - **Regenerate** on that answer uses Claude again.
+- **Unknown command:** `/gpt hi` shows *"Unknown command /gpt"*, and nothing is sent.
+- **Paths:** `/v3/records:batch limits?` is sent as a normal question, because paths aren't commands.
 
 ---
 
@@ -202,6 +226,7 @@ uv run python -m app.cli providers
 uv run python -m app.cli ask "How long are backups kept?" --model anthropic
 uv run python -m app.cli ask "What happens after the contract ends?" --language de --detailed
 uv run python -m app.cli ask "…" --json                      # the full JSON result
+uv run python -m app.cli ask "/claude How long are backups kept?"   # model chosen by command
 uv run python -m app.cli                                      # interactive session
 ```
 
@@ -216,6 +241,7 @@ docker compose exec backend python -m app.cli --url http://localhost:8000 ask "�
 - `/lang de`: fix the answer language (`/lang auto` resets it).
 - `/detail on`: detailed answers.
 - `/new`: start a new conversation. Follow-ups work within one conversation.
+- `/claude`, `/local` (also `/anthropic`, `/ollama`, `/ministral`): switch the model. `/claude <question>` asks one question with that model and keeps the selection. `/models` lists them.
 - `/help` and `/quit`.
 
 **Exit codes:** `0` answered, `2` not covered by the knowledge base, `1` error. Colours appear only on a terminal, and never when `NO_COLOR` is set.
@@ -253,9 +279,9 @@ docker compose -f docker-compose.yml -f docker-compose.claude-only.yml up -d --b
 
 | What | Command | Needs |
 |---|---|---|
-| Backend unit and API tests (157) | `cd backend && uv run pytest` | nothing |
+| Backend unit and API tests (159) | `cd backend && uv run pytest` | nothing |
 | Speed tests | `cd backend && uv run pytest -m perf -s` | nothing |
-| Frontend tests (28) | `cd frontend && npm test` | nothing |
+| Frontend tests (35) | `cd frontend && npm test` | nothing |
 | Retrieval benchmark | `cd backend && uv run python -m app.evaluation.retrieval --k 6` | Ollama |
 | Answer benchmark (18 questions) | `cd backend && uv run python -m app.evaluation.answers --provider anthropic` | Ollama + key (about $0.20) |
 | Follow-up benchmark (5 conversations) | `cd backend && uv run python -m app.evaluation.followups --provider anthropic` | Ollama + key (about $0.17) |
@@ -279,6 +305,7 @@ On the frontend, the admin tests are in `src/features/admin/*.test.tsx`.
    - Ask *"Which plans support SCIM user provisioning?"* with Claude. Show the citations and click a `[n]` chip.
    - Click **More detail**.
    - Ask *"And what about Business?"* to show a follow-up and its *Understood as* line.
+   - Type `/` to show the model commands, then `/local How long are backups kept?` to ask one question with the local model while Claude stays selected.
 2. **Language:** pick *Deutsch* and ask in English: the answer comes in German.
 3. **Refusal:** ask *"What does the Enterprise plan cost?"*: it's not covered, and it points to an SME request.
 4. **Admin area** (Ctrl+Shift+A):

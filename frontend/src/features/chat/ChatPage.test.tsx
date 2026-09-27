@@ -117,17 +117,91 @@ describe("ChatPage", () => {
     render(<ChatPage />);
 
     await user.selectOptions(screen.getByLabelText("Answer language"), "de");
-    await user.type(screen.getByLabelText("Your question"), "How long are backups kept?{Enter}");
-    await user.click(await screen.findByRole("button", { name: "More detail" }));
-    await waitFor(() => expect(screen.getAllByText("How long are backups kept?")).toHaveLength(2));
+    await user.type(
+      screen.getByLabelText("Your question"),
+      "How long are backups kept?{Enter}",
+    );
+    await user.click(
+      await screen.findByRole("button", { name: "More detail" }),
+    );
+    await waitFor(() =>
+      expect(screen.getAllByText("How long are backups kept?")).toHaveLength(2),
+    );
 
     const bodies = fetchMock.mock.calls
       .filter(([url]) => url.endsWith("/chat/stream"))
       .map(([, init]) => JSON.parse(init!.body as string));
     expect(bodies[0].options).toEqual({ provider: "ollama", language: "de" });
-    expect(bodies[1].options).toEqual({ provider: "ollama", language: "de", detail: "detailed" });
-    expect(screen.getByText("More detail", { selector: "span" })).toBeInTheDocument(); // tag on the question
+    expect(bodies[1].options).toEqual({
+      provider: "ollama",
+      language: "de",
+      detail: "detailed",
+    });
+    expect(
+      screen.getByText("More detail", { selector: "span" }),
+    ).toBeInTheDocument(); // tag on the question
     expect(localStorage.getItem("omnicorp-answer-language")).toBe("de");
     localStorage.clear();
+  });
+
+  it("switches the model with /claude and asks one question with /local <question>", async () => {
+    const fetchMock = mockBackend(sse("done", chatResponse()));
+    const user = userEvent.setup();
+    render(<ChatPage />);
+    const picker = await screen.findByLabelText("Model");
+    expect(picker).toHaveValue("ollama");
+
+    await user.type(screen.getByLabelText("Your question"), "/claude{Enter}");
+    expect(picker).toHaveValue("anthropic"); // the dropdown follows the command
+    expect(
+      await screen.findByText(/Model switched to Claude Opus/),
+    ).toBeInTheDocument();
+
+    await user.type(
+      screen.getByLabelText("Your question"),
+      "/local How long are backups kept?{Enter}",
+    );
+    expect(
+      await screen.findByText("How long are backups kept?"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Gemma 3 4B · local", { selector: "span" })).toBeInTheDocument(); // tag on the one-off question
+    expect(picker).toHaveValue("anthropic"); // the selection stays
+
+    const bodies = fetchMock.mock.calls
+      .filter(([url]) => url.endsWith("/chat/stream"))
+      .map(([, init]) => JSON.parse(init!.body as string));
+    expect(bodies).toEqual([
+      {
+        message: "How long are backups kept?",
+        options: { provider: "ollama" },
+      },
+    ]);
+  });
+
+  it("lists models, warns on unknown commands and suggests while typing", async () => {
+    const fetchMock = mockBackend(sse("done", chatResponse()));
+    const user = userEvent.setup();
+    render(<ChatPage />);
+    await screen.findByLabelText("Model");
+
+    await user.type(screen.getByLabelText("Your question"), "/cl");
+    const list = screen.getByRole("list", { name: "Model commands" });
+    expect(list).toHaveTextContent("/claude");
+    await user.keyboard("{Tab}");
+    expect(screen.getByLabelText("Your question")).toHaveValue("/claude ");
+    await user.clear(screen.getByLabelText("Your question"));
+
+    await user.type(screen.getByLabelText("Your question"), "/models{Enter}");
+    expect(
+      await screen.findByText(/\/claude, \/anthropic/),
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Your question"), "/gpt hi{Enter}");
+    expect(
+      await screen.findByText(/Unknown command \/gpt/),
+    ).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(([url]) => url.endsWith("/chat/stream")),
+    ).toBe(false);
   });
 });

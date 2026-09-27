@@ -5,7 +5,8 @@ local backend (--url http://localhost:8000).
 
   uv run python -m app.cli ask "How long are backups kept?" [--model anthropic]
                                [--language de] [--detailed] [--json]
-  uv run python -m app.cli                 interactive session (type /help)
+  uv run python -m app.cli ask "/claude How long are backups kept?"   model chosen by command
+  uv run python -m app.cli                 interactive session (/help, /claude, /local, /models)
   uv run python -m app.cli health
   uv run python -m app.cli providers
 
@@ -17,10 +18,11 @@ import argparse
 import json
 import os
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, TextIO
 
 from app.cli.api import ApiError, KbClient
+from app.cli.models import ModelCommand, label, model_commands, model_list, split_command
 from app.rag.chunking import SECTION_SEPARATOR
 
 DEFAULT_URL = os.environ.get("OMNICORP_KB_URL", "http://localhost:8080")
@@ -29,6 +31,9 @@ LANGUAGES = ("en", "de", "fr", "es", "it", "pt", "nl", "pl")
 
 HELP = """Commands:
   /new              start a new conversation
+  /claude, /local   switch the model (also /anthropic, /ollama, /ministral; see /models)
+  /claude QUESTION  ask one question with that model; the selection stays
+  /models           list the models and their commands
   /model NAME       use a model provider (e.g. anthropic, ollama); /model alone = default
   /lang CODE        answer language (en, de, fr, ...); /lang auto = the question's language
   /detail on|off    detailed answers
@@ -119,6 +124,7 @@ def repl(client: KbClient, session: Session, inp: TextIO, out: TextIO, style: St
     out.write(
         style.bold("OmniCorp knowledge base") + style.dim("  (type /help, /quit to leave)") + "\n"
     )
+    commands = load_commands(client)
     while True:
         out.write("\n> ")
         out.flush()
@@ -129,7 +135,10 @@ def repl(client: KbClient, session: Session, inp: TextIO, out: TextIO, style: St
         text = line.strip()
         if not text:
             continue
-        if text.startswith("/"):
+        # "/word ..." is a command; "/v3/records:batch ..." and other paths are questions.
+        if text.startswith("/") and split_command(text) is not None:
+            if model_command(client, session, commands, text, out, style):
+                continue
             if command(text, session, out, style) == "quit":
                 return EXIT_OK
             continue
@@ -137,6 +146,51 @@ def repl(client: KbClient, session: Session, inp: TextIO, out: TextIO, style: St
             ask(client, session, text, out, style)
         except ApiError as exc:
             out.write(style.error(f"Error: {exc}") + "\n")
+
+
+def load_commands(client: KbClient) -> dict[str, ModelCommand]:
+    """Model commands for the enabled providers; none if the API cannot be reached yet."""
+    try:
+        return model_commands(client.get("/providers")["providers"])
+    except (ApiError, ValueError, KeyError, TypeError):
+        return {}
+
+
+def model_command(
+    client: KbClient,
+    session: Session,
+    commands: dict[str, ModelCommand],
+    text: str,
+    out: TextIO,
+    style: Style,
+) -> bool:
+    """Handles /models, /<model> and /<model> <question>; False if `text` is another command."""
+    parsed = split_command(text)
+    if parsed is None:
+        return False
+    name, question = parsed
+    if name == "models":
+        out.write(model_list(commands, session.provider) + "\n")
+        return True
+    found = commands.get(name)
+    if found is None:
+        return False
+    provider = found.provider
+    if not provider.get("available", True):
+        detail = f": {provider['detail']}" if provider.get("detail") else ""
+        out.write(style.warn(f"{label(provider)} is not available right now{detail}.") + "\n")
+    elif question:
+        # This question only: the selection stays, the conversation continues.
+        one_off = replace(session, provider=provider["name"])
+        try:
+            ask(client, one_off, question, out, style)
+        except ApiError as exc:
+            out.write(style.error(f"Error: {exc}") + "\n")
+        session.conversation_id = one_off.conversation_id
+    else:
+        session.provider = provider["name"]
+        out.write(style.dim(f"Model switched to {label(provider)}.") + "\n")
+    return True
 
 
 def command(text: str, session: Session, out: TextIO, style: Style) -> str | None:
@@ -203,11 +257,21 @@ def main(
     try:
         if args.cmd == "ask":
             session = Session(provider=args.model, language=args.language, detailed=args.detailed)
+            question = args.question
+            # `ask "/claude How long ...?"` picks the model like the interactive session does.
+            parsed = split_command(question)
+            if parsed is not None and parsed[0] != "models":
+                found = load_commands(kb).get(parsed[0])
+                if found is None:
+                    raise ApiError("unknown_model", f"Unknown model command /{parsed[0]}.")
+                if not parsed[1]:
+                    raise ApiError("no_question", f"Add a question after /{parsed[0]}.")
+                session.provider, question = found.provider["name"], parsed[1]
             if args.json:
-                result = kb.chat(session.body(args.question))
+                result = kb.chat(session.body(question))
                 out.write(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
                 return EXIT_NOT_COVERED if result["refused"] else EXIT_OK
-            return ask(kb, session, args.question, out, style)
+            return ask(kb, session, question, out, style)
         if args.cmd == "health":
             health = kb.get("/health")
             index = health["index"]

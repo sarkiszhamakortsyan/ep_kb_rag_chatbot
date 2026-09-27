@@ -20,6 +20,7 @@ import {
 import { getHealth, getProviders } from "../../api/client";
 import type { Health, Provider } from "../../api/types";
 import { AssistantBubble } from "./AssistantBubble";
+import { modelCommands, parseInput, suggestions } from "./commands";
 import { LogoMark } from "./LogoMark";
 import { LANGUAGES, readLanguage, storeLanguage } from "./languages";
 import { providerLabel } from "./providers";
@@ -50,7 +51,7 @@ const EXAMPLES: { topic: string; icon: LucideIcon; question: string }[] = [
 const MAX_CHARS = 4000;
 
 export function ChatPage() {
-  const { messages, busy, ask, stop, newConversation } = useChat();
+  const { messages, busy, ask, stop, newConversation, addNotice } = useChat();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [provider, setProvider] = useState<string>("");
   const [language, setLanguage] = useState(readLanguage);
@@ -100,15 +101,66 @@ export function ChatPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const send = (question: string, detailed = false) =>
-    void ask(question, {
-      provider: provider || undefined,
-      language: language || undefined,
-      detail: detailed ? "detailed" : undefined,
-    });
+  // `model` overrides the selected model for this question only (a "/<model> question"
+  // command, or a retry of such a question).
+  const send = (question: string, detailed = false, model?: string) => {
+    const chosen = model ?? provider;
+    const override =
+      model && model !== provider
+        ? providers.find((p) => p.name === model)
+        : undefined;
+    void ask(
+      question,
+      {
+        provider: chosen || undefined,
+        language: language || undefined,
+        detail: detailed ? "detailed" : undefined,
+      },
+      override ? providerLabel(override) : undefined,
+    );
+  };
+
+  // Typed input: a question, or a model command (/claude, /local, /models, ...).
+  const handleInput = (text: string) => {
+    const parsed = parseInput(text, providers);
+    switch (parsed.kind) {
+      case "question":
+        send(parsed.text);
+        break;
+      case "switch":
+        setProvider(parsed.provider.name);
+        addNotice(`Model switched to ${providerLabel(parsed.provider)}.`);
+        break;
+      case "ask":
+        send(parsed.question, false, parsed.provider.name);
+        break;
+      case "list":
+        addNotice(modelList(providers, provider));
+        break;
+      case "unknown":
+        addNotice(
+          `Unknown command /${parsed.name}. Type /models to see the available models.`,
+          "warning",
+        );
+        break;
+      case "unavailable":
+        addNotice(
+          `${providerLabel(parsed.provider)} is not available right now${parsed.provider.detail ? `: ${parsed.provider.detail}` : ""}.`,
+          "warning",
+        );
+        break;
+    }
+  };
+
   const empty = messages.length === 0;
   const composer = (
-    <Composer busy={busy} onSend={send} onStop={stop} autoFocus={empty} />
+    <Composer
+      busy={busy}
+      onSend={handleInput}
+      onStop={stop}
+      autoFocus={empty}
+      providers={providers}
+    />
   );
 
   return (
@@ -188,11 +240,28 @@ export function ChatPage() {
         ) : (
           <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-6">
             {messages.map((m) =>
-              m.role === "user" ? (
+              m.role === "notice" ? (
+                <p
+                  key={m.id}
+                  role="status"
+                  className={`mx-auto max-w-[90%] rounded-lg px-3 py-1.5 text-center text-xs whitespace-pre-line ${
+                    m.tone === "warning"
+                      ? "bg-warning-soft text-warning-ink"
+                      : "bg-subtle text-ink-muted"
+                  }`}
+                >
+                  {m.text}
+                </p>
+              ) : m.role === "user" ? (
                 <div
                   key={m.id}
                   className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-brand-soft px-4 py-2.5 whitespace-pre-wrap text-brand-ink"
                 >
+                  {m.model && (
+                    <span className="mb-1 block text-xs font-medium tracking-wide text-brand-ink/70 uppercase">
+                      {m.model}
+                    </span>
+                  )}
                   {m.detailed && (
                     <span className="mb-1 block text-xs font-medium tracking-wide text-brand-ink/70 uppercase">
                       More detail
@@ -204,8 +273,8 @@ export function ChatPage() {
                 <AssistantBubble
                   key={m.id}
                   message={m}
-                  onRetry={(q) => send(q, m.detailed)}
-                  onMoreDetail={(q) => send(q, true)}
+                  onRetry={(q) => send(q, m.detailed, m.provider)}
+                  onMoreDetail={(q) => send(q, true, m.provider)}
                 />
               ),
             )}
@@ -275,11 +344,23 @@ type ComposerProps = {
   onSend: (q: string) => void;
   onStop: () => void;
   autoFocus: boolean;
+  providers: Provider[];
 };
 
-function Composer({ busy, onSend, onStop, autoFocus }: ComposerProps) {
+function Composer({
+  busy,
+  onSend,
+  onStop,
+  autoFocus,
+  providers,
+}: ComposerProps) {
   const [draft, setDraft] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
+  const hints = suggestions(draft, providers);
+  const complete = (name: string) => {
+    setDraft(`/${name} `);
+    ref.current?.focus();
+  };
 
   // Grow with the text, up to a limit (then it scrolls).
   useEffect(() => {
@@ -296,11 +377,38 @@ function Composer({ busy, onSend, onStop, autoFocus }: ComposerProps) {
     setDraft("");
   };
   const onKeyDown = (e: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) submit(e);
+    if (e.key === "Tab" && hints.length > 0) {
+      e.preventDefault(); // Tab completes the first suggested command
+      complete(hints[0].name);
+    } else if (e.key === "Enter" && !e.shiftKey) submit(e);
   };
 
   return (
-    <form onSubmit={submit} className="w-full">
+    <form onSubmit={submit} className="relative w-full">
+      {hints.length > 0 && (
+        <ul
+          aria-label="Model commands"
+          className="absolute bottom-full left-0 z-10 mb-2 w-full max-w-sm overflow-hidden rounded-xl border border-line bg-surface py-1 shadow-lg"
+        >
+          {hints.map((c) => (
+            <li key={c.name}>
+              <button
+                type="button"
+                onClick={() => complete(c.name)}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-subtle"
+              >
+                <span className="font-mono text-ink">/{c.name}</span>
+                <span className="truncate text-xs text-ink-faint">
+                  {providerLabel(c.provider)}
+                </span>
+              </button>
+            </li>
+          ))}
+          <li className="border-t border-line px-3 pt-1.5 pb-1 text-[11px] text-ink-faint">
+            Tab to complete · add a question to ask it with that model only
+          </li>
+        </ul>
+      )}
       <div className="flex items-end gap-2 rounded-2xl border border-line-strong bg-surface p-2 shadow-sm transition focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15">
         <textarea
           ref={ref}
@@ -310,7 +418,7 @@ function Composer({ busy, onSend, onStop, autoFocus }: ComposerProps) {
           maxLength={MAX_CHARS}
           rows={1}
           autoFocus={autoFocus}
-          placeholder="Ask a question…"
+          placeholder="Ask a question… (type / to choose a model)"
           aria-label="Your question"
           className="max-h-[200px] min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none focus-visible:outline-none"
         />
@@ -364,4 +472,24 @@ function StatusBadge({ health }: { health: Health | null }) {
       <span className="sr-only md:not-sr-only">{label}</span>
     </span>
   );
+}
+
+/** The /models reply: every available model with its commands, and the current selection. */
+function modelList(providers: Provider[], selected: string): string {
+  const commands = modelCommands(providers);
+  const lines = providers.map((p) => {
+    const names = commands
+      .filter((c) => c.provider.name === p.name)
+      .map((c) => `/${c.name}`);
+    const state = p.available
+      ? p.name === selected
+        ? " (selected)"
+        : ""
+      : " (unavailable)";
+    return `${providerLabel(p)}: ${names.join(", ")}${state}`;
+  });
+  return [
+    ...lines,
+    "Type /<model> to switch, or /<model> <question> to ask one question with that model.",
+  ].join("\n");
 }
