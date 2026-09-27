@@ -453,7 +453,7 @@ All settings are environment variables, read from `.env` (see [`.env.example`](.
 | `ADMIN_TOKEN` | – | Enables the admin area (dev-features); empty = switched off |
 | `HISTORY_ENABLED` / `HISTORY_RETENTION_DAYS` | `true` / `90` | Store questions and answers for the admin area, and for how long |
 | `EMBEDDING_PROVIDER` / `LOCAL_EMBED_MODEL` | `ollama` / `google/embeddinggemma-300m` | `local` runs the embeddings inside the backend (dev-features, used by `docker-compose.claude-only.yml`) |
-| `MCP_TOKEN` / `MCP_ALLOWED_HOSTS` | – / `localhost,127.0.0.1` | MCP server over HTTP at `/api/mcp/` (dev-features); empty token = switched off |
+| `MCP_TOKEN` / `MCP_ALLOWED_HOSTS` | – / `localhost,127.0.0.1` | MCP server over HTTP at `/api/mcp/` (dev-mcp); empty token = switched off |
 | `MODEL_PRICES` / `LOCAL_COST_PER_HOUR` | Claude list prices / `0` | Costs tab: price overrides (JSON, USD per million tokens) and an optional hourly cost for the local model |
 
 ---
