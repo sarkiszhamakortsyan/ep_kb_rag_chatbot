@@ -1,0 +1,1508 @@
+ ▐▛███▛█   Claude Code v2.1.283
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~/git/ep_kb_rag_chatbot
+
+  Opus 5.5 is now your default model and it draws down usage faster than Sonnet 5. Switch anytime with /model.
+
+❯ continue                                                                      
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+● Scan clean. New export is superset of 08:17 export (same session, now through
+  phase 19). Moving it and committing with log update.
+
+● Bash(git mv -f 2>/dev/null; mv
+      2026-09-27-085127-check-the-file-documentationtaskdocsstepsmd-a.txt
+      documentation/ai-logs/cli-exports/2026-09-27-0851-session-8310ea63…)
+  ⎿  23ed04e Update the AI conversation logs
+  ⎿  2 files changed (binary, mode only or too large to show)
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Nothing was left to build, so I only tidied up the conversation logs. Phases
+  10–19 are all done and marked ✅ in ideas.md, and Phase 19 was already
+  committed and pushed.
+
+  - Your latest /export file: I checked it for API keys, tokens and private keys
+    and found none. I moved it to
+    documentation/ai-logs/cli-exports/2026-09-27-0851-session-8310ea63.txt. It
+    covers the same session as the 08:17 export, now up to the end of Phase 19.
+  - Committed and pushed: the new export and the updated session log
+    2026-09-25_8310ea63.md are in commit 23ed04e on dev-features. The working
+    tree is clean. dev-mcp doesn't have this log commit.
+
+  Next step is your call. I can merge dev-features into main/dev for the
+  official submission, bring dev-mcp up to date, or start a new idea if you add
+  one to ideas.md.
+
+✻ Cogitated for 29s · done 8:52 AM
+
+※ recap: You're building the OmniCorp knowledge-base RAG chatbot, and all feature phases are done, with the latest conversation logs committed and pushed on dev-features. Next, choose whether to merge dev-features into main/dev, update dev-mcp, or start a new idea. (disable recaps in /config)
+
+❯ Merge the changes from "dev-features" in "main-features", and from "dev-mcp"  
+  in "main-mcp". Check what is left to be done in                               
+  "features-which-we-can-try-to-implement" in the README                        
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● main-features and main-mcp don't exist, locally or on origin. Checking
+  ancestry and the README section before deciding.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Feature list: nothing left to build. Target branches missing. Creating them
+  from dev tips (fast-forward equivalent, main untouched).
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Neither main-features nor main-mcp existed, locally or on GitHub, so I created
+  both and pushed them. main and dev are not changed.
+
+  Branches:
+  - main-features now points to the same commit as dev-features (23ed04e, which
+    includes today's log update).
+  - main-mcp now points to the same commit as dev-mcp (0a0368e, Phase 19).
+  - Both sets of changes were built on main and dev, so this is the same result
+    a merge would give, with no merge commits and no conflicts.
+  - I didn't re-run CI on the new branches, because they are exactly the commits
+    that already passed CI. 23ed04e added only log files, and they are not
+    tested.
+  - dev-mcp doesn't have today's log-update commit (23ed04e), so main-mcp
+    doesn't either.
+
+  README "Features which we can try to implement": nothing is left to do.
+  - Eight of the nine items are ticked on both branches.
+  - The only unticked item is on dev-features: "Check if we can build the whole
+    Chatbot in an MCP server". It is built on dev-mcp, where it is ticked. It
+    stays unticked on dev-features on purpose, because the MCP server is kept
+    off that branch.
+
+  The branch notes in CLAUDE.md and my notes from earlier sessions mention only
+  the two dev-* branches. Do you want me to add the two main-* branches there,
+  and to say how they should be kept up to date?
+
+✻ Brewed for 47s · done 9:12 AM
+
+※ recap: Goal is keeping the release branches current: `main-features` now matches `dev-features` and `main-mcp` matches `dev-mcp`, and the README feature list has nothing left to build. Next, confirm whether to note the two `main-*` branches in `CLAUDE.md`. (disable recaps in /config)
+
+❯ yes, add the main branches to CLAUDE.md                                       
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      import re,subprocess…)
+  ⎿   CLAUDE.md                       | 2 +-
+      documentation/ai-logs/README.md | 2 ++
+      2 files changed, 3 insertions(+), 1 deletion(-)
+     … +2 lines (ctrl+o to expand)
+  ⎿  Updated CLAUDE.md (+1 -1)
+       4  
+       5  ## Project status
+       6  
+       7 -All phases (0–9) of the build plan in `documentation/taskdocs/s
+         -teps.md` are done. The README documents the architecture, API, 
+         -trade-offs, testing and AI usage; `documentation/evaluation.md`
+         - has the test and benchmark results (Claude 18/18, local `minis
+         -tral-3:3b` 17/18, plus a comparison of six local models). Key e
+         -ntry points: the API app factory `backend/app/main.py` (`create
+         -_app`) and `app/api/` (schemas, error mapping, SSE, background 
+         -index loading in `state.py`); the pipeline in `app/rag/pipeline
+         -.py`, with prompts in `app/prompts/*.md` and wiring in `app/ser
+         -vices.py`; shared test fakes in `backend/tests/fakes.py`. CI: `
+         -.github/workflows/ci.yml`. New features come from `documentatio
+         -n/taskdocs/ideas.md`, one at a time, on the **`dev-features`** 
+         -branch (`main`/`dev` stay the official submission). The MCP ser
+         -ver (phase 16) lives only on the separate **`dev-mcp`** branch 
+         -(dev-features + MCP); keep it out of `dev-features`. Their phas
+         -e plan and progress are at the end of `ideas.md`. Phase 10 adde
+         -d the admin area (`app/api/v1/admin/`, token check in `app/core
+         -/security.py`, SQLite history in `app/stores/history/`, fronten
+         -d `features/admin/`); phase 11 the Statistics tab (`app/stores/
+         -history/stats.py`, `/admin/stats`); phase 12 the Costs tab (`ap
+         -p/core/pricing.py`, `app/stores/history/costs.py`, `/admin/cost
+         -s`); phase 13 the Tests tab (`app/evaluation/runner.py`, `/admi
+         -n/eval`); phase 14 `options.detail`/`options.language` (`system
+         -_prompt()` in `app/rag/prompts.py`, "More detail" button, langu
+         -age selector); phase 15 the CLI (`app/cli/`); phase 17 runtime 
+         -model switches (`/admin/settings`) and Claude-only mode (`EMBED
+         -DING_PROVIDER=local`, `docker-compose.claude-only.yml`); phase 
+         -18 follow-up questions (rewrite step in `app/rag/pipeline.py`, 
+         -`recent_turns()` on the event stores); phase 19 model commands 
+         -typed in the chat/CLI (`/claude`, `/local`, `/models`: `fronten
+         -d/src/features/chat/commands.ts`, `backend/app/cli/models.py`).
+         - Keep this file's commands up to date.                         
+       7 +All phases (0–9) of the build plan in `documentation/taskdocs/s
+         +teps.md` are done. The README documents the architecture, API, 
+         +trade-offs, testing and AI usage; `documentation/evaluation.md`
+         + has the test and benchmark results (Claude 18/18, local `minis
+         +tral-3:3b` 17/18, plus a comparison of six local models). Key e
+         +ntry points: the API app factory `backend/app/main.py` (`create
+         +_app`) and `app/api/` (schemas, error mapping, SSE, background 
+         +index loading in `state.py`); the pipeline in `app/rag/pipeline
+         +.py`, with prompts in `app/prompts/*.md` and wiring in `app/ser
+         +vices.py`; shared test fakes in `backend/tests/fakes.py`. CI: `
+         +.github/workflows/ci.yml`. New features come from `documentatio
+         +n/taskdocs/ideas.md`, one at a time, on the **`dev-features`** 
+         +branch (`main`/`dev` stay the official submission). The MCP ser
+         +ver (phase 16) lives only on the separate **`dev-mcp`** branch 
+         +(dev-features + MCP); keep it out of `dev-features`. Stable cop
+         +ies: **`main-features`** tracks `dev-features` and **`main-mcp`
+         +** tracks `dev-mcp`. Never commit to them directly; fast-forwar
+         +d each one from its dev branch (`git push origin dev-features:m
+         +ain-features`, `git push origin dev-mcp:main-mcp`) once a chang
+         +e is finished and CI is green. Their phase plan and progress ar
+         +e at the end of `ideas.md`. Phase 10 added the admin area (`app
+         +/api/v1/admin/`, token check in `app/core/security.py`, SQLite 
+         +history in `app/stores/history/`, frontend `features/admin/`); 
+         +phase 11 the Statistics tab (`app/stores/history/stats.py`, `/a
+         +dmin/stats`); phase 12 the Costs tab (`app/core/pricing.py`, `a
+         +pp/stores/history/costs.py`, `/admin/costs`); phase 13 the Test
+         +s tab (`app/evaluation/runner.py`, `/admin/eval`); phase 14 `op
+         +tions.detail`/`options.language` (`system_prompt()` in `app/rag
+         +/prompts.py`, "More detail" button, language selector); phase 1
+         +5 the CLI (`app/cli/`); phase 17 runtime model switches (`/admi
+         +n/settings`) and Claude-only mode (`EMBEDDING_PROVIDER=local`, 
+         +`docker-compose.claude-only.yml`); phase 18 fol … [+284 chars] 
+       8  
+       9  ## Commands
+      10  
+  ⎿  PostToolUse:Bash says: Tip: Run /ultrareview before you push to catch bugs 
+     with a cloud-based multi-agent review — 3 free reviews left.
+
+● commit -a also picked up documentation/ai-logs/README.md. Checking what
+  changed there.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Index line for moved export, added by log hook. Correct, keep. Committing new
+  session log and updating memory.
+
+  Ran 2 shell commands, wrote 1 memory (ctrl+o to expand)
+
+● I added the two stable branches to CLAUDE.md on both dev-features and dev-mcp,
+  right after the existing note that keeps MCP out of dev-features. The new
+  text says:
+
+  ▎ Stable copies: main-features tracks dev-features and main-mcp tracks 
+  ▎ dev-mcp. Never commit to them directly; fast-forward each one from its dev 
+  ▎ branch (git push origin dev-features:main-features, git push origin 
+  ▎ dev-mcp:main-mcp) once a change is finished and CI is green.
+
+  - Pushed: both dev branches, and I brought main-features and main-mcp up to
+    date with them in the same way the note describes.
+  - Extra file in the first commit: commit -a also committed
+    documentation/ai-logs/README.md. The only change there was the automatic log
+    export adding a link to this morning's export file. That is correct, so I
+    kept it.
+  - Session log: I committed this session's conversation log as 2c3404f on
+    dev-features, and pushed it to main-features too.
+  - My notes: I recorded the same branch rule in my memory for future sessions.
+
+  dev-mcp and main-mcp got only the CLAUDE.md change, not the conversation-log
+  commits.
+
+✻ Brewed for 48s · done 9:21 AM
+
+❯ now backend is using port 8000 and the frontend is using 5173. If the ports   
+  are already in use, then the Chatbot is not going to start. Make a check and  
+  if any of the port is busy, to use other one (next one, or method used in     
+  best practices). Also, if the port busy, message must be shown with the ports 
+  that are currently used to make sure that I will be able to know how to       
+  access the environment                                                        
+
+  Listed 3 directories, ran 2 shell commands (ctrl+o to expand)
+
+● Writing scripts/start.py: free-port check and launcher for local dev
+  (8000/5173) and Docker (8080/11434).
+
+● Write(scripts/start.py)
+  ⎿  Wrote 306 lines to scripts/start.py
+       1 #!/usr/bin/env python3
+       3 
+       4 A fixed port that is already taken stops the backend (uvicorn) o
+       5 starting. This launcher checks each port first and, when it is b
+         usy, takes the next free one
+         e actually in use.
+       7 
+       9   python3 scripts/start.py dev                   # backend (uvic
+         orn --reload) + frontend (Vite)
+         e up -d --build
+     … +358 lines (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      p="scripts/start.py"; s=open(p).read()…)  ⎿   .env.example                                 |   4 +
+      docker-compose.yml                           |   2 +-
+      documentation/ai-logs/2026-09-27_0cfe740d.md | 172 ++++++++++++++++++
+     … +67 lines (ctrl+o to expand)
+  ⎿  Updated scripts/start.py (+4 -4)
+      63      return True
+      64  
+      65  
+      66 -def find_free_port(preferred: int, taken: set[int] = frozenset(
+         -)) -> int:  # type: ignore[assignment]                         
+      66 +def find_free_port(preferred: int, taken: set[int] | None = Non
+         +e) -> int:                                                     
+      67      """The preferred port if it is free, else the next free one
+           (skipping `taken`)."""
+      68      for port in range(preferred, min(preferred + MAX_TRIES + 1,
+           65536)):
+      69 -        if port not in taken and port_is_free(port):           
+      69 +        if port not in (taken or set()) and port_is_free(port):
+      70              return port
+      71      sys.exit(f"No free port found in {preferred}-{preferred + M
+          AX_TRIES}.")
+      72  
+     ...
+      86      """Pick a port. `own` is a port this project's running cont
+          ainer already holds: reuse it."""
+      87      if own is not None:
+      88          return PortChoice(name, preferred, own)
+      89 -    return PortChoice(name, preferred, find_free_port(preferred
+         -, taken or set()))                                             
+      89 +    return PortChoice(name, preferred, find_free_port(preferred
+         +, taken))                                                      
+      90  
+      91  
+      92  def report_ports(choices: list[PortChoice]) -> None:
+     ...
+      275          pass
+      276      finally:
+      277          stop(procs)
+      278 -    failed = [p.returncode for p in procs if p.returncode not 
+          -in (0, None, -signal.SIGINT)]                                 
+      278 +    failed = [p.returncode for p in procs if p.returncode not 
+          +in (0, None, 130, -signal.SIGINT)]                            
+      279      return failed[0] if failed else 0
+      280  
+      281  
+  ⎿  Updated frontend/vite.config.ts (+2 -1)
+       6    plugins: [react(), tailwindcss()],
+       7    server: {
+       8      // Local development: forward API calls to the backend (ngi
+          nx does this in Docker).
+       9 -    proxy: { "/api": "http://localhost:8000" },                
+       9 +    // scripts/start.py sets API_PROXY_TARGET when port 8000 is
+         + busy.                                                         
+      10 +    proxy: { "/api": process.env.API_PROXY_TARGET ?? "http://lo
+         +calhost:8000" },                                               
+      11    },
+      12    test: {
+      13      environment: "jsdom",
+  ⎿  Updated docker-compose.yml (+1 -1)
+      17    ollama:
+      18      image: ollama/ollama:0.34.4
+      19      ports:
+      20 -      - "127.0.0.1:11434:11434" # host access for local develop
+         -ment and integration tests                                     
+      20 +      - "127.0.0.1:${OLLAMA_PORT:-11434}:11434" # host access f
+         +or local development and integration tests                     
+      21      volumes:
+      22        - ollama-models:/root/.ollama
+      23      environment:
+  ⎿  Updated .env.example (+4 -0)
+       3  # --- Docker Compose ------------------------------------------
+          -------------
+       4  # Host port of the web UI
+       5  FRONTEND_PORT=8080
+       6 +# Host port of Ollama (published on 127.0.0.1 for local develop
+         +ment and integration tests)                                    
+       7 +OLLAMA_PORT=11434                                              
+       8 +# scripts/start.py treats these ports (and BACKEND_PORT=8000, F
+         +RONTEND_DEV_PORT=5173 for                                      
+       9 +# `start.py dev`) as preferred: when one is busy it takes the n
+         +ext free one and says so.                                      
+      10  
+      11  # --- LLM providers -------------------------------------------
+          --------------
+      12  # Chat provider used by default: ollama | anthropic
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot && python3 - <<'EOF'
+      p="scripts/start.py"; s=open(p).read()…)
+  ⎿  1 file reformatted
+     All checks passed!
+     Success: no issues found in 1 source file
+  ⎿  Updated scripts/start.py (+17 -11)
+      82          return self.port != self.preferred
+      83  
+      84  
+      85 -def choose(name: str, preferred: int, own: int | None = None, t
+         -aken: set[int] | None = None) -> PortChoice:                   
+      85 +def choose(                                                    
+      86 +    name: str, preferred: int, own: int | None = None, taken: s
+         +et[int] | None = None                                          
+      87 +) -> PortChoice:                                               
+      88      """Pick a port. `own` is a port this project's running cont
+          ainer already holds: reuse it."""
+      89      if own is not None:
+      90          return PortChoice(name, preferred, own)
+     ...
+      164  
+      165  
+      166  def run_docker(claude_only: bool) -> int:
+      165 -    frontend = choose("Web UI", int_setting("FRONTEND_PORT", 8
+          -080), own=compose_port("frontend", 80))                       
+      167 +    frontend = choose(                                        
+      168 +        "Web UI", int_setting("FRONTEND_PORT", 8080), own=comp
+          +ose_port("frontend", 80)                                      
+      169 +    )                                                         
+      170      choices = [frontend]
+      171      env = dict(os.environ, FRONTEND_PORT=str(frontend.port))
+      172      if not claude_only:
+     ...
+      196          lines.append(("Ollama", f"http://127.0.0.1:{choices[1]
+           .port}"))
+      197      lines.append(("CLI", f"cd backend && uv run python -m app.
+           cli --url {url}"))
+      198      summary("OmniCorp KB chatbot is running (Docker)", lines, 
+           choices)
+      195 -    print("  Stop with: docker compose down. Start again with 
+          -scripts/start.py so ports are re-checked.\n")                 
+      199 +    print("  Stop: docker compose down. Start again with scrip
+          +ts/start.py to re-check ports.\n")                            
+      200      return 0
+      201  
+      202  
+     ...
+      218  def stop(procs: list[subprocess.Popen[bytes]]) -> None:
+      219      for p in procs:
+      220          if p.poll() is None:
+      217 -            p.send_signal(signal.SIGINT if os.name != "nt" els
+          -e signal.CTRL_BREAK_EVENT)                                    
+      221 +            p.terminate() if os.name == "nt" else p.send_signa
+          +l(signal.SIGINT)                                              
+      222      for p in procs:
+      223          try:
+      224              p.wait(timeout=10)
+     ...
+      239      ollama_port = compose_port("ollama", 11434)
+      240      if ollama_port and setting("OLLAMA_BASE_URL", DEFAULT_OLLA
+           MA_URL) == DEFAULT_OLLAMA_URL:
+      241          backend_env["OLLAMA_BASE_URL"] = f"http://localhost:{o
+           llama_port}"
+      238 -    ollama_url = backend_env.get("OLLAMA_BASE_URL") or setting
+          -("OLLAMA_BASE_URL", DEFAULT_OLLAMA_URL)                       
+     … 38 more lines (ctrl+o to expand)
+
+● Now live test: occupy 8000 and 5173, run start.py dev.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Found issue: uvicorn --reload binds port before it listens, so summary printed
+  too early (first proxy call refused). Readiness must use real connect, not
+  bind.
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot && kill -INT 1029179; sleep 5; ps -eo
+      pid,args | grep -E "start.py|8001|5174" | grep -v grep || echo "all
+      children stopped";…)
+  ⎿  1029179 python3 scripts/start.py dev
+     1029209 /home/sako/.local/bin/uv run uvicorn app.main:api --reload --p
+     ort 8001
+     … +10 lines (ctrl+o to expand)
+  ⎿  Updated scripts/start.py (+12 -4)
+      38  # --- Port checks ---------------------------------------------
+          ----------------
+      39  
+      40  
+      41 -def port_is_free(port: int) -> bool:                           
+      42 -    """True when nothing listens on `port` (IPv4 or IPv6) and a
+         - server could bind it."""                                      
+      41 +def accepts_connections(port: int) -> bool:                    
+      42 +    """True when a server on this machine accepts connections o
+         +n `port` (IPv4 or IPv6)."""                                    
+      43      for host in ("127.0.0.1", "::1"):
+      44          try:
+      45              with socket.create_connection((host, port), timeout
+          =0.3):
+      46 -                return False  # something accepted the connecti
+         -on                                                             
+      46 +                return True                                    
+      47          except OSError:
+      48              pass
+      49 +    return False                                               
+      50 +                                                               
+      51 +                                                               
+      52 +def port_is_free(port: int) -> bool:                           
+      53 +    """True when nothing listens on `port` (IPv4 or IPv6) and a
+         + server could bind it."""                                      
+      54 +    if accepts_connections(port):                              
+      55 +        return False                                           
+      56      for family, host in ((socket.AF_INET, "0.0.0.0"), (socket.A
+          F_INET6, "::")):
+      57          try:
+      58              sock = socket.socket(family, socket.SOCK_STREAM)
+     ...
+      216      while time.monotonic() < deadline:
+      217          if any(p.poll() is not None for p in procs):
+      218              return False
+      212 -        if all(not port_is_free(port) for port in ports):     
+      219 +        # Not a bind test: uvicorn --reload binds the port bef
+          +ore its worker listens.                                       
+      220 +        if all(accepts_connections(port) for port in ports):  
+      221              return True
+      222          time.sleep(0.5)
+      223      return False
+
+● SIGINT ignored because test ran launcher as background job (inherited
+  SIG_IGN). Making stop path robust: handle SIGTERM, stop children with
+  terminate().
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot && kill 1029176; python3 - <<'EOF'
+      p="scripts/start.py"; s=open(p).read()…)
+  ⎿  1 file reformatted
+     All checks passed!
+     Success: no issues found in 1 source file
+  ⎿  Updated scripts/start.py (+13 -2)
+      226  def stop(procs: list[subprocess.Popen[bytes]]) -> None:
+      227      for p in procs:
+      228          if p.poll() is None:
+      229 -            p.terminate() if os.name == "nt" else p.send_signa
+          -l(signal.SIGINT)                                              
+      229 +            p.terminate()  # uv and npm pass the signal on to 
+          +uvicorn and Vite                                              
+      230      for p in procs:
+      231          try:
+      232              p.wait(timeout=10)
+     ...
+      234              p.kill()
+      235  
+      236  
+      237 +def interrupt(signum: int, frame: object) -> None:            
+      238 +    raise KeyboardInterrupt                                   
+      239 +                                                              
+      240 +                                                              
+      241  def run_dev() -> int:
+      242 +    # Ctrl+C and `kill` both stop the servers, even when start
+          +ed as a background job.                                       
+      243 +    signal.signal(signal.SIGINT, interrupt)                   
+      244 +    signal.signal(signal.SIGTERM, interrupt)                  
+      245      uv, npm = require("uv"), require("npm")
+      246      backend = choose("Backend", int_setting("BACKEND_PORT", 80
+           00))
+      247      frontend = choose("Frontend", int_setting("FRONTEND_DEV_PO
+           RT", 5173), taken={backend.port})
+     ...
+      292          pass
+      293      finally:
+      294          stop(procs)
+      288 -    failed = [p.returncode for p in procs if p.returncode not 
+          -in (0, None, 130, -signal.SIGINT)]                            
+      295 +    failed = [                                                
+      296 +        p.returncode                                          
+      297 +        for p in procs                                        
+      298 +        if p.returncode not in (0, None, 130, 143, -signal.SIG
+          +INT, -signal.SIGTERM)                                         
+      299 +    ]                                                         
+      300      return failed[0] if failed else 0
+      301  
+      302  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● I found port 8001's bind check fails due to lingering TIME_WAIT (servers
+  themselves use SO_REUSEADDR), and Vite's npm→sh→node process chain survives
+  the stop command. I'll fix this by adding SO_REUSEADDR to the bind test and
+  running children in their own process group so stop can kill the whole group.
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot && for p in $(ps -eo pid,args | grep
+      -E -- "--port (8001|8002|5174)" | grep -v grep | awk '{print $1}'); do
+      kill $p; done; p…)
+  ⎿  2
+     1 file left unchanged
+     All checks passed!
+     Success: no issues found in 1 source file
+  ⎿  Updated scripts/start.py (+14 -3)
+      59          except OSError:
+      60              continue  # no IPv6 on this machine
+      61          with sock:
+      62 +            if os.name != "nt":                                
+      63 +                # Like uvicorn and Vite: ignore closed connecti
+         +ons still in TIME_WAIT.                                        
+      64 +                sock.setsockopt(socket.SOL_SOCKET, socket.SO_RE
+         +USEADDR, 1)                                                    
+      65              if family == socket.AF_INET6:
+      66                  sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV
+          6_V6ONLY, 1)
+      67              try:
+     ...
+      229  def stop(procs: list[subprocess.Popen[bytes]]) -> None:
+      230      for p in procs:
+      231          if p.poll() is None:
+      229 -            p.terminate()  # uv and npm pass the signal on to 
+          -uvicorn and Vite                                              
+      232 +            if os.name == "nt":                               
+      233 +                p.terminate()                                 
+      234 +            else:  # the whole group: npm starts Vite through 
+          +a shell that doesn't pass signals on                          
+      235 +                os.killpg(p.pid, signal.SIGTERM)              
+      236      for p in procs:
+      237          try:
+      238              p.wait(timeout=10)
+      239          except subprocess.TimeoutExpired:
+      234 -            p.kill()                                          
+      240 +            if os.name == "nt":                               
+      241 +                p.kill()                                      
+      242 +            else:                                             
+      243 +                os.killpg(p.pid, signal.SIGKILL)              
+      244  
+      245  
+      246  def interrupt(signum: int, frame: object) -> None:
+     ...
+      248  
+      249  
+      250  def run_dev() -> int:
+      242 -    # Ctrl+C and `kill` both stop the servers, even when start
+          -ed as a background job.                                       
+      251 +    # Ctrl+C and `kill` both stop the servers (they run in the
+          +ir own process groups).                                       
+      252      signal.signal(signal.SIGINT, interrupt)
+      253      signal.signal(signal.SIGTERM, interrupt)
+      254      uv, npm = require("uv"), require("npm")
+     ...
+      272              [uv, "run", "uvicorn", "app.main:api", "--reload",
+            "--port", str(backend.port)],
+      273              cwd=REPO_ROOT / "backend",
+      274              env=backend_env,
+     … 10 more lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Dev mode works: both default ports blocked, launcher moved to 8001/5174, UI
+  proxy reached backend, clean stop. Now Docker mode test against running stack.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Own containers keep their ports. Now: 8080 held by foreign process.
+
+● Bash(sed -i 's|    print("\$", " ".join(cmd\[1:\]), flush=True)|    print("$
+      docker", " ".join(cmd[1:]), flush=True)|' scripts/start.py && grep -n
+      'print("\$ docker'…)
+  ⎿  194:    print("$ docker", " ".join(cmd[1:]), flush=True)
+     exit 0
+     Port check:
+     … +12 lines (ctrl+o to expand)
+  ⎿  Updated scripts/start.py (+1 -1)
+      191      report_ports(choices)
+      192  
+      193      cmd = [*compose_cmd(claude_only), "up", "-d", "--build"]
+      194 -    print("$", " ".join(cmd[1:]), flush=True)                 
+      194 +    print("$ docker", " ".join(cmd[1:]), flush=True)          
+      195      code = subprocess.run(cmd, cwd=REPO_ROOT, env=env).returnc
+           ode
+      196      if code != 0:
+      197          return code
+  ⎿  (timeout 10m)
+
+● Found two bugs: the health check on 8081 returns empty right after startup
+  (likely a timing issue), and the second run kept using 8081 with an incorrect
+  "in use" message even though 8080 was free again. I'll fix this so the app
+  only reuses its own port when the preferred port is actually busy.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      p="scripts/start.py"; s=open(p).read()…)
+  ⎿  1 file left unchanged
+     All checks passed!
+     Success: no issues found in 1 source file
+     … +8 lines (ctrl+o to expand)
+  ⎿  Updated scripts/start.py (+4 -3)
+       95  def choose(
+       96      name: str, preferred: int, own: int | None = None, taken: 
+           set[int] | None = None
+       97  ) -> PortChoice:
+       98 -    """Pick a port. `own` is a port this project's running con
+          -tainer already holds: reuse it."""                            
+       99 -    if own is not None:                                       
+      100 -        return PortChoice(name, preferred, own)               
+       98 +    """Pick a port. `own` is the port this project's running c
+          +ontainer already publishes."""                                
+       99 +    if own is not None and (own == preferred or not port_is_fr
+          +ee(preferred)):                                               
+      100 +        return PortChoice(name, preferred, own)  # keep it; el
+          +se move back to the preferred one                             
+      101      return PortChoice(name, preferred, find_free_port(preferre
+           d, taken))
+      102  
+      103  
+     ...
+      195      code = subprocess.run(cmd, cwd=REPO_ROOT, env=env).returnc
+           ode
+      196      if code != 0:
+      197          return code
+      198 +    wait_for([frontend.port], [])  # nginx may need a moment a
+          +fter `up -d`                                                  
+      199  
+      200      url = f"http://localhost:{frontend.port}"
+      201      lines = [
+  ⎿  (timeout 10m)
+
+● Docker mode fixed: moves back to 8080 once free, UI answers before summary.
+  Adding unit tests for port logic.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(backend/tests/unit/test_start_script.py)
+  ⎿  Wrote 82 lines to backend/tests/unit/test_start_script.py
+       1 """scripts/start.py: free-port selection for the dev servers and
+          the Docker stack."""
+       2 
+       3 import importlib.util
+       4 import socket
+       6 from collections.abc import Iterator
+       7 from pathlib import Path
+       8 from types import ModuleType
+       9 
+      10 import pytest
+     … +85 lines (ctrl+o to expand)
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot/backend && sed -i 's/
+      monkeypatch.delenv("FRONTEND_PORT", raising=False)/
+      monkeypatch.delenv("FRONTEND_PORT", raising=…)
+  ⎿  Success: no issues found in 74 source files
+     ......................
+        [100%]
+     166 passed, 11 deselected in 6.55s
+  ⎿  Updated backend/tests/unit/test_start_script.py (+2 -3)
+      36      assert not start.port_is_free(listener)
+      37  
+      38  
+      39 -def test_busy_preferred_port_moves_to_the_next_free_one(       
+      40 -    start: ModuleType, listener: int                           
+      41 -) -> None:                                                     
+      39 +def test_busy_preferred_port_moves_to_the_next_free_one(start: 
+         +ModuleType, listener: int) -> None:                            
+      40      choice = start.choose("Backend", listener)
+      41      assert choice.port > listener
+      42      assert choice.moved
+     ...
+      75      (tmp_path / ".env").write_text(env_file)
+      76      monkeypatch.setattr(start, "REPO_ROOT", tmp_path)
+      77      monkeypatch.delenv("FRONTEND_PORT", raising=False)
+      78 +    monkeypatch.delenv("BACKEND_PORT", raising=False)          
+      79      monkeypatch.setenv("OLLAMA_PORT", "11600")
+      80      assert start.int_setting("FRONTEND_PORT", 8080) == 9090
+      81      assert start.int_setting("OLLAMA_PORT", 11434) == 11600  # 
+          the environment wins
+  ⎿  (timeout 5m)
+
+● Tests green (166). Updating docs: README, CLAUDE.md, features guide.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      def rep(p, pairs):…)
+  ⎿  21:- [Quick start](#quick-start)
+  ⎿  Updated README.md (+38 -1)
+      49  - **Using Claude (recommended on machines without a GPU):** set
+           `ANTHROPIC_API_KEY=...` in `.env`, then run `docker compose up
+           -d`. Pick *anthropic* in the **Model** selector, or set `LLM_P
+          ROVIDER=anthropic` to make it the default. Ollama still runs, b
+          ecause it provides the embeddings.
+      50  - **Check the status:** `curl localhost:8080/api/v1/health`. Th
+          e backend container isn't published: the UI's nginx forwards `/
+          api/*` to it. For the interactive Swagger UI (`/docs`), run the
+           backend locally (see below) and open `http://localhost:8000/do
+          cs`.
+      51  - **Stop:** `docker compose down` (add `-v` to also delete the 
+          models and the index).
+      52 +- **Port already in use?** `docker compose up` fails when port 
+         +8080 (web UI) or 11434 (Ollama) is taken. Start with `python3 s
+         +cripts/start.py docker` instead (add `--claude-only` for Claude
+         +-only mode): it checks both ports, takes the next free one when
+         + a port is busy, and prints the URLs in use. See [Ports](#ports
+         +).                                                             
+      53  
+      54  ### Local development (without Docker for the app)
+      55  
+     ...
+      59  cd frontend && npm ci && npm run dev                           
+              # :5173, proxies /api -> :8000
+      60  ```
+      61  
+      62 +Or start both servers with one command, on free ports: `python3
+         + scripts/start.py dev` (after `uv sync` and `npm ci`). Ctrl+C s
+         +tops both.                                                     
+      63 +                                                               
+      64 +### Ports                                                      
+      65 +                                                               
+      66 +`scripts/start.py` (Python standard library only) checks every 
+         +port before starting. A busy port is replaced by the next free 
+         +one, and the script prints what it chose:                      
+      67 +                                                               
+      68 +```text                                                        
+      69 +Port check:                                                    
+      70 +  ! Backend: port 8000 is already in use, using 8001 instead   
+      71 +  ! Frontend: port 5173 is already in use, using 5174 instead  
+      72 +===============================================================
+         +=========                                                      
+      73 +  OmniCorp KB chatbot is running (local development)           
+      74 +---------------------------------------------------------------
+         +---------                                                      
+      75 +  Chat UI      http://localhost:5174                           
+      76 +  Admin area   http://localhost:5174/admin                     
+      77 +  Backend API  http://localhost:8001/api/v1/health             
+      78 +  Swagger UI   http://localhost:8001/docs                      
+      79 +  Ollama       http://localhost:11434                          
+      80 +  CLI          cd backend && uv run python -m app.cli --url htt
+         +p://localhost:8001                                             
+      81 +---------------------------------------------------------------
+         +---------                                                      
+      82 +  Note: Backend uses port 8001 because 8000 is already in use. 
+      83 +  Note: Frontend uses port 5174 because 5173 is already in use.
+      84 +===============================================================
+         +=========                                                      
+      85 +```                                                            
+      86 +                                                               
+      87 +| Mode | Ports (preferred) | Set in `.env` or the environment |
+      88 +|---|---|---|                                                  
+      89 +| `start.py dev` | backend 8000, frontend 5173 | `BACKEND_PORT`
+         +, `FRONTEND_DEV_PORT` |                                        
+      90 +| `start.py docker` | web UI 8080, Ollama 11434 | `FRONTEND_POR
+         +T`, `OLLAMA_PORT` |                                            
+      91 +                                                               
+     … 17 more lines (ctrl+o to expand)
+  ⎿  Updated documentation/features-guide.md (+3 -0)
+      40  - **The chat** is at http://localhost:8080.
+      41  - **The admin area** is at http://localhost:8080/admin, or pres
+          s **Ctrl+Shift+A** in the chat. Sign in with the `ADMIN_TOKEN` 
+          value.
+      42  - **After changing `.env`**, run `docker compose up -d backend`
+           to apply it.
+      43 +- **Port 8080 or 11434 already in use?** Start with `python3 sc
+         +ripts/start.py docker` instead. It takes the next free port and
+         + prints the URLs; use those in place of `localhost:8080` in thi
+         +s guide.                                                       
+      44  - **Switching back from `dev-mcp`:** run `rm -rf backend/app/mc
+          p` first. It removes a Python cache folder that git leaves behi
+          nd.
+      45  
+      46  ---
+     ...
+      331  | Claude is marked unavailable | No `ANTHROPIC_API_KEY` | Add 
+           it to `.env` and restart the backend |
+      332  | A benchmark says another run is in progress (409) | Only one
+            run at a time | Wait, or **Cancel** it in the Tests tab |
+      333  | The local model is slow (about 1 minute per answer) | CPU-on
+           ly inference | Use Claude for demos, or a GPU |
+      334 +| `docker compose up` fails with "port is already allocated" /
+          + "address already in use" | Another program uses port 8080 or 
+          +11434 | Start with `python3 scripts/start.py docker`: it takes
+          + the next free port and prints the URLs to use |              
+      335 +| `uvicorn` or `npm run dev` doesn't start on 8000 / 5173 | Th
+          +e port is busy | `python3 scripts/start.py dev` picks free por
+          +ts and prints them |                                          
+      336  | An empty `app/mcp` package appears after switching from `dev
+           -mcp` | A Python cache folder left behind by git | `rm -rf bac
+           kend/app/mcp`, then rebuild |
+  ⎿  Updated CLAUDE.md (+2 -0)
+      24  
+      25  Full stack (repo root): `docker compose up -d --build`, then op
+          en http://localhost:8080. Ollama always starts (it serves the e
+          mbeddings), and `ollama-init` pulls the models on first run (~4
+           GB, about 10 minutes); the backend then builds the index in th
+          e background (about 16 s on the dev VM's host CPU, cached in th
+          e `backend-index` volume). Ollama is published on `127.0.0.1:11
+          434` for host-side dev and integration tests. Run the backend l
+          ocally with `uv run uvicorn app.main:api --reload` (from `backe
+          nd/`).
+      26  
+      27 +Start on free ports (repo root): `python3 scripts/start.py dev`
+         + (uvicorn + Vite; preferred ports 8000/5173) or `python3 script
+         +s/start.py docker [--claude-only]` (compose; 8080/11434). A bus
+         +y port is replaced by the next free one and the URLs in use are
+         + printed; tests in `backend/tests/unit/test_start_script.py`.  
+      28 +                                                               
+      29  Configuration: copy `.env.example` to `.env` in the repo root. 
+          `.env` is git-ignored, so never commit real keys.
+      30  
+      31  ## Layout
+
+  Read 1 file (ctrl+o to expand)
+
+● Tighten stop: kill whole group even if group leader already exited (Vite could
+  outlive npm).
+
+● Update(scripts/start.py)  ⎿  Added 15 lines, removed 9 lines
+      227      return False
+      228  
+      229  
+      230 +def signal_group(p: subprocess.Popen[bytes], sig: signal.Signa
+          +ls) -> None:                                                  
+      231 +    """Signal the process and, on POSIX, its whole group: npm 
+          +starts Vite through a shell                                   
+      232 +    that doesn't pass signals on, and Vite may outlive npm."""
+      233 +    if os.name == "nt":                                       
+      234 +        if p.poll() is None:                                  
+      235 +            p.kill() if sig == signal.SIGKILL else p.terminate
+          +()                                                            
+      236 +        return                                                
+      237 +    try:                                                      
+      238 +        os.killpg(p.pid, sig)                                 
+      239 +    except ProcessLookupError:                                
+      240 +        pass  # the group is already gone                     
+      241 +                                                              
+      242 +                                                              
+      243  def stop(procs: list[subprocess.Popen[bytes]]) -> None:
+      244      for p in procs:
+      232 -        if p.poll() is None:                                  
+      233 -            if os.name == "nt":                               
+      234 -                p.terminate()                                 
+      235 -            else:  # the whole group: npm starts Vite through 
+          -a shell that doesn't pass signals on                          
+      236 -                os.killpg(p.pid, signal.SIGTERM)              
+      245 +        signal_group(p, signal.SIGTERM)                       
+      246      for p in procs:
+      247          try:
+      248              p.wait(timeout=10)
+      249          except subprocess.TimeoutExpired:
+      241 -            if os.name == "nt":                               
+      242 -                p.kill()                                      
+      243 -            else:                                             
+      244 -                os.killpg(p.pid, signal.SIGKILL)              
+      250 +            signal_group(p, signal.SIGKILL)                   
+      251  
+      252  
+      253  def interrupt(signum: int, frame: object) -> None:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot && python3 - <<'EOF'
+      p="scripts/start.py"; s=open(p).read()…)
+  ⎿  1 file left unchanged
+     All checks passed!
+     Success: no issues found in 1 source file
+     … +10 lines (ctrl+o to expand)
+  ⎿  Updated scripts/start.py (+2 -3)
+      18  """
+      19  
+      20  import argparse
+      21 +import contextlib                                              
+      22  import errno
+      23  import os
+      24  import shutil
+     ...
+      235          if p.poll() is None:
+      236              p.kill() if sig == signal.SIGKILL else p.terminate
+           ()
+      237          return
+      237 -    try:                                                      
+      238 +    with contextlib.suppress(ProcessLookupError):  # the group
+          + is already gone                                              
+      239          os.killpg(p.pid, sig)
+      239 -    except ProcessLookupError:                                
+      240 -        pass  # the group is already gone                     
+      240  
+      241  
+      242  def stop(procs: list[subprocess.Popen[bytes]]) -> None:
+  ⎿  (timeout 3m 20s)
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Committing on dev-features, then porting to dev-mcp.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(git switch -q dev-mcp && git cherry-pick -n 507d896 2>&1 | tail -5; git
+      status --short)
+  ⎿  CONFLICT (modify/delete): documentation/ai-logs/2026-09-27_0cfe740d.md
+      deleted in HEAD and modified in 507d896 (Start on free ports: scripts
+     /start.py checks each port and reports the URLs).  Version 507d896 (St
+     … +16 lines (ctrl+o to expand)
+  ⎿  Updated .env.example (+6 -0)
+      68  HISTORY_ENABLED=true
+      69  HISTORY_RETENTION_DAYS=90
+      70  
+      71 +# --- MCP server (http://localhost:8080/api/mcp/) -------------
+         +---------------------                                          
+      72 +# Disabled when empty; MCP clients send it as "Authorization: B
+         +earer <token>".                                                
+      73 +MCP_TOKEN=                                                     
+      74 +# Host names clients may use (DNS-rebinding protection); any po
+         +rt is allowed                                                  
+      75 +MCP_ALLOWED_HOSTS=localhost,127.0.0.1                          
+      76 +                                                               
+      77  # --- Costs tab -----------------------------------------------
+          -------------------
+      78  # Price overrides in USD per million tokens (defaults: Claude l
+          ist prices), as JSON:
+      79  # MODEL_PRICES={"claude-opus-5": {"input": 5, "output": 25, "ca
+          che_read": 0.5, "cache_write": 6.25}}
+  ⎿  Updated CLAUDE.md (+1 -1)
+       4  
+       5  ## Project status
+       6  
+       7 -All phases (0–9) of the build plan in `documentation/taskdocs/s
+         -teps.md` are done. The README documents the architecture, API, 
+         -trade-offs, testing and AI usage; `documentation/evaluation.md`
+         - has the test and benchmark results (Claude 18/18, local `minis
+         -tral-3:3b` 17/18, plus a comparison of six local models). Key e
+         -ntry points: the API app factory `backend/app/main.py` (`create
+         -_app`) and `app/api/` (schemas, error mapping, SSE, background 
+         -index loading in `state.py`); the pipeline in `app/rag/pipeline
+         -.py`, with prompts in `app/prompts/*.md` and wiring in `app/ser
+         -vices.py`; shared test fakes in `backend/tests/fakes.py`. CI: `
+         -.github/workflows/ci.yml`. New features come from `documentatio
+         -n/taskdocs/ideas.md`, one at a time, on the **`dev-features`** 
+         -branch (`main`/`dev` stay the official submission). The MCP ser
+         -ver (phase 16) lives only on the separate **`dev-mcp`** branch 
+         -(dev-features + MCP); keep it out of `dev-features`. Stable cop
+         -ies: **`main-features`** tracks `dev-features` and **`main-mcp`
+         -** tracks `dev-mcp`. Never commit to them directly; fast-forwar
+         -d each one from its dev branch (`git push origin dev-features:m
+         -ain-features`, `git push origin dev-mcp:main-mcp`) once a chang
+         -e is finished and CI is green. Their phase plan and progress ar
+         -e at the end of `ideas.md`. Phase 10 added the admin area (`app
+         -/api/v1/admin/`, token check in `app/core/security.py`, SQLite 
+         -history in `app/stores/history/`, frontend `features/admin/`); 
+         -phase 11 the Statistics tab (`app/stores/history/stats.py`, `/a
+         -dmin/stats`); phase 12 the Costs tab (`app/core/pricing.py`, `a
+         -pp/stores/history/costs.py`, `/admin/costs`); phase 13 the Test
+         -s tab (`app/evaluation/runner.py`, `/admin/eval`); phase 14 `op
+         -tions.detail`/`options.language` (`system_prompt()` in `app/rag
+         -/prompts.py`, "More detail" button, language selector); phase 1
+         -5 the CLI (`app/cli/`); phase 17 runtime model switches (`/admi
+         -n/settings`) and Claude-only mode (`EMBEDDING_PROVIDER=local`, 
+         -`docker-compose.claude-only.yml`); phase 18 fol … [+284 chars] 
+       7 +All phases (0–9) of the build plan in `documentation/taskdocs/s
+         +teps.md` are done. The README documents the architecture, API, 
+         +trade-offs, testing and AI usage; `documentation/evaluation.md`
+         + has the test and benchmark results (Claude 18/18, local `minis
+         +tral-3:3b` 17/18, plus a comparison of six local models). Key e
+         +ntry points: the API app factory `backend/app/main.py` (`create
+         +_app`) and `app/api/` (schemas, error mapping, SSE, background 
+         +index loading in `state.py`); the pipeline in `app/rag/pipeline
+         +.py`, with prompts in `app/prompts/*.md` and wiring in `app/ser
+         +vices.py`; shared test fakes in `backend/tests/fakes.py`. CI: `
+         +.github/workflows/ci.yml`. New features come from `documentatio
+         +n/taskdocs/ideas.md`, one at a time, on the **`dev-features`** 
+         +branch (`main`/`dev` stay the official submission). The MCP ser
+         +ver exists only on **`dev-mcp`** (dev-features + MCP); keep it 
+         +out of `dev-features`. Stable copies: **`main-features`** track
+         +s `dev-features` and **`main-mcp`** tracks `dev-mcp`. Never com
+         +mit to them directly; fast-forward each one from its dev branch
+         + (`git push origin dev-features:main-features`, `git push origi
+         +n dev-mcp:main-mcp`) once a change is finished and CI is green.
+         + Their phase plan and progress are at the end of `ideas.md`. Ph
+         +ase 10 added the admin area (`app/api/v1/admin/`, token check i
+         +n `app/core/security.py`, SQLite history in `app/stores/history
+         +/`, frontend `features/admin/`); phase 11 the Statistics tab (`
+         +app/stores/history/stats.py`, `/admin/stats`); phase 12 the Cos
+         +ts tab (`app/core/pricing.py`, `app/stores/history/costs.py`, `
+         +/admin/costs`); phase 13 the Tests tab (`app/evaluation/runner.
+         +py`, `/admin/eval`); phase 14 `options.detail`/`options.languag
+         +e` (`system_prompt()` in `app/rag/prompts.py`, "More detail" bu
+         +tton, language selector); phase 15 the CLI (`app/cli/`); phase 
+         +16 the MCP server (`app/mcp/`: `python -m app.mcp` over stdio, 
+         +`/api/mcp/` over HTTP with `MCP_TOKEN`); phase 17 runtime model
+         + switches (`/admin/settings`) and Claude-only m … [+364 chars] 
+       8  
+       9  ## Commands
+      10  
+  ⎿  Updated README.md (+45 -5)
+      11  
+      12  > **Branches:** three versions of the same project.
+      13  > - `main`: the official submission for the assignment.
+      14 -> - **`dev-features`** (this branch): the official task plus op
+         -tional add-ons from the feature list. See [Extra features](#ext
+         -ra-features-dev-features-branch).                              
+      15 -> - `dev-mcp`: everything here **plus an MCP server**, so AI as
+         -sistants can use the knowledge base directly.                  
+      14 +> - `dev-features`: the official task plus optional add-ons fro
+         +m the feature list.                                            
+      15 +> - **`dev-mcp`** (this branch): everything in `dev-features` *
+         +*plus the MCP server**, so AI assistants can use the knowledge 
+         +base directly.                                                 
+      16 +>                                                              
+      17 +> See [Extra features](#extra-features-dev-features-branch) and
+         + [MCP server](#mcp-server).                                    
+      18  
+      19  ---
+      20  
+     ...
+      317  - **Colours:** used only on a terminal, and never when `NO_COL
+           OR` is set.
+      318  - **Interactive mode:** it keeps the conversation id until `/n
+           ew`.
+      319  
+      320 +### MCP server                                                
+      321 +                                                              
+      322 +The knowledge base is also an **MCP server**, so AI assistants
+          + such as Claude Code or Claude Desktop can use it directly:   
+      323 +                                                              
+      324 +| Tool / resource | What it does |                            
+      325 +|---|---|                                                     
+      326 +| `ask_knowledge_base(question, model?, language?)` | The full
+          + pipeline: a cited answer, or `refused: true` when the documen
+          +tation has no answer |                                        
+      327 +| `search_knowledge_base(query, k?)` | The best-matching secti
+          +ons (document, section, text, score), for the assistant to ans
+          +wer from itself |                                             
+      328 +| `kb://documents` · `kb://documents/{doc_id}` | The list of a
+          +rticles, and one article in full |                            
+      329 +                                                              
+      330 +**Over HTTP**, inside the running stack:                      
+      331 +1. Set `MCP_TOKEN` in `.env` and restart the backend. Without 
+          +it the endpoint doesn't exist.                                
+      332 +2. The endpoint is `http://localhost:8080/api/mcp/`, and it ex
+          +pects `Authorization: Bearer <MCP_TOKEN>`.                    
+      333 +3. It's served by the backend, so questions asked this way als
+          +o appear in the admin history.                                
+      334 +                                                              
+      335 +```bash                                                       
+      336 +claude mcp add --transport http omnicorp-kb http://localhost:8
+          +080/api/mcp/ --header "Authorization: Bearer $MCP_TOKEN"      
+      337 +```                                                           
+      338 +                                                              
+      339 +**Over stdio**, as a local subprocess:                        
+      340 +- It needs Ollama reachable for the embeddings, and `ANTHROPIC
+          +_API_KEY` for Claude answers. Its logs go to stderr.          
+      341 +- Claude Code:                                                
+      342 +                                                              
+      343 +  ```bash                                                     
+      344 +  claude mcp add omnicorp-kb -- uv run --directory /path/to/re
+          +po/backend python -m app.mcp                                  
+     … 46 more lines (ctrl+o to expand)
+  ⎿  Updated backend/app/core/config.py (+8 -1)
+      81      # Optional cost of running the local model, e.g. a GPU serv
+          er's price per hour (USD).
+      82      local_cost_per_hour: float = Field(default=0.0, ge=0)
+      83  
+      84 -    @field_validator("enabled_llm_providers", "cors_origins", m
+         -ode="before")                                                  
+      84 +    # MCP server over HTTP at /api/mcp (ideas.md: "the chatbot 
+         +as an MCP server").                                            
+      85 +    # Disabled when empty; clients send it as a Bearer token.  
+      86 +    mcp_token: SecretStr | None = None                         
+      87 +    # Host names MCP clients may use (DNS-rebinding protection)
+         +; ports are always allowed.                                    
+      88 +    mcp_allowed_hosts: Annotated[list[str], NoDecode] = ["local
+         +host", "127.0.0.1"]                                            
+      89 +                                                               
+      90 +    @field_validator("enabled_llm_providers", "cors_origins", "
+         +mcp_allowed_hosts", mode="before")                             
+      91      @classmethod
+      92      def _split_csv(cls, value: object) -> object:
+      93          if isinstance(value, str):
+     ...
+       97      @field_validator(
+       98          "anthropic_api_key",
+       99          "admin_token",
+      100 +        "mcp_token",                                          
+      101          "ollama_think",
+      102          "anthropic_effort",
+      103          mode="before",
+  ⎿  Updated backend/app/core/logging.py (+5 -2)
+       5  import sys
+       6  from contextvars import ContextVar
+       7  from datetime import UTC, datetime
+       8 +from typing import TextIO                                      
+       9  
+      10  request_id_var: ContextVar[str | None] = ContextVar("request_id
+          ", default=None)
+      11  
+     ...
+      35          return json.dumps(entry, ensure_ascii=False, default=st
+          r)
+      36  
+      37  
+      37 -def configure_logging(level: str = "INFO") -> None:            
+      38 -    handler = logging.StreamHandler(sys.stdout)                
+      38 +def configure_logging(level: str = "INFO", stream: TextIO | Non
+         +e = None) -> None:                                             
+      39 +    # stdout by default (container logs); the stdio MCP server 
+         +passes stderr, since its stdout                                
+      40 +    # carries the protocol.                                    
+      41 +    handler = logging.StreamHandler(stream or sys.stdout)      
+      42      handler.setFormatter(JsonFormatter())
+      43      root = logging.getLogger()
+      44      root.handlers[:] = [handler]
+  ⎿  … 13 more files changed
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(cd /home/sako/git/ep_kb_rag_chatbot && git commit -q -m "Start on free
+      ports: scripts/start.py checks each port and reports the URLs…)
+  ⎿  94fe92e Start on free ports: scripts/start.py checks each port and rep
+     orts the URLs
+     507d896 Start on free ports: scripts/start.py checks each port and rep
+     orts the URLs
+  ⎿  Deleted backend/app/mcp/__init__.py (+0 -1)
+      1 -"""The knowledge base as an MCP server (ideas.md: "the chatbot a
+        -s an MCP server")."""                                           
+  ⎿  Deleted backend/app/mcp/__main__.py (+0 -31)
+       1 -"""Runs the knowledge base as a local MCP server over stdio.   
+       2 -                                                               
+       3 -MCP clients (Claude Desktop, Claude Code, ...) start it as a su
+         -bprocess, for example:                                         
+       4 -                                                               
+       5 -  claude mcp add omnicorp-kb -- uv run --directory /path/to/bac
+         -kend python -m app.mcp                                         
+       6 -                                                               
+       7 -It builds the same services as the API in-process, so Ollama mu
+         -st be reachable for the                                        
+       8 -embeddings (OLLAMA_BASE_URL) and ANTHROPIC_API_KEY is needed fo
+         -r Claude answers.                                              
+       9 -"""                                                            
+      10 -                                                               
+      11 -import asyncio                                                 
+      12 -import sys                                                     
+      13 -                                                               
+      14 -from app.core.config import get_settings                       
+      15 -from app.core.logging import configure_logging                 
+      16 -from app.mcp.server import build_mcp_server                    
+      17 -from app.services import create_services                       
+      18 -                                                               
+      19 -                                                               
+      20 -async def serve() -> None:                                     
+      21 -    settings = get_settings()                                  
+      22 -    services = await create_services(settings)                 
+      23 -    try:                                                       
+      24 -        await build_mcp_server(lambda: services).run_stdio_asyn
+         -c()                                                            
+      25 -    finally:                                                   
+      26 -        await services.aclose()                                
+      27 -                                                               
+      28 -                                                               
+      29 -if __name__ == "__main__":                                     
+      30 -    configure_logging(get_settings().log_level, stream=sys.stde
+         -rr)                                                            
+      31 -    asyncio.run(serve())                                       
+  ⎿  Deleted backend/app/mcp/http.py (+0 -58)
+       1 -"""Serves the MCP server over Streamable HTTP inside the API at
+         - /api/mcp/, behind MCP_TOKEN."""                               
+       2 -                                                               
+       3 -import json                                                    
+       4 -import secrets                                                 
+       5 -from typing import Any                                         
+       6 -                                                               
+       7 -from mcp.server.mcpserver import MCPServer                     
+       8 -from mcp.server.transport_security import TransportSecuritySett
+         -ings                                                           
+       9 -from starlette.types import ASGIApp, Receive, Scope, Send      
+      10 -                                                               
+      11 -MOUNT_PATH = "/api/mcp"                                        
+      12 -                                                               
+      13 -                                                               
+      14 -class BearerTokenGuard:                                        
+      15 -    """Rejects requests without `Authorization: Bearer <MCP_TOK
+         -EN>` (constant-time check)."""                                 
+      16 -                                                               
+      17 -    def __init__(self, app: ASGIApp, token: str) -> None:      
+      18 -        self.app = app                                         
+      19 -        self._token = token.encode()                           
+      20 -                                                               
+      21 -    async def __call__(self, scope: Scope, receive: Receive, se
+         -nd: Send) -> None:                                             
+      22 -        if scope["type"] == "http" and not self._authorized(sco
+         -pe):                                                           
+      23 -            body = json.dumps(                                 
+      24 -                {"error": {"code": "unauthorized", "message": "
+         -Missing or invalid MCP token."}}                               
+      25 -            ).encode()                                         
+      26 -            await send(                                        
+      27 -                {                                              
+      28 -                    "type": "http.response.start",             
+      29 -                    "status": 401,                             
+      30 -                    "headers": [                               
+      31 -                        (b"content-type", b"application/json"),
+      32 -                        (b"www-authenticate", b"Bearer"),      
+      33 -                    ],                                         
+      34 -                }                                              
+      35 -            )                                                  
+      36 -            await send({"type": "http.response.body", "body": b
+         -ody})                                                          
+      37 -            return                                             
+      38 -        await self.app(scope, receive, send)                   
+      39 -                                                               
+      40 -    def _authorized(self, scope: Scope) -> bool:               
+     … 18 more lines (ctrl+o to expand)
+  ⎿  Deleted backend/app/mcp/server.py (+0 -103)
+        1 -"""MCP tools and resources over the same services as the web A
+          -PI.                                                           
+        2 -                                                              
+        3 -- `search_knowledge_base` returns the best-matching sections; 
+          -the calling assistant writes its                              
+        4 -  own answer from them.                                       
+        5 -- `ask_knowledge_base` runs the full pipeline, so answers keep
+          - this project's rules: sources                                
+        6 -  only, citations, and a refusal when the documentation has no
+          - answer.                                                      
+        7 -- `kb://documents` lists the articles and `kb://documents/{doc
+          -_id}` returns one in full.                                    
+        8 -"""                                                           
+        9 -                                                              
+       10 -from collections.abc import Callable                          
+       11 -from typing import Any                                        
+       12 -                                                              
+       13 -from mcp.server.mcpserver import MCPServer                    
+       14 -from mcp.server.mcpserver.exceptions import ResourceNotFoundEr
+          -ror, ToolError                                                
+       15 -                                                              
+       16 -from app.providers.errors import ProviderError                
+       17 -from app.rag.ingest import load_documents                     
+       18 -from app.rag.pipeline import ChatOptions                      
+       19 -from app.rag.prompts import LANGUAGES                         
+       20 -from app.services import Services                             
+       21 -                                                              
+       22 -INSTRUCTIONS = (                                              
+       23 -    "OmniCorp's internal knowledge base for Customer Success M
+          -anagers: SSO and user "                                       
+       24 -    "provisioning, API rate limits, data retention and GDPR, w
+          -ebhooks and integrations, "                                   
+       25 -    "support tiers and SLAs. Use ask_knowledge_base for a cite
+          -d answer, or "                                                
+       26 -    "search_knowledge_base to read the relevant sections yours
+          -elf. Only state what the "                                    
+       27 -    "returned sources say."                                   
+       28 -)                                                             
+       29 -                                                              
+       30 -                                                              
+       31 -def build_mcp_server(get_services: Callable[[], Services]) -> 
+          -MCPServer:                                                    
+       32 -    """`get_services` returns the ready services or raises (e.
+          -g. while the index is loading)."""                            
+       33 -    server = MCPServer("omnicorp-knowledge-base", instructions
+          -=INSTRUCTIONS)                                                
+       34 -                                                              
+       35 -    def services() -> Services:                               
+       36 -        try:                                                  
+       37 -            return get_services()                             
+       38 -        except Exception as exc:  # e.g. ServiceNotReadyError:
+          - tell the client why                                          
+       39 -            raise ToolError(str(exc)) from exc                
+       40 -                                                              
+     … 63 more lines (ctrl+o to expand)
+  ⎿  Deleted backend/tests/unit/test_mcp.py (+0 -135)
+        1 -import json                                                   
+        2 -from pathlib import Path                                      
+        3 -from typing import Any                                        
+        4 -                                                              
+        5 -import pytest                                                 
+        6 -from fastapi.testclient import TestClient                     
+        7 -from mcp import Client                                        
+        8 -                                                              
+        9 -from app.core.config import Settings                          
+       10 -from app.main import create_app                               
+       11 -from app.mcp.server import build_mcp_server                   
+       12 -from app.services import Services, create_services            
+       13 -from app.stores.events.base import EventStore                 
+       14 -from tests.fakes import FakeEmbedder, FakeLLM                 
+       15 -                                                              
+       16 -pytestmark = pytest.mark.anyio                                
+       17 -                                                              
+       18 -TOKEN = "mcp-test-token-0123456789"                           
+       19 -                                                              
+       20 -                                                              
+       21 -def make_settings(tmp_path: Path, **overrides: object) -> Sett
+          -ings:                                                         
+       22 -    kb = tmp_path / "kb"                                      
+       23 -    kb.mkdir(exist_ok=True)                                   
+       24 -    (kb / "kb-1.md").write_text(                              
+       25 -        "---\nid: kb-1\ntitle: Backup guide\n---\n## Backups\n
+          -\nBackups are retained for 35 days.\n"                        
+       26 -    )                                                         
+       27 -    values: dict[str, object] = {                             
+       28 -        "kb_dir": kb,                                         
+       29 -        "index_dir": tmp_path / "index",                      
+       30 -        "database_path": tmp_path / "db" / "history.sqlite",  
+       31 -        "min_score": 0.0,                                     
+       32 -        "enabled_llm_providers": ["ollama"],                  
+       33 -        "llm_provider": "ollama",                             
+       34 -    }                                                         
+       35 -    values.update(overrides)                                  
+       36 -    return Settings(_env_file=None, **values)  # type: ignore[
+          -call-arg, arg-type]                                           
+       37 -                                                              
+       38 -                                                              
+       39 -async def fake_services(settings: Settings, events: EventStore
+          - | None = None) -> Services:                                  
+       40 -    return await create_services(                             
+     … 95 more lines (ctrl+o to expand)
+  ⎿  … 13 more files changed
+
+● Waiting for CI on both branches before fast-forwarding main-*.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● A busy port no longer stops the chatbot from starting. Start it with python3 
+  scripts/start.py dev or python3 scripts/start.py docker. If a preferred port
+  is in use, it moves to the next free one and prints the addresses in use (this
+  is how Vite already handles its own port).
+
+  ┌────────────────────────────────┬────────────────┬───────────────────────┐
+  │            Command             │   Preferred    │ Change them in .env   │
+  │                                │     ports      │         with          │
+  ├────────────────────────────────┼────────────────┼───────────────────────┤
+  │ python3 scripts/start.py dev   │ backend 8000,  │ BACKEND_PORT,         │
+  │ (backend + frontend on your    │ frontend 5173  │ FRONTEND_DEV_PORT     │
+  │ machine)                       │                │                       │
+  ├────────────────────────────────┼────────────────┼───────────────────────┤
+  │ python3 scripts/start.py       │ web UI 8080,   │ FRONTEND_PORT,        │
+  │ docker [--claude-only]         │ Ollama 11434   │ OLLAMA_PORT           │
+  └────────────────────────────────┴────────────────┴───────────────────────┘
+
+  What you see when ports are taken:
+
+  Port check:
+    ! Backend: port 8000 is already in use, using 8001 instead
+    ! Frontend: port 5173 is already in use, using 5174 instead
+  ========================================================================
+    OmniCorp KB chatbot is running (local development)
+    Chat UI      http://localhost:5174
+    Admin area   http://localhost:5174/admin
+    Backend API  http://localhost:8001/api/v1/health
+    Swagger UI   http://localhost:8001/docs
+    Ollama       http://localhost:11434
+    CLI          cd backend && uv run python -m app.cli --url 
+  http://localhost:8001
+    Note: Backend uses port 8001 because 8000 is already in use.
+    Note: Frontend uses port 5174 because 5173 is already in use.
+
+  How it behaves:
+  - Summary timing: the addresses are printed only once the servers actually
+    accept connections.
+  - Frontend to backend: the frontend's /api forwarding follows the backend to
+    its new port.
+  - Your own stack: in Docker mode, a port already held by this project's
+    running containers doesn't count as busy. Once 8080 is free again, the next
+    start moves back to it.
+  - Ollama port: it can now be changed. docker-compose.yml reads OLLAMA_PORT,
+    default 11434.
+  - Stopping: Ctrl+C stops both dev servers.
+  - Plain docker compose up doesn't check ports; it uses the values in .env as
+    before.
+
+  What I checked on the real setup:
+  - Dev mode: with 8000 and 5173 taken, the servers came up on 8001 and 5174,
+    and the chat page reached the backend. After stopping, no server process was
+    left behind.
+  - Docker mode, own containers: with this project's containers already running,
+    the stack stayed on 8080 and 11434.
+  - Docker mode, 8080 taken: with another program on 8080, the web UI moved to
+    8081 and printed that. When 8080 was free again, the next start moved it
+    back.
+
+  Three problems came up in those runs and are fixed:
+  - The summary was printed before the backend could answer.
+  - A port was sometimes wrongly reported as busy just after an earlier
+    connection to it had closed.
+  - Stopping left the Vite dev server running.
+
+  Tests pass: 166 backend (7 of them new, for the port logic) and 35 frontend.
+  It's on dev-features and dev-mcp, CI passed on both, and main-features and
+  main-mcp now match them. The README (new "Ports" section), the features guide
+  troubleshooting table, CLAUDE.md and .env.example are updated.
+
+  main and dev (the official submission) don't have it. Should I add it there
+  too?
+
+✻ Sautéed for 8m 51s · done 9:34 AM
+
+※ recap: Goal was that the chatbot starts even when its ports are busy: python3 scripts/start.py now picks the next free port and prints the addresses, on both feature branches with CI passing. Next: tell me whether main and dev should get it too. (disable recaps in /config)
+
+❯ make sure that the default ports are used by default, and only if they are    
+  used to change them                                                           
+
+● Current logic already keeps defaults unless busy. Verifying live with nothing
+  blocked, and making summary say explicitly when defaults are kept.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Bash(python3 - <<'EOF'
+      p="scripts/start.py"; s=open(p).read()…)
+  ⎿  Success: no issues found in 1 source file
+     health via 5173: {"status":"ok","ready":true,"version":"0
+     exit 0
+     … +9 lines (ctrl+o to expand)
+  ⎿  Updated scripts/start.py (+6 -4)
+      322      print(f"\n{'=' * 72}\n  {title}\n{'-' * 72}")
+      323      for label, value in lines:
+      324          print(f"  {label.ljust(width)}  {value}")
+      325 +    print(f"{'-' * 72}")                                      
+      326      moved = [c for c in choices if c.moved]
+      326 -    if moved:                                                 
+      327 -        print(f"{'-' * 72}")                                  
+      328 -        for c in moved:                                       
+      329 -            print(f"  Note: {c.name} uses port {c.port} becaus
+          -e {c.preferred} is already in use.")                          
+      327 +    for c in moved:                                           
+      328 +        print(f"  Note: {c.name} uses port {c.port} because {c
+          +.preferred} is already in use.")                              
+      329 +    if not moved:                                             
+      330 +        ports = ", ".join(f"{c.name} {c.port}" for c in choice
+          +s)                                                            
+      331 +        print(f"  Ports: {ports} (the configured ports; none w
+          +as busy)")                                                    
+      332      print("=" * 72, flush=True)
+      333  
+      334  
+  ⎿  (timeout 10m)
+
+● Defaults confirmed: dev used 8000/5173, Docker 8080/11434, no port-check
+  message. Updating README, committing both branches.
+
+● Bash(python3 - <<'EOF'
+      p="README.md"; s=open(p).read()…)
+  ⎿  7 passed in 0.05s
+     58628ec start.py: say when the default ports are kept
+     7fc587f start.py: say when the default ports are kept
+  ⎿  Updated README.md (+1 -1)
+      63  
+      64  ### Ports
+      65  
+      66 -`scripts/start.py` (Python standard library only) checks every 
+         -port before starting. A busy port is replaced by the next free 
+         -one, and the script prints what it chose:                      
+      66 +`scripts/start.py` (Python standard library only) checks every 
+         +port before starting. The default ports (or the ones set in `.e
+         +nv`) are always used when they are free; only a busy port is re
+         +placed by the next free one. The summary then shows `Ports: … (
+         +the configured ports; none was busy)`, or a note for each port 
+         +that was moved, as here:                                       
+      67  
+      68  ```text
+      69  Port check:
+  ⎿  (timeout 3m 20s)
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Perf-test timing flake on CI runner (API latency 865 ms > 500 ms limit);
+  change doesn't touch API. Re-running failed job.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● The launcher already used the default ports whenever they were free, so the
+  only code change is that it now says so. When no port is busy, the summary
+  ends with a line like this:
+
+  Ports: Backend 8000, Frontend 5173 (the configured ports; none was busy)
+
+  If a port is busy, only that port moves to the next free one, and a note names
+  it.
+
+  Checked by running it:
+  - Dev mode, nothing blocking: it used 8000 and 5173, the chat page reached the
+    backend, and no "Port check" message appeared.
+  - Docker mode: it used 8080 and 11434 and printed the same kind of line. The
+    running containers of this project hold those ports themselves, so they
+    don't count as busy.
+  - Busy ports (tested before): 8000 moved to 8001, 5173 to 5174, and 8080
+    to 8081. Once 8080 was free again, the next start went back to it.
+
+  Ports set in .env (FRONTEND_PORT and the others) count as the defaults.
+  Running uvicorn, npm run dev or docker compose up directly still uses the
+  default ports without any check.
+
+  The change is on dev-features and dev-mcp, and the README "Ports" section now
+  says that free default ports are always used. CI passed on both branches. On
+  dev-mcp one timing test failed at first: API latency was 865 ms against a 500
+  ms limit. It passed when I re-ran it; this change doesn't touch the API.
+  main-features and main-mcp now match their dev branches.
+
+✻ Brewed for 3m 29s · done 10:04 AM
+
+※ recap: You wanted the chatbot to use its default ports and change only a port that's busy, and scripts/start.py now does that on all four feature branches with CI passing. Next: decide whether main and dev should get it too.
