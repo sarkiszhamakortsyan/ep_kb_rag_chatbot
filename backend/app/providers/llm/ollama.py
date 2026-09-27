@@ -1,3 +1,6 @@
+"""Answer model (LLM provider) for local Ollama models: streams /api/chat responses, reports
+token usage, and turns timeouts and HTTP errors into clear provider errors."""
+
 import json
 from collections.abc import AsyncIterator, Sequence
 from typing import Any

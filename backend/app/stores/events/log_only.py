@@ -1,3 +1,6 @@
+"""The default EventStore: writes one structured log line per chat turn with its metrics (model,
+tokens, timings, refusal), without the question or answer text."""
+
 import json
 import logging
 from typing import TYPE_CHECKING

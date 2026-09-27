@@ -1,3 +1,5 @@
+// Small shared UI pieces for the admin tabs: KPI tile, card and empty state.
+
 import type { ReactNode } from "react";
 
 // Building blocks shared by the admin tabs.

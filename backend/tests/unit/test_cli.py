@@ -1,3 +1,6 @@
+"""Tests for the command-line client against a mocked API: streamed answers, exit codes, JSON
+output, the interactive session and the model commands."""
+
 import io
 import json
 from collections.abc import Callable

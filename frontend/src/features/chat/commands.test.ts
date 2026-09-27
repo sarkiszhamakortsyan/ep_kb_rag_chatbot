@@ -1,3 +1,6 @@
+// Tests for the model commands: names, parsing, normal questions and paths, unknown models, and
+// suggestions.
+
 import { describe, expect, it } from "vitest";
 import type { Provider } from "../../api/types";
 import { modelCommands, parseInput, suggestions } from "./commands";

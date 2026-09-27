@@ -1,3 +1,5 @@
+// A small bar chart per day in plain SVG, used by the Statistics and Costs tabs.
+
 import { useEffect, useRef, useState } from "react";
 
 const HEIGHT = 160;

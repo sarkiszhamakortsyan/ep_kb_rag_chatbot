@@ -1,3 +1,6 @@
+"""The History tab API: stored chat turns with search, filters and paging, one turn in full, and
+a CSV export of the filtered list."""
+
 import csv
 import io
 from collections.abc import Iterator

@@ -1,3 +1,6 @@
+// Detail panel for one benchmark run in the Tests tab: progress, score, and every question with its
+// result, failures first.
+
 import { CircleCheck, CircleX, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";

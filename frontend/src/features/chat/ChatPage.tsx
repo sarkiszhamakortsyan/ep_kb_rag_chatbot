@@ -1,3 +1,6 @@
+// The chat screen: header with the model picker and the answer-language selector, the conversation,
+// example questions, and the input with send, stop and model-command suggestions.
+
 import {
   ArrowUp,
   Database,

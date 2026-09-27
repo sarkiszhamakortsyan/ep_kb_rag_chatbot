@@ -1,3 +1,6 @@
+// Costs tab: estimated spending, cost per day and model, a what-if with other Claude models,
+// optimisation hints, and optional advice from Claude.
+
 import { Info, PiggyBank, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";

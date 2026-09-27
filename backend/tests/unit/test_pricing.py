@@ -1,3 +1,6 @@
+"""Tests for the cost calculation: every Claude token type, price overrides, and the local model,
+early refusals and unknown models."""
+
 import pytest
 
 from app.core.pricing import ModelPrice, PriceTable, TokenCounts

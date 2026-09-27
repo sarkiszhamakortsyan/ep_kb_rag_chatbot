@@ -1,3 +1,6 @@
+// Tests for the Tests tab: the run list, confirmation before a paid Claude run, and the run
+// details.
+
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";

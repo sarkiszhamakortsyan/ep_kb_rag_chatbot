@@ -1,3 +1,6 @@
+"""Data classes for the knowledge base: a Document (one article with its front matter) and a
+Chunk (a searchable passage with its heading path)."""
+
 from dataclasses import dataclass, field
 from typing import Any
 

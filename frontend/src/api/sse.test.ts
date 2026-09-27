@@ -1,3 +1,6 @@
+// Tests for the SSE parser: events split across chunks, CRLF line endings, comments and invalid
+// JSON.
+
 import { describe, expect, it } from "vitest";
 import { SseParser } from "./sse";
 

@@ -1,3 +1,6 @@
+// Tests tab: start retrieval or answer benchmarks, follow their progress, and compare each run with
+// the previous one.
+
 import { Play, Square } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {

@@ -1,3 +1,6 @@
+"""Builds the embedding provider chosen in the settings (EMBEDDING_PROVIDER). The pipeline only
+sees the EmbeddingProvider interface."""
+
 from collections.abc import Callable, Mapping
 from functools import partial
 

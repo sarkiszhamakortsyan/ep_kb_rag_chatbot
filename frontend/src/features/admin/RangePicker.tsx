@@ -1,3 +1,5 @@
+// Date-range selector (7, 30 or 90 days) for the Statistics and Costs tabs.
+
 const RANGES = [7, 30, 90];
 
 /** 7 / 30 / 90-day switch shared by the Statistics and Costs tabs. */

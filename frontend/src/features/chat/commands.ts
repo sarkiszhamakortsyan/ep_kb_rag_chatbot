@@ -1,3 +1,6 @@
+// Model commands typed in the chat (/claude, /local, /models): parsing, the command list built from
+// the enabled models, and suggestions while typing.
+
 import type { Provider } from "../../api/types";
 import { modelName } from "./providers";
 

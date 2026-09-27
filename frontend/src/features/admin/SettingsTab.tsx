@@ -1,3 +1,5 @@
+// Settings tab: switch answer models on or off and choose the default, without a restart.
+
 import { Check, Cpu } from "lucide-react";
 import { useEffect, useState } from "react";
 import {

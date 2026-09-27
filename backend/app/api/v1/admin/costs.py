@@ -1,3 +1,7 @@
+"""GET /admin/costs estimates spending from the stored token counts and list prices, with a
+what-if for other Claude models and optimisation hints. POST /admin/costs/advice asks Claude
+for advice on the aggregated figures only."""
+
 import json
 from dataclasses import asdict
 from typing import Annotated, Any

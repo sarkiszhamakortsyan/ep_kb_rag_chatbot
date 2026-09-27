@@ -1,3 +1,7 @@
+// One assistant answer: streamed Markdown with clickable [n] citation chips, the source cards,
+// progress steps, the rewritten follow-up question, errors, and the copy, regenerate and More
+// detail buttons.
+
 import {
   Check,
   CircleCheck,

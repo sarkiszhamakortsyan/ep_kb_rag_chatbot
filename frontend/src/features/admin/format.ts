@@ -1,3 +1,5 @@
+// Formatting helpers for the admin area: dates, seconds, numbers and US dollars.
+
 export const formatDateTime = (iso: string) =>
   new Date(iso).toLocaleString(undefined, {
     dateStyle: "medium",

@@ -1,3 +1,6 @@
+"""In-memory vector store: exact cosine-similarity search over a numpy matrix, saved to and
+loaded from the index folder on disk."""
+
 import json
 from collections.abc import Sequence
 from dataclasses import asdict

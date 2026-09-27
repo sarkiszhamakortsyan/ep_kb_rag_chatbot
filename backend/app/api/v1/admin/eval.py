@@ -1,3 +1,6 @@
+"""The Tests tab API: list benchmark runs, start a retrieval or answer benchmark in the
+background, follow its progress and cancel it."""
+
 from dataclasses import asdict
 from typing import Annotated, Any, Literal
 

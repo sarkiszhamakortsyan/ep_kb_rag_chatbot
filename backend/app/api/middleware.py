@@ -1,3 +1,6 @@
+"""ASGI middleware that gives every request an id (or reuses the caller's X-Request-ID), returns
+it in the response headers and adds it to every log line of that request."""
+
 import json
 import logging
 import time

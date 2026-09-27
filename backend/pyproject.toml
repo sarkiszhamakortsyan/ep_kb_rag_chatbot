@@ -1,3 +1,6 @@
+# Backend project definition for uv: dependencies, dev tools, and the settings for pytest, ruff and
+# mypy.
+
 [project]
 name = "omnicorp-kb-backend"
 version = "0.1.0"

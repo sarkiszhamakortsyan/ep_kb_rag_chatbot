@@ -1,3 +1,6 @@
+"""Tests for the in-process embedding provider (Claude-only mode): the same task prompts as
+Ollama, and a clear error for unsupported models."""
+
 from pathlib import Path
 from typing import Any
 

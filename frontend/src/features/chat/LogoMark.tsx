@@ -1,3 +1,5 @@
+// The brand mark (an open book), used in the chat header.
+
 import { BookOpen } from "lucide-react";
 
 /** Brand mark: an open book on the brand colour (also used as the favicon). */

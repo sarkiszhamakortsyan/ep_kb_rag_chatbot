@@ -1,3 +1,6 @@
+"""Tests for the Ollama chat and embedding providers with mocked HTTP: streaming, usage, the
+think option, missing models, timeouts, cut-off streams and batching."""
+
 import json
 from collections.abc import Callable
 

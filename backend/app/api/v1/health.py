@@ -1,3 +1,6 @@
+"""GET /health: liveness (always 200) plus readiness, meaning whether the index is loaded and
+whether Ollama is reachable with the configured models pulled."""
+
 from typing import Annotated, Literal
 
 import httpx

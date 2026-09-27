@@ -1,3 +1,6 @@
+"""Tests for the admin API: token protection, the admin area switched off, chat turns appearing
+in the history, filters and paging, and the CSV export."""
+
 import asyncio
 import time
 from collections.abc import AsyncIterator, Iterator

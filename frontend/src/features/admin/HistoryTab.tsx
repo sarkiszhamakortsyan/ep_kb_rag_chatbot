@@ -1,3 +1,5 @@
+// History tab: stored questions and answers with search, filters, paging and CSV export.
+
 import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
