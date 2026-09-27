@@ -24,6 +24,8 @@ Frontend (Node 22, run from `frontend/`): `npm ci`, `npm run dev` (proxies `/api
 
 Full stack (repo root): `docker compose up -d --build`, then open http://localhost:8080. Ollama always starts (it serves the embeddings), and `ollama-init` pulls the models on first run (~4 GB, about 10 minutes); the backend then builds the index in the background (about 16 s on the dev VM's host CPU, cached in the `backend-index` volume). Ollama is published on `127.0.0.1:11434` for host-side dev and integration tests. Run the backend locally with `uv run uvicorn app.main:api --reload` (from `backend/`).
 
+Start on free ports (repo root): `python3 scripts/start.py dev` (uvicorn + Vite; preferred ports 8000/5173) or `python3 scripts/start.py docker [--claude-only]` (compose; 8080/11434). A busy port is replaced by the next free one and the URLs in use are printed; tests in `backend/tests/unit/test_start_script.py`.
+
 Configuration: copy `.env.example` to `.env` in the repo root. `.env` is git-ignored, so never commit real keys.
 
 ## Layout

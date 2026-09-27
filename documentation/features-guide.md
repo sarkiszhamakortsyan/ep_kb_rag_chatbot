@@ -43,6 +43,7 @@ curl -s localhost:8080/api/v1/health     # wait for "ready": true
 - **The chat** is at http://localhost:8080.
 - **The admin area** is at http://localhost:8080/admin, or press **Ctrl+Shift+A** in the chat. Sign in with the `ADMIN_TOKEN` value.
 - **After changing `.env`**, run `docker compose up -d backend` to apply it.
+- **Port 8080 or 11434 already in use?** Start with `python3 scripts/start.py docker` instead. It takes the next free port and prints the URLs; use those in place of `localhost:8080` in this guide.
 - **Switching back from `dev-mcp`:** run `rm -rf backend/app/mcp` first. It removes a Python cache folder that git leaves behind.
 
 ---
@@ -467,6 +468,8 @@ On the frontend, the admin tests are in `src/features/admin/*.test.tsx`.
 | Claude is marked unavailable | No `ANTHROPIC_API_KEY` | Add it to `.env` and restart the backend |
 | A benchmark says another run is in progress (409) | Only one run at a time | Wait, or **Cancel** it in the Tests tab |
 | The local model is slow (about 1 minute per answer) | CPU-only inference | Use Claude for demos, or a GPU |
+| `docker compose up` fails with "port is already allocated" / "address already in use" | Another program uses port 8080 or 11434 | Start with `python3 scripts/start.py docker`: it takes the next free port and prints the URLs to use |
+| `uvicorn` or `npm run dev` doesn't start on 8000 / 5173 | The port is busy | `python3 scripts/start.py dev` picks free ports and prints them |
 | An empty `app/mcp` package appears after switching from `dev-mcp` | A Python cache folder left behind by git | `rm -rf backend/app/mcp`, then rebuild |
 | MCP returns 404 | `MCP_TOKEN` is empty, so the endpoint doesn't exist | Set it in `.env`, then `docker compose up -d backend` |
 | MCP returns 401 `unauthorized` | Wrong or missing `Authorization: Bearer <MCP_TOKEN>` header | Check the token and the header |
