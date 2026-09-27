@@ -1,3 +1,6 @@
+"""Embedding provider that calls Ollama's /api/embed in batches, with the model's own task
+prompts for documents and for search queries."""
+
 from collections.abc import Sequence
 
 import httpx

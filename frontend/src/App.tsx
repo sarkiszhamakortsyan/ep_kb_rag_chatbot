@@ -1,3 +1,5 @@
+// Top-level component: shows the admin area under /admin and the chat everywhere else.
+
 import { AdminPage } from "./features/admin/AdminPage";
 import { ChatPage } from "./features/chat/ChatPage";
 

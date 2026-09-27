@@ -1,3 +1,6 @@
+// State and streaming logic of the chat: sends questions, reads the SSE stream into messages, and
+// handles stop, retry and new conversations.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, streamChat } from "../../api/client";
 import type { Citation, ChatResponse } from "../../api/types";

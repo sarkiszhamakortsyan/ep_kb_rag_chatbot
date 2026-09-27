@@ -1,3 +1,6 @@
+// Tests for the chat screen: sending a question with the chosen model, streaming the answer, and
+// clearing the conversation.
+
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";

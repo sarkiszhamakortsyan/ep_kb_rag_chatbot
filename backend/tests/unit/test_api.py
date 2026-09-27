@@ -1,3 +1,6 @@
+"""Tests for the public HTTP API with fake models: health, request ids, providers, cited answers,
+refusals, request validation and unknown providers."""
+
 import asyncio
 import json
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence

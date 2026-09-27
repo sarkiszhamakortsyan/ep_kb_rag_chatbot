@@ -1,3 +1,6 @@
+"""The chat endpoints: POST /chat returns the whole answer as JSON, and POST /chat/stream sends
+the same answer as Server-Sent Events (meta, token..., done, or error)."""
+
 import json
 import logging
 from collections.abc import AsyncIterator

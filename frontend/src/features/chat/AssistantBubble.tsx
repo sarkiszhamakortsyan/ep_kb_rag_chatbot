@@ -1,3 +1,6 @@
+// One assistant answer: streamed Markdown with clickable [n] citation chips, the source cards,
+// progress steps, errors, and copy and regenerate buttons.
+
 import { Check, CircleCheck, Copy, Info, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";

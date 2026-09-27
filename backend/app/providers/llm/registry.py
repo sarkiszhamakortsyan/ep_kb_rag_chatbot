@@ -1,3 +1,6 @@
+"""Builds the registry of answer models (LLM providers) from the settings: which are enabled,
+which is the default, and how each one is created when first used."""
+
 from collections.abc import Callable, Mapping
 from functools import partial
 

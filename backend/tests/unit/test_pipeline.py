@@ -1,3 +1,6 @@
+"""Tests for the RAG pipeline with fake models: cited answers, early refusal on low scores,
+uncited answers, invented citation numbers, model refusals and stream order."""
+
 import logging
 from collections.abc import AsyncIterator, Sequence
 from functools import partial

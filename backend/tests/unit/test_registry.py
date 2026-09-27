@@ -1,3 +1,6 @@
+"""Tests for the model registries: the default and named providers, disabled and unknown
+providers, a missing Claude key, invalid configurations, and closing providers."""
+
 import pytest
 
 from app.core.config import Settings

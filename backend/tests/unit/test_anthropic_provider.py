@@ -1,3 +1,6 @@
+"""Tests for the Claude provider with a mocked API: streaming and token usage, effort and
+fallback settings, error mapping, and a missing API key."""
+
 import json
 from collections.abc import Callable
 

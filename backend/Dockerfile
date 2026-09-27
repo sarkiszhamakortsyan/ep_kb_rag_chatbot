@@ -1,3 +1,6 @@
+# Backend image: installs the locked dependencies with uv in a builder stage, then runs the FastAPI
+# app with uvicorn on port 8000 as a non-root user.
+
 FROM python:3.12-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1

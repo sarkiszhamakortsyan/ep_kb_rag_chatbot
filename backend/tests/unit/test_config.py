@@ -1,3 +1,6 @@
+"""Tests for the settings: defaults, parsing of provider lists and empty values, validation of
+the default provider, and that the API key is never printed."""
+
 import pytest
 from pydantic import ValidationError
 

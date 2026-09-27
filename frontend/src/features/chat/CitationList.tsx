@@ -1,3 +1,6 @@
+// The source cards under an answer: article, section, matching passage and match level for each
+// citation.
+
 import { ChevronDown, FileText } from "lucide-react";
 import type { Citation } from "../../api/types";
 import { citationAnchor, relevance, RELEVANCE_LABEL, type Relevance } from "./citations";

@@ -1,3 +1,5 @@
+"""Shared pytest configuration: async tests run on asyncio."""
+
 import pytest
 
 

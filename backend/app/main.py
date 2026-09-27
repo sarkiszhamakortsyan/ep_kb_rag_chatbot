@@ -1,3 +1,7 @@
+"""Application entry point. `create_app` wires the settings, the services, background index
+loading, the v1 routes, the error handlers and the request-id middleware; `api` is the
+instance that uvicorn serves."""
+
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 

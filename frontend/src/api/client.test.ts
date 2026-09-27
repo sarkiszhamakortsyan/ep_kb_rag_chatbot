@@ -1,3 +1,5 @@
+// Tests for the API client: streamed events, and server errors before the stream starts.
+
 import { describe, expect, it, vi } from "vitest";
 import { chatResponse, jsonResponse, sse, streamResponse } from "../test/fixtures";
 import { ApiError, streamChat } from "./client";

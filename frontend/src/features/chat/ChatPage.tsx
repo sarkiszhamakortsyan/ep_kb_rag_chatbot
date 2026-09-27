@@ -1,3 +1,6 @@
+// The chat screen: header with the model picker, the conversation, example questions, and the input
+// with send and stop.
+
 import { ArrowUp, Database, Gauge, KeyRound, LifeBuoy, Square, SquarePen, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { getHealth, getProviders } from "../../api/client";

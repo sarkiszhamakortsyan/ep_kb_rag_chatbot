@@ -1,3 +1,5 @@
+// Readable names for the answer models in the model picker (for example "Claude Opus · cloud").
+
 import type { Provider } from "../../api/types";
 
 // Readable names for the model picker; unknown models fall back to their raw id.

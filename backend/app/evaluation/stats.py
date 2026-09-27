@@ -1,3 +1,6 @@
+"""Small statistics helpers for the benchmarks: nearest-rank percentiles and latency summaries
+(p50, p95, max)."""
+
 import math
 from collections.abc import Iterable
 

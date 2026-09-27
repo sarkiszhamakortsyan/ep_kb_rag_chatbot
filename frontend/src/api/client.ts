@@ -1,3 +1,6 @@
+// Typed client for the backend API: health, providers, and the chat stream, with errors turned into
+// ApiError objects.
+
 import { SseParser } from "./sse";
 import type {
   ApiErrorBody,

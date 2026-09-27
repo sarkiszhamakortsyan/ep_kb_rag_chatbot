@@ -1,3 +1,6 @@
+"""Turns the model's [n] markers into citations: finds the cited numbers, drops numbers that
+match no source, and builds the source snippets shown in the UI."""
+
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass

@@ -1,3 +1,6 @@
+"""GET /providers: the enabled answer models (LLM providers), the default one, and whether each
+can be used right now. The chat UI builds its model picker from it."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends

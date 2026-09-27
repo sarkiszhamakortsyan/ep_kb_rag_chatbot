@@ -1,3 +1,6 @@
+// Tests for the answer bubble: Markdown, citation chips and source cards, refusals, progress,
+// errors, and stopped answers.
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";

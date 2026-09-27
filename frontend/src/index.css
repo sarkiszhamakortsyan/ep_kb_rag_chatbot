@@ -1,3 +1,7 @@
+/*
+ * Global styles: Tailwind, the Inter font, and the colour tokens for the light and dark themes.
+ */
+
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 
