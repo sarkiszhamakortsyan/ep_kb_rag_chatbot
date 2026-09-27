@@ -7,6 +7,15 @@ export type UserMessage = {
   role: "user";
   text: string;
   detailed?: boolean;
+  model?: string; // set when a "/<model> question" command chose the model for this question only
+};
+
+/** A short note from the chat itself (model switched, command help), not sent to the API. */
+export type NoticeMessage = {
+  id: string;
+  role: "notice";
+  text: string;
+  tone: "info" | "warning";
 };
 
 export type AssistantMessage = {
@@ -19,9 +28,10 @@ export type AssistantMessage = {
   error?: { code: string; message: string };
   question: string; // kept so a failed answer can be retried
   detailed?: boolean; // asked with detail="detailed"
+  provider?: string; // the model provider it was asked with (a retry reuses it)
 };
 
-export type Message = UserMessage | AssistantMessage;
+export type Message = UserMessage | AssistantMessage | NoticeMessage;
 
 let counter = 0;
 const localId = () => `local-${Date.now()}-${++counter}`;
@@ -43,7 +53,11 @@ export function useChat() {
     );
 
   const ask = useCallback(
-    async (question: string, options: ChatOptions = {}) => {
+    async (
+      question: string,
+      options: ChatOptions = {},
+      modelLabel?: string,
+    ) => {
       const text = question.trim();
       if (!text || busy) return;
       const controller = new AbortController();
@@ -53,7 +67,7 @@ export function useChat() {
       const detailed = options.detail === "detailed";
       setMessages((all) => [
         ...all,
-        { id: localId(), role: "user", text, detailed },
+        { id: localId(), role: "user", text, detailed, model: modelLabel },
         {
           id: answerId,
           role: "assistant",
@@ -62,6 +76,7 @@ export function useChat() {
           sources: [],
           question: text,
           detailed,
+          provider: options.provider,
         },
       ]);
 
@@ -143,5 +158,23 @@ export function useChat() {
     setBusy(false);
   }, []);
 
-  return { messages, conversationId, busy, ask, stop, newConversation };
+  const addNotice = useCallback(
+    (text: string, tone: NoticeMessage["tone"] = "info") => {
+      setMessages((all) => [
+        ...all,
+        { id: localId(), role: "notice", text, tone },
+      ]);
+    },
+    [],
+  );
+
+  return {
+    messages,
+    conversationId,
+    busy,
+    ask,
+    stop,
+    newConversation,
+    addNotice,
+  };
 }

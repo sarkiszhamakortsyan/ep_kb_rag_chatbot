@@ -17,6 +17,7 @@ Mark every idea after you finish.
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. ✅ (dev-features, phase 17)
 - Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README) ✅ (dev-features, phase 16)
 - Option to use it over a CLI. (added 2026-09-26, from the README) ✅ (dev-features, phase 15)
+- Select the model from the chat / prompt, e.g. `/claude`, next to the existing model dropdown, in the UI and the CLI. (added 2026-09-27) ✅ (dev-features and dev-mcp, phase 19)
 
 ---
 
@@ -294,3 +295,24 @@ Every idea on the list is implemented on `dev-features`, in phases 10–18. Each
 - **`dev-features`:** has the other features (phases 10–15 and 17–18) and no MCP code, dependency or docs.
 - **`main`/`dev`:** remain the official submission.
 
+**Phase 19 ✅ (2026-09-27): choosing the model by typing (UI and CLI).**
+- **Requested:** choose the model from the chat or prompt (`/<model-name>`), and keep the existing dropdown.
+- **Commands:**
+  - `/claude` switches, and the dropdown follows.
+  - `/claude <question>` asks that question only with that model, and the selection stays.
+  - `/models` or `/help` lists them.
+  - The names are the provider name, a short name (`claude`, `local`) and the model family (`ministral`), built from `GET /providers`, so disabled models aren't offered.
+  - Unknown or unavailable models get a hint and nothing is sent. Paths such as `/v3/records:batch …` stay questions.
+- **No backend change:** the API already accepts `options.provider` per question.
+- **Frontend:**
+  - `features/chat/commands.ts`: the parser and suggestions.
+  - Chat notices: switch confirmations, the model list, warnings.
+  - A model tag on one-off questions, and Regenerate/More detail reuse the question's model.
+  - Command suggestions when typing `/`, with Tab to complete.
+- **CLI:** `app/cli/models.py`. The interactive session supports `/claude`, `/local`, `/<model> <question>` and `/models`, and `ask "/claude …"` works too.
+- **Bug found by the tests and fixed:** in the CLI session, a question starting with a path was treated as an unknown command. It's now asked as a question.
+- **Docs:** the README gets "Choosing the model by typing" and the feature-list item. The features guide gets section 2.4, the CLI commands and a demo step. Built on `dev-features` and brought to `dev-mcp` unchanged.
+- **Tests:** backend 163 on `dev-mcp` (2 new CLI tests), frontend 35 (7 new: parser, and chat switch, one-off, list, unknown and suggestions).
+- **Checked live:**
+  - Browser: `/claude` switched the dropdown, and `/claude <question>` with the local model selected was answered by Claude while the dropdown stayed on local.
+  - CLI: `ask "/claude …"`, the `/gpt` error with exit code 1, and `/models`, `/claude`, `/local <question>` in a session.

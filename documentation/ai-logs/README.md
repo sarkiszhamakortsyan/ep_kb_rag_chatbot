@@ -11,3 +11,4 @@ Snapshots of the same sessions as the terminal showed them, saved with the `/exp
 
 - [2026-09-25-2110-session-8310ea63.txt](cli-exports/2026-09-25-2110-session-8310ea63.txt)
 - [2026-09-26-1637-session-8310ea63.txt](cli-exports/2026-09-26-1637-session-8310ea63.txt)
+- [2026-09-27-0817-session-8310ea63.txt](cli-exports/2026-09-27-0817-session-8310ea63.txt)

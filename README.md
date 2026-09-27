@@ -355,6 +355,24 @@ Details:
 
   Benchmark: `uv run python -m app.evaluation.followups --provider anthropic` (or `ollama`).
 
+### Choosing the model by typing
+
+The model can be chosen in the chat or the CLI by typing a command, as well as with the dropdown, which stays:
+
+| Type | What happens |
+|---|---|
+| `/claude` (or `/anthropic`) | Switches to Claude; the dropdown follows |
+| `/local` (or `/ollama`, `/ministral`) | Switches to the local model |
+| `/claude How long are backups kept?` | Asks **this question only** with Claude; the selection stays as it was |
+| `/models` (or `/help`) | Lists the models, their commands and the selected one |
+
+- **Where the names come from:** the provider name, a short name and the model family, built from the enabled models. Models switched off in the admin Settings tab aren't offered.
+- **Errors:** an unknown command (`/gpt`) or an unavailable model gets a hint, and nothing is sent.
+- **Suggestions:** typing `/` shows the available commands, and **Tab** completes the first one.
+- **Tagging:** a one-off question is tagged with its model, and **Regenerate** and **More detail** reuse that model.
+- **Paths are safe:** only a command word counts, so a question that starts with a path, such as `/v3/records:batch limits?`, is sent as a normal question.
+- **CLI:** the same commands work in the interactive session, and `ask "/claude How long are backups kept?"` works too. `--model` stays.
+
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -585,3 +603,4 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. *(dev-features: Settings tab, Claude-only compose mode)*
 - [x] Check if we can build the hole Chatbot in an MCP server. *(dev-mcp: MCP tools and resources, over HTTP and stdio)*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
+- [x] Select the model from the chat / prompt with `/<model>` commands, next to the model dropdown (UI and CLI). *(dev-features and dev-mcp: see "Choosing the model by typing")*
