@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,14 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import app
 from app.api.errors import install_error_handlers
 from app.api.middleware import RequestContextMiddleware
-from app.api.state import AppState, get_services
+from app.api.state import AppState
 from app.api.v1 import admin, chat, health, providers
 from app.api.v1.admin.settings import apply_stored_policy
 from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.evaluation.runner import EvalRunner
-from app.mcp.http import MOUNT_PATH, mcp_http_app
-from app.mcp.server import build_mcp_server
 from app.services import Services, create_services
 from app.stores.events.base import EventStore
 from app.stores.events.fanout import FanOutEventStore
@@ -42,11 +40,6 @@ def create_app(
 ) -> FastAPI:
     settings = settings or get_settings()
 
-    # The MCP server (dev-features) shares the API's services; it exists only with MCP_TOKEN.
-    mcp_server = (
-        build_mcp_server(lambda: get_services(api.state.app_state)) if settings.mcp_token else None
-    )
-
     @asynccontextmanager
     async def lifespan(api: FastAPI) -> AsyncIterator[None]:
         # The history opens before the index loads, so the admin area works while it builds.
@@ -70,10 +63,7 @@ def create_app(
             state.start(build)
         else:
             await state.load(build)
-        async with AsyncExitStack() as stack:
-            if mcp_server:
-                await stack.enter_async_context(mcp_server.session_manager.run())
-            yield
+        yield
         if eval_runner:
             await eval_runner.close()
         await state.close()
@@ -102,9 +92,6 @@ def create_app(
     install_error_handlers(api)
     for router in (health.router, providers.router, chat.router, admin.router):
         api.include_router(router, prefix="/api/v1")
-    if mcp_server and settings.mcp_token:
-        token = settings.mcp_token.get_secret_value()
-        api.mount(MOUNT_PATH, mcp_http_app(mcp_server, token, settings.mcp_allowed_hosts))
     return api
 
 

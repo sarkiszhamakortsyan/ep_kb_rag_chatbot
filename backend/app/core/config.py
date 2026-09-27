@@ -81,13 +81,7 @@ class Settings(BaseSettings):
     # Optional cost of running the local model, e.g. a GPU server's price per hour (USD).
     local_cost_per_hour: float = Field(default=0.0, ge=0)
 
-    # MCP server over HTTP at /api/mcp (ideas.md: "the chatbot as an MCP server").
-    # Disabled when empty; clients send it as a Bearer token.
-    mcp_token: SecretStr | None = None
-    # Host names MCP clients may use (DNS-rebinding protection); ports are always allowed.
-    mcp_allowed_hosts: Annotated[list[str], NoDecode] = ["localhost", "127.0.0.1"]
-
-    @field_validator("enabled_llm_providers", "cors_origins", "mcp_allowed_hosts", mode="before")
+    @field_validator("enabled_llm_providers", "cors_origins", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
         if isinstance(value, str):
@@ -97,7 +91,6 @@ class Settings(BaseSettings):
     @field_validator(
         "anthropic_api_key",
         "admin_token",
-        "mcp_token",
         "ollama_think",
         "anthropic_effort",
         mode="before",

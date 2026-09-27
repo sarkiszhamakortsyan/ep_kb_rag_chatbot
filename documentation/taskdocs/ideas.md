@@ -15,7 +15,7 @@ Mark every idea after you finish.
 - Add hidden tab with response history. ✅ (dev-features, phase 10; follow-up questions in phase 18)
 - Add hidden tab with unit, speed, and performance test. ✅ (dev-features, phase 13)
 - Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. ✅ (dev-features, phase 17)
-- Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README) ✅ (dev-features, phase 16)
+- Check if we can build the whole chatbot as an MCP server. (added 2026-09-26, from the README) ✅ (phase 16, kept only on the **`dev-mcp`** branch)
 - Option to use it over a CLI. (added 2026-09-26, from the README) ✅ (dev-features, phase 15)
 
 ---
@@ -138,7 +138,7 @@ The admin features (#1, #2, #5, #6) share one foundation: a database for chat ev
 - Colours are turned off automatically when output goes to a file. Exit codes: 0 answered, 2 not covered, 1 error, so scripts can use it.
 - **Tests:** the CLI against a mocked API.
 
-#### Phase 16: MCP server (#8). Size: M ✅ (2026-09-26)
+#### Phase 16: MCP server (#8). Size: M ✅ (2026-09-26; on the `dev-mcp` branch only)
 - **Answer to the question:** yes. The chatbot can be offered as an **MCP server**, so assistants such as Claude Desktop or Claude Code can use the knowledge base directly. Two tools:
   - `search_knowledge_base(query, k)` returns the matching sections with document, section and score. The calling assistant writes the answer itself.
   - `ask_knowledge_base(question, model?)` runs our full pipeline and returns the answer with citations. Answers stay under our rules: sources only, refusals, citations.
@@ -231,7 +231,7 @@ The features are built on the **`dev-features`** branch. `main` and `dev` stay t
 - **Tests:** backend 144 (6 new, using a mock transport: streaming output and options, exit codes, error paths, JSON, health and providers, an interactive script).
 - **Checked against the live stack:** from the host (Claude answer with sources, early refusal with exit 2, an interactive German answer) and inside the backend container.
 
-**Phase 16 ✅ (2026-09-26): MCP server.**
+**Phase 16 ✅ (2026-09-26): MCP server.** *(Moved on 2026-09-27: it now lives only on the `dev-mcp` branch; `dev-features` doesn't contain it.)*
 - **SDK:** the official MCP Python SDK **v2** (`mcp` 2.2, where `FastMCP` is now `MCPServer`).
 - **Tools and resources** (`app/mcp/server.py`):
   - `search_knowledge_base` and `ask_knowledge_base`, plus the resources `kb://documents` and `kb://documents/{doc_id}`.
@@ -285,6 +285,12 @@ Every idea on the list is implemented on `dev-features`, in phases 10–18. Each
 - detailed answers and an answer-language selector
 - follow-up questions
 - a CLI
-- an MCP server
+- an MCP server (now on the `dev-mcp` branch only)
 - a Claude-only mode
+
+### Branch layout (2026-09-27)
+
+- **`dev-features`** (this branch): all features except the MCP server. The MCP code (`app/mcp/`), its tests, the `mcp` dependency, the `MCP_*` settings and its docs were removed. Tests: backend 157, frontend 28.
+- **`dev-mcp`:** the separate version with the whole official task, every feature here, and the MCP server.
+- **`main`/`dev`:** remain the official submission.
 

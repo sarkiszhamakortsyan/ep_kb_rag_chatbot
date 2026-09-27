@@ -5,7 +5,6 @@ import logging
 import sys
 from contextvars import ContextVar
 from datetime import UTC, datetime
-from typing import TextIO
 
 request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 
@@ -35,10 +34,8 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(entry, ensure_ascii=False, default=str)
 
 
-def configure_logging(level: str = "INFO", stream: TextIO | None = None) -> None:
-    # stdout by default (container logs); the stdio MCP server passes stderr, since its stdout
-    # carries the protocol.
-    handler = logging.StreamHandler(stream or sys.stdout)
+def configure_logging(level: str = "INFO") -> None:
+    handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
     root = logging.getLogger()
     root.handlers[:] = [handler]

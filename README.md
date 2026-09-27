@@ -9,7 +9,10 @@ A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). 
 
 > The original assignment brief and the progress checklist are at the [end of this file](#assignment-brief).
 
-> **Branches:** `main` is the official submission for the assignment. **`dev-features`** (this branch) builds on it with optional extras from the feature list: see [Extra features](#extra-features-dev-features-branch).
+> **Branches:** three versions of the same project.
+> - `main`: the official submission for the assignment.
+> - **`dev-features`** (this branch): the official task plus optional add-ons from the feature list. See [Extra features](#extra-features-dev-features-branch).
+> - `dev-mcp`: everything here **plus an MCP server**, so AI assistants can use the knowledge base directly.
 
 ---
 
@@ -274,78 +277,6 @@ docker compose exec backend python -m app.cli --url http://localhost:8000 ask "�
 - **Colours:** used only on a terminal, and never when `NO_COLOR` is set.
 - **Interactive mode:** it keeps the conversation id until `/new`.
 
-### MCP server
-
-The knowledge base is also an **MCP server**, so AI assistants such as Claude Code or Claude Desktop can use it directly:
-
-| Tool / resource | What it does |
-|---|---|
-| `ask_knowledge_base(question, model?, language?)` | The full pipeline: a cited answer, or `refused: true` when the documentation has no answer |
-| `search_knowledge_base(query, k?)` | The best-matching sections (document, section, text, score), for the assistant to answer from itself |
-| `kb://documents` · `kb://documents/{doc_id}` | The list of articles, and one article in full |
-
-**Over HTTP**, inside the running stack:
-1. Set `MCP_TOKEN` in `.env` and restart the backend. Without it the endpoint doesn't exist.
-2. The endpoint is `http://localhost:8080/api/mcp/`, and it expects `Authorization: Bearer <MCP_TOKEN>`.
-3. It's served by the backend, so questions asked this way also appear in the admin history.
-
-```bash
-claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ --header "Authorization: Bearer $MCP_TOKEN"
-```
-
-**Over stdio**, as a local subprocess:
-- It needs Ollama reachable for the embeddings, and `ANTHROPIC_API_KEY` for Claude answers. Its logs go to stderr.
-- Claude Code:
-
-  ```bash
-  claude mcp add omnicorp-kb -- uv run --directory /path/to/repo/backend python -m app.mcp
-  ```
-- Claude Desktop (`claude_desktop_config.json`):
-
-  ```json
-  { "mcpServers": { "omnicorp-kb": { "command": "uv", "args": ["run", "--directory", "/path/to/repo/backend", "python", "-m", "app.mcp"] } } }
-  ```
-
-Built with the official MCP Python SDK (v2). The HTTP transport is stateless, and host names are checked against `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
-
-### Model switches and "Claude only"
-
-- **Settings tab** (`/admin/settings`):
-  - Switch answer models on or off and choose the default, without a restart. The chat's model picker updates immediately.
-  - The configuration stays the upper limit: only providers in `ENABLED_LLM_PROVIDERS` can be enabled.
-  - Choices are stored in SQLite and re-applied after a restart. They're ignored, with a warning in the log, if the configuration no longer allows them.
-- **Claude only, without any Ollama container:**
-
-  ```bash
-  docker compose -f docker-compose.yml -f docker-compose.claude-only.yml up -d --build
-  ```
-
-  - Anthropic has no embeddings API, so embeddings then run **inside the backend** with fastembed (ONNX Runtime, no PyTorch).
-  - It's the **same `embeddinggemma` model**: vectors are identical to Ollama's (cosine 1.000), and the retrieval benchmark gives the same recall 0.97 and the same scores, so the thresholds stay valid.
-  - The model (about 1.2 GB) is downloaded once into the `backend-models` volume. The first start takes about 1.5 minutes; after that it loads in about 2 s.
-  - A question embeds in about 50 ms.
-  - Checked with the Ollama container stopped: health ok, cited answers, a German answer, and early refusals.
-
-### Follow-up questions
-
-A follow-up like *"And on the Enterprise plan?"* now keeps its topic:
-1. **Rewrite:** when a question belongs to a conversation with earlier turns, the model first rewrites it into a self-contained question, using the last 3 turns. The prompt is `prompts/rewrite_question.md`, and it keeps the question's language.
-2. **Search and answer:** retrieval and the answer both use the rewritten question.
-3. **Transparency:** the chat shows it as *"Understood as: …"*, and the admin history stores it next to the original.
-
-Details:
-- **Where the earlier turns come from:** the SQLite history, or a small in-memory store when the history is switched off.
-- **First questions** skip the extra call. The benchmarks stay single-turn, so their numbers are unchanged.
-- **Cost:** the rewrite adds one short LLM call, about 1.3 s with Claude and 4–15 s with the local model. Its tokens are included in the turn's usage and costs.
-- **Measured** on a 5-conversation set (`tests/eval/followups.yaml`, one in German): every follow-up answered correctly in context, and almost none without it.
-
-  | Model | In context | Without context |
-  |---|---|---|
-  | Claude | **5/5** | 1/5 |
-  | `ministral-3:3b` | **5/5** | 0/5 |
-
-  Benchmark: `uv run python -m app.evaluation.followups --provider anthropic` (or `ollama`).
-
 ### Tests tab
 
 The **Tests** tab (`/admin/tests`) runs the same 18-question benchmark as the CLI against the live system:
@@ -448,7 +379,6 @@ All settings are environment variables, read from `.env` (see [`.env.example`](.
 | `ADMIN_TOKEN` | – | Enables the admin area (dev-features); empty = switched off |
 | `HISTORY_ENABLED` / `HISTORY_RETENTION_DAYS` | `true` / `90` | Store questions and answers for the admin area, and for how long |
 | `EMBEDDING_PROVIDER` / `LOCAL_EMBED_MODEL` | `ollama` / `google/embeddinggemma-300m` | `local` runs the embeddings inside the backend (dev-features, used by `docker-compose.claude-only.yml`) |
-| `MCP_TOKEN` / `MCP_ALLOWED_HOSTS` | – / `localhost,127.0.0.1` | MCP server over HTTP at `/api/mcp/` (dev-features); empty token = switched off |
 | `MODEL_PRICES` / `LOCAL_COST_PER_HOUR` | Claude list prices / `0` | Costs tab: price overrides (JSON, USD per million tokens) and an optional hourly cost for the local model |
 
 ---
@@ -466,7 +396,6 @@ backend/
     stores/         vector/ (in-memory numpy store), events/ (per-turn hook), history/ (SQLite, migrations, statistics)
     evaluation/     retrieval + answer benchmarks (CLI, pytest, and background runs for the Tests tab)
     cli/            command-line client for the API (ask, interactive session, health, providers)
-    mcp/            MCP server: tools and resources, stdio entry point, token-guarded HTTP mount
   data/kb/          5 mock OmniCorp articles (SSO, API limits, retention/GDPR, webhooks, support SLAs)
   tests/            unit/, integration/, eval/ (questions.yaml), perf/, fakes.py
 frontend/src/
@@ -491,7 +420,7 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 - **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (17/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
 - **English knowledge base.** Questions in other languages work, and the answer comes in the question's language, or in the language chosen in the header selector (dev-features).
-- **Planned features** ([`ideas.md`](documentation/taskdocs/ideas.md)): on `main` they exist only as seams in the code; this branch builds all of them: the response history, statistics, costs, tests and settings tabs, detailed answers, the language selector, follow-up questions, the CLI, the MCP server and the Claude-only mode.
+- **Planned features** ([`ideas.md`](documentation/taskdocs/ideas.md)): on `main` they exist only as seams in the code; this branch builds all of them except the MCP server: the response history, statistics, costs, tests and settings tabs, detailed answers, the language selector, follow-up questions, the CLI and the Claude-only mode. The MCP server is a separate version on the `dev-mcp` branch.
 
 ---
 
@@ -557,12 +486,12 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <b>- [x] Choose AI assistant - Claude</b><br />
 <b>- [x] Make sure you log all the communication with the AI Assistant</b> (automatic export to `documentation/ai-logs/`)<br />
 <b>- [x] Create a plan step by step</b><br />
-- [ ] Create a hidden menu with statistics (planned; data is already recorded per turn)<br />
+<b>- [x] Create a hidden menu with statistics</b> (dev-features: admin Statistics tab)<br />
 <b>- [x] Create documentation</b> (this README, `documentation/`)<br />
-- [ ] Check if its possible to have hidden menu with casts. Check for a method / AI suggestions how to optimize them (planned; token usage is already recorded per turn)<br />
+<b>- [x] Check if its possible to have hidden menu with casts. Check for a method / AI suggestions how to optimize them</b> (dev-features: admin Costs tab)<br />
 <b>- [x] Professional language in the response</b> (enforced by the system prompt; "more detail on request" is planned)<br />
-- [ ] Option to Question / Answer in different language (partly: answers come in the question's language; a language selector is planned)<br />
-- [ ] Add response history (planned)<br />
+<b>- [x] Option to Question / Answer in different language</b> (dev-features: answer-language selector)<br />
+<b>- [x] Add response history</b> (dev-features: admin History tab, plus follow-up questions)<br />
 <b>- [x] If the client insists to have the answer (if there is no in documentation) choose what to do - like forward to human, or disregard in polite way</b> (polite refusal that points to an Internal SME Request)<br />
 <b>- [x] Unit, speed, and performance test</b> (see `documentation/evaluation.md`)<br />
 <b>- [x] Proceed with the plan</b><br />
@@ -574,5 +503,5 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 - [x] Option to Question / Answer in different languages. *(dev-features: answer-language selector)*
 - [x] Add hidden tab with response history. *(dev-features: admin area with History tab)*
 - [x] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude. *(dev-features: Settings tab, Claude-only compose mode)*
-- [x] Check if we can build the hole Chatbot in an MCP server. *(dev-features: MCP tools and resources, over HTTP and stdio)*
+- [ ] Check if we can build the hole Chatbot in an MCP server. *(done as a separate version: the `dev-mcp` branch)*
 - [x] Option to use it over CLI. *(dev-features: `python -m app.cli`)*
