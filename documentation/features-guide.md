@@ -1,6 +1,8 @@
 # Features guide: how to use and test the add-ons
 
-This guide covers the optional features on the **`dev-features`** branch, built on top of the official assignment (`main`). For each feature it explains what it does, how to use it, and how to check that it works. The MCP server is a separate version of the chatbot, on the `dev-mcp` branch, with its own section in that branch's copy of this guide.
+This guide covers the optional features built on top of the official assignment (`main`). For each feature it explains what it does, how to use it, and how to check that it works.
+- **Sections 1–5 and 7–9** apply to both `dev-features` and **`dev-mcp`** (this branch).
+- **Section 6, the MCP server**, exists only on `dev-mcp`.
 
 **Contents**
 
@@ -9,16 +11,17 @@ This guide covers the optional features on the **`dev-features`** branch, built 
 3. [Admin area](#3-admin-area): History, Statistics, Costs, Tests, Settings
 4. [Command-line client](#4-command-line-client)
 5. [Claude-only mode (no Ollama)](#5-claude-only-mode-no-ollama)
-6. [Automated tests and benchmarks](#6-automated-tests-and-benchmarks)
-7. [A 10-minute demo script](#7-a-10-minute-demo-script)
-8. [Troubleshooting](#8-troubleshooting)
+6. [MCP server (dev-mcp only)](#6-mcp-server-dev-mcp-only): what it offers, HTTP setup, stdio setup, testing
+7. [Automated tests and benchmarks](#7-automated-tests-and-benchmarks)
+8. [A 10-minute demo script](#8-a-10-minute-demo-script)
+9. [Troubleshooting](#9-troubleshooting)
 
 ---
 
 ## 1. Start the stack
 
 ```bash
-git switch dev-features
+git switch dev-mcp               # or dev-features, without the MCP server
 cp .env.example .env            # first time only
 ```
 
@@ -249,11 +252,144 @@ docker compose -f docker-compose.yml -f docker-compose.claude-only.yml up -d --b
 
 ---
 
-## 6. Automated tests and benchmarks
+## 6. MCP server (dev-mcp only)
+
+The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants such as Claude Code, Claude Desktop or any MCP client use external tools. On `dev-mcp` the knowledge base is such a tool. An assistant can ask it questions and get the same cited, documentation-only answers as the chat, or read the sections and write its own answer.
+
+### 6.1 What the server offers
+
+| Name | Kind | What it does |
+|---|---|---|
+| `ask_knowledge_base(question, model?, language?)` | tool | The full pipeline: a cited answer, or `"refused": true` when the documentation has no answer. `model` is `anthropic` or `ollama`; `language` is an ISO code (`de`, `fr`, …) |
+| `search_knowledge_base(query, k?)` | tool | The `k` best-matching sections (document, section, full text, similarity), for the assistant to answer from itself |
+| `kb://documents` | resource | The list of articles |
+| `kb://documents/{doc_id}` | resource | One article in full (Markdown) |
+
+There are two ways to connect, and both give the same tools.
+
+| | HTTP (in the running stack) | stdio (local subprocess) |
+|---|---|---|
+| Runs in | the backend container, at `/api/mcp/` | a process the client starts on your machine |
+| Needs | `MCP_TOKEN` set; the stack running | `uv`, the repo, Ollama reachable, and optionally `ANTHROPIC_API_KEY` |
+| Security | Bearer token, and allowed host names | Local only, no network endpoint |
+| History | Questions appear in the admin History and Statistics | Not recorded |
+| Best for | Sharing one server; demos from any MCP client | A personal setup in Claude Code or Claude Desktop |
+
+### 6.2 Set up over HTTP
+
+1. **Choose a token and add it to `.env`:**
+
+   ```bash
+   # replaces the empty MCP_TOKEN= line from .env.example (add the line first if it is missing)
+   sed -i "s/^MCP_TOKEN=.*/MCP_TOKEN=$(openssl rand -hex 24)/" .env
+   docker compose up -d backend
+   export MCP_TOKEN=$(grep '^MCP_TOKEN=' .env | cut -d= -f2)
+   ```
+
+   Without `MCP_TOKEN` the endpoint doesn't exist (404).
+2. **Check it with curl.** The server is stateless, so each request stands alone:
+
+   ```bash
+   curl -s http://localhost:8080/api/mcp/ \
+     -H "Authorization: Bearer $MCP_TOKEN" \
+     -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+     -H 'MCP-Protocol-Version: 2025-06-18' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+   ```
+
+   Expected: an `event: message` line whose data lists `search_knowledge_base` and `ask_knowledge_base`.
+
+   To call a tool, send `"method":"tools/call","params":{"name":"search_knowledge_base","arguments":{"query":"webhook signature","k":1}}`. It returns the *Webhooks › Verifying signatures* section.
+3. **Add it to Claude Code:**
+
+   ```bash
+   claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ \
+     --header "Authorization: Bearer $MCP_TOKEN"
+   claude mcp list            # omnicorp-kb should show as connected
+   ```
+
+   Then ask Claude Code, for example: *"Use the omnicorp-kb tools: what is the first-response time for a P1 ticket on Enterprise?"*
+4. **Other clients** (Claude Desktop, Cursor, the MCP Inspector) use the same URL and header. To explore the server interactively, run `npx @modelcontextprotocol/inspector`, choose *Streamable HTTP*, enter the URL, and add the `Authorization` header.
+
+**Reaching it from another machine:** add that host name to `MCP_ALLOWED_HOSTS` (DNS-rebinding protection; any port is allowed), and publish the stack behind HTTPS.
+
+### 6.3 Set up over stdio
+
+The client starts the server as a subprocess, which builds the same services in-process.
+
+**Needs:**
+- the repo and `uv` (`cd backend && uv sync`)
+- Ollama reachable for the embeddings: the Docker stack publishes it on `127.0.0.1:11434`, and `.env` should keep `OLLAMA_BASE_URL=http://localhost:11434`
+- `ANTHROPIC_API_KEY` in `.env` for Claude answers
+
+**Claude Code:**
+
+```bash
+claude mcp add omnicorp-kb -- uv run --directory /absolute/path/to/repo/backend python -m app.mcp
+```
+
+**Claude Desktop** (`claude_desktop_config.json`: *Settings → Developer → Edit config*):
+
+```json
+{
+  "mcpServers": {
+    "omnicorp-kb": {
+      "command": "uv",
+      "args": ["run", "--directory", "/absolute/path/to/repo/backend", "python", "-m", "app.mcp"]
+    }
+  }
+}
+```
+
+**First start:** it loads the cached index from `backend/data/index/`, or builds it in about 16 s. Its logs go to stderr, because stdout carries the protocol.
+
+### 6.4 Test it
+
+- **Automated:**
+
+  ```bash
+  cd backend && uv run pytest tests/unit/test_mcp.py -v
+  ```
+
+  The 4 tests cover the tools and resources through the SDK's in-process client, the error messages, and the HTTP token check with the endpoint on and off.
+- **Against the running stack,** a Python client (`MCP_TOKEN` exported):
+
+  ```python
+  # save as mcp_check.py and run: cd backend && uv run python mcp_check.py
+  import asyncio, json, os
+
+  import httpx
+  from mcp import Client
+  from mcp.client.streamable_http import streamable_http_client
+
+
+  async def main() -> None:
+      http = httpx.AsyncClient(headers={"Authorization": f"Bearer {os.environ['MCP_TOKEN']}"}, timeout=120)
+      async with Client(streamable_http_client("http://localhost:8080/api/mcp/", http_client=http)) as client:
+          print([t.name for t in (await client.list_tools()).tools])
+          result = await client.call_tool(
+              "ask_knowledge_base", {"question": "How long are backups kept?", "model": "anthropic"}
+          )
+          print(json.loads(result.content[0].text)["answer"])
+
+
+  asyncio.run(main())
+  ```
+
+  Expected: the two tool names, then *"Backups are retained for **35 days** [1]. …"*
+- **Error behaviour:**
+  - A wrong token gets 401.
+  - An unknown host name gets 421.
+  - `ask_knowledge_base` with `language: "xx"` or an unknown `model` returns a tool error that explains why.
+  - While the index is loading, tools reply that the knowledge base is still loading.
+
+---
+
+## 7. Automated tests and benchmarks
 
 | What | Command | Needs |
 |---|---|---|
-| Backend unit and API tests (157) | `cd backend && uv run pytest` | nothing |
+| Backend unit and API tests (161, including 4 MCP tests) | `cd backend && uv run pytest` | nothing |
 | Speed tests | `cd backend && uv run pytest -m perf -s` | nothing |
 | Frontend tests (28) | `cd frontend && npm test` | nothing |
 | Retrieval benchmark | `cd backend && uv run python -m app.evaluation.retrieval --k 6` | Ollama |
@@ -273,7 +409,7 @@ On the frontend, the admin tests are in `src/features/admin/*.test.tsx`.
 
 ---
 
-## 7. A 10-minute demo script
+## 8. A 10-minute demo script
 
 1. **Chat:**
    - Ask *"Which plans support SCIM user provisioning?"* with Claude. Show the citations and click a `[n]` chip.
@@ -289,10 +425,11 @@ On the frontend, the admin tests are in `src/features/admin/*.test.tsx`.
    - **Settings:** switch a model off, show the chat, then switch it back on.
 5. **Terminal:** `uv run python -m app.cli ask "How long are backups kept?"`.
 6. **Optional:** restart in Claude-only mode (section 5) to show it works without Ollama.
+7. **MCP (dev-mcp):** in Claude Code with the server added (section 6), ask *"Using the omnicorp-kb tools, how long are backups kept?"*. Claude calls `ask_knowledge_base` and answers with the knowledge base's citations.
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -304,3 +441,8 @@ On the frontend, the admin tests are in `src/features/admin/*.test.tsx`.
 | A benchmark says another run is in progress (409) | Only one run at a time | Wait, or **Cancel** it in the Tests tab |
 | The local model is slow (about 1 minute per answer) | CPU-only inference | Use Claude for demos, or a GPU |
 | An empty `app/mcp` package appears after switching from `dev-mcp` | A Python cache folder left behind by git | `rm -rf backend/app/mcp`, then rebuild |
+| MCP returns 404 | `MCP_TOKEN` is empty, so the endpoint doesn't exist | Set it in `.env`, then `docker compose up -d backend` |
+| MCP returns 401 `unauthorized` | Wrong or missing `Authorization: Bearer <MCP_TOKEN>` header | Check the token and the header |
+| MCP returns 421 `Invalid Host header` | The client uses a host name not in `MCP_ALLOWED_HOSTS` | Add it, e.g. `MCP_ALLOWED_HOSTS=localhost,127.0.0.1,kb.example.com` |
+| An MCP tool says the knowledge base is still loading | The index is building | Wait for `/api/v1/health` |
+| The stdio server can't reach Ollama | Ollama isn't running, or `OLLAMA_BASE_URL` points to the Docker-internal name | Start the stack (Ollama is published on `127.0.0.1:11434`), and keep `OLLAMA_BASE_URL=http://localhost:11434` in `.env` |

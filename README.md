@@ -313,6 +313,8 @@ claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ --hea
   { "mcpServers": { "omnicorp-kb": { "command": "uv", "args": ["run", "--directory", "/path/to/repo/backend", "python", "-m", "app.mcp"] } } }
   ```
 
+Step-by-step setup, testing and troubleshooting: [features guide, section 6](documentation/features-guide.md#6-mcp-server-dev-mcp-only).
+
 Built with the official MCP Python SDK (v2). The HTTP transport is stateless, and host names are checked against `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
 
 ### Model switches and "Claude only"
