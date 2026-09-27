@@ -1,3 +1,6 @@
+"""Tests for the MCP server through the SDK's in-process client: tools, resources, prompts, model
+names, errors, and the token check of the HTTP endpoint."""
+
 import json
 from pathlib import Path
 from typing import Any

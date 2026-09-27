@@ -1,3 +1,6 @@
+"""Tests for the benchmark code: percentiles, the question set's format, and how answers and
+retrieval results are scored."""
+
 import pytest
 
 from app.evaluation.answers import AnswerCheck, evaluate_answers, summarize

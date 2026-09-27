@@ -1,3 +1,6 @@
+"""Tests for the in-memory vector store: ordering by cosine similarity, edge cases, input
+validation, and saving and loading."""
+
 from pathlib import Path
 
 import pytest

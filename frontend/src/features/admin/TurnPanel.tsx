@@ -1,3 +1,5 @@
+// Detail panel for one stored chat turn: question, answer, sources, tokens and timings.
+
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";

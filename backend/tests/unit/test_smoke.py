@@ -1,3 +1,5 @@
+"""Smoke test: the backend package imports."""
+
 import app
 
 

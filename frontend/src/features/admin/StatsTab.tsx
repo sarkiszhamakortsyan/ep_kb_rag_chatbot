@@ -1,3 +1,6 @@
+// Statistics tab: totals, questions per day, models, most cited sources, and the questions the
+// knowledge base couldn't answer.
+
 import { useEffect, useState } from "react";
 import { getStats, type UsageStats } from "../../api/admin";
 import { ApiError } from "../../api/client";

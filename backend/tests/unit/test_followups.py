@@ -1,3 +1,6 @@
+"""Tests for follow-up questions: rewriting before retrieval, keeping the question when the
+rewrite is unusable, and reading recent turns from memory or SQLite."""
+
 from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
 

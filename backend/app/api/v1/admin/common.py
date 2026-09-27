@@ -1,3 +1,6 @@
+"""Shared dependencies for the admin endpoints: access to the SQLite history, and the date-range
+query parameters (default: the last 30 days)."""
+
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 

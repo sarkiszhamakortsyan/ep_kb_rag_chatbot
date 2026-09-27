@@ -1,3 +1,6 @@
+// Tests for the admin area: sign-in errors, the switched-off state, the History tab and the Costs
+// tab.
+
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";

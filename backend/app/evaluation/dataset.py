@@ -1,3 +1,6 @@
+"""Loads the benchmark question set (tests/eval/questions.yaml): each question, whether it is
+answerable, its expected documents and its key facts."""
+
 from dataclasses import dataclass, field
 from pathlib import Path
 

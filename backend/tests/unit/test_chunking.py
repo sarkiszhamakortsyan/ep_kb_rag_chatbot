@@ -1,3 +1,6 @@
+"""Tests for front-matter parsing and heading-aware chunking: section paths, packing with
+overlap, splitting oversized blocks, and the chunking settings."""
+
 from itertools import pairwise
 
 import pytest

@@ -1,3 +1,6 @@
+"""Retrieval step of the pipeline: embeds the question and returns the most similar chunks from
+the vector store, with their scores and timings."""
+
 import time
 from dataclasses import dataclass
 

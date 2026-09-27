@@ -1,3 +1,6 @@
+# Frontend image: builds the React app with Node, then serves the static files with nginx, which
+# also forwards /api to the backend.
+
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./

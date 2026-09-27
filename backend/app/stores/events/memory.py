@@ -1,3 +1,6 @@
+"""An EventStore that keeps the last turns of each conversation in memory, so follow-up questions
+work even when the SQLite history is switched off."""
+
 from collections import OrderedDict, deque
 from typing import TYPE_CHECKING
 

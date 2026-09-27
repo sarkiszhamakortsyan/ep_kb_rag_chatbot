@@ -1,3 +1,5 @@
+// Sign-in form for the admin area (the ADMIN_TOKEN).
+
 import { useState, type FormEvent } from "react";
 import { getAdminSession, type AdminSession } from "../../api/admin";
 import { ApiError } from "../../api/client";

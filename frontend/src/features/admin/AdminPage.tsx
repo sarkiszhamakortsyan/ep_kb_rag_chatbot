@@ -1,3 +1,6 @@
+// The hidden admin area: token sign-in, then the Statistics, Costs, History, Tests and Settings
+// tabs.
+
 import {
   ArrowLeft,
   ChartColumn,

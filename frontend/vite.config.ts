@@ -1,3 +1,6 @@
+// Vite configuration: React and Tailwind plugins, the /api proxy to the backend for local
+// development, and the Vitest test setup.
+
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";

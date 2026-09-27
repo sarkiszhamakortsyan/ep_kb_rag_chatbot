@@ -1,3 +1,5 @@
+// Test data and helpers: sample citations and chat responses, and fake SSE and JSON HTTP responses.
+
 import type { ChatResponse, Citation } from "../api/types";
 
 export const citation = (n: number, overrides: Partial<Citation> = {}): Citation => ({

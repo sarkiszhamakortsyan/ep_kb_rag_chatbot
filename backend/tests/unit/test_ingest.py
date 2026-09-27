@@ -1,3 +1,6 @@
+"""Tests for building and caching the index: reuse of the cache, rebuilds when documents, models,
+chunking or prompts change, corrupt caches, and duplicate article ids."""
+
 import json
 import os
 from collections.abc import Sequence

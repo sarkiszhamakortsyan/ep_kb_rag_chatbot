@@ -1,3 +1,6 @@
+"""Tests for the SQLite response history: storing and reading turns, paging and filters,
+retention, usage statistics, and that a storage failure never breaks the chat."""
+
 import dataclasses
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path

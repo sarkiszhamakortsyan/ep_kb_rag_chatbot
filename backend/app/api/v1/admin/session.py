@@ -1,3 +1,6 @@
+"""GET /admin/session: checks the admin token at sign-in and tells the admin UI whether the
+history is switched on and how long turns are kept."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request

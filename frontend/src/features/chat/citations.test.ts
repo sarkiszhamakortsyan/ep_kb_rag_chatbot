@@ -1,3 +1,6 @@
+// Tests for citation helpers: marker links, grouped markers, match levels, and removing markers for
+// copying.
+
 import { describe, expect, it } from "vitest";
 import { linkCitations, relevance, stripCitations } from "./citations";
 

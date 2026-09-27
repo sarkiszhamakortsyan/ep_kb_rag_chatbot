@@ -1,3 +1,7 @@
+"""Answer model (LLM provider) for Claude: streams answers from the Anthropic Messages API with
+your own API key, caches the system prompt, reports token usage, and maps API errors to the
+project's error types."""
+
 from collections.abc import AsyncIterator, Sequence
 from typing import Any, Literal
 

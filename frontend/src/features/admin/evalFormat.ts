@@ -1,3 +1,5 @@
+// Formatting helpers for benchmark runs: score, result, change and duration.
+
 import type { EvalRun } from "../../api/admin";
 
 const num = (value: unknown) => (typeof value === "number" ? value : null);

@@ -1,3 +1,6 @@
+"""An EventStore that passes every chat turn to several stores, for example the log and the
+SQLite history."""
+
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 

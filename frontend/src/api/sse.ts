@@ -1,3 +1,5 @@
+// Parser for the chat stream's Server-Sent Events.
+
 import type { StreamEvent } from "./types";
 
 /**

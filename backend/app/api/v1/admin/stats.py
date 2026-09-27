@@ -1,3 +1,6 @@
+"""GET /admin/stats: usage statistics for a date range (totals, questions per day, models, most
+cited sources and the questions the knowledge base couldn't answer)."""
+
 from dataclasses import asdict
 from typing import Any
 

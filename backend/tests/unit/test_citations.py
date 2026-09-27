@@ -1,3 +1,6 @@
+"""Tests for citation handling and prompt building: marker styles, mapping markers to sources,
+out-of-range numbers, snippets, and the prompt templates."""
+
 from app.rag.citations import build_citations, cited_numbers
 from app.rag.models import Chunk
 from app.rag.prompts import build_user_message, load_prompt

@@ -1,3 +1,5 @@
+// Tests for the Settings tab: validation, then saving the enabled models and the default.
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
