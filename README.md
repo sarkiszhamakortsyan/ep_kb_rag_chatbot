@@ -9,11 +9,14 @@ A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). 
 
 > The original assignment brief and the progress checklist are at the [end of this file](#assignment-brief).
 
+> **Branches.** This branch (`main`) is the submission for the assignment, and everything in this README describes it. Optional extensions built afterwards, such as an admin area, usage statistics, cost reports, a CLI and an MCP server, live on separate branches: see [Beyond the assignment](#beyond-the-assignment-optional-features).
+
 ---
 
 ## Contents
 
 - [Quick start](#quick-start)
+- [Try it](#try-it)
 - [Architecture](#architecture)
 - [API](#api)
 - [Key decisions and trade-offs](#key-decisions-and-trade-offs)
@@ -21,6 +24,7 @@ A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). 
 - [Configuration](#configuration)
 - [Project structure](#project-structure)
 - [Known limitations and future work](#known-limitations-and-future-work)
+- [Beyond the assignment: optional features](#beyond-the-assignment-optional-features)
 - [AI assistant usage](#ai-assistant-usage)
 - [Assignment brief](#assignment-brief)
 
@@ -51,6 +55,22 @@ docker compose up -d ollama ollama-init          # Ollama on 127.0.0.1:11434
 cd backend  && uv sync && uv run uvicorn app.main:api --reload    # :8000, Swagger at /docs
 cd frontend && npm ci && npm run dev                               # :5173, proxies /api -> :8000
 ```
+
+---
+
+## Try it
+
+These questions come from the evaluation set (`backend/tests/eval/questions.yaml`) and show the main behaviours:
+
+| Question | What to expect |
+|---|---|
+| *Which plans support SCIM user provisioning?* | An answer from one article, with a citation chip and a source card |
+| *All administrators are locked out after enabling SSO enforcement. What should the customer do and how fast will support respond on the Enterprise tier?* | An answer that combines two articles (SSO and support SLAs), citing both |
+| *Wie lange werden Backups aufbewahrt und in welchen Regionen werden die Daten gespeichert?* | A German question over English articles, answered in German |
+| *What is the price per seat of the Business plan?* | A polite refusal in about 50 ms, without calling the model: no section scores above the relevance threshold, so the answer points to an internal expert |
+| *How do I enable offline mode in the OmniCorp mobile app?* | A near-topic question: related sections are found, but the model reads them, sees they don't answer it, and declines politely instead of guessing |
+
+Click a citation chip `[n]` to jump to its source card, which shows the article, the section and the matching passage. Switch the **Model** selector between *ollama* and *anthropic* to compare the local model with Claude.
 
 ---
 
@@ -302,7 +322,36 @@ docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
 - **Local answers are slow on a CPU** (about 60 s per answer on a 4-core laptop CPU, mostly reading the prompt) and less reliable than Claude (17/18 vs 18/18). A GPU or Claude is recommended for interactive use.
 - **Small knowledge base and evaluation set** (5 articles, 18 questions). Enough to validate the design, not to tune it statistically.
 - **English knowledge base.** Questions in other languages work, and the answer comes in the question's language; there's no language selector yet (`ideas.md` #4).
-- **Planned** (with the seams already in the code, see [`ideas.md`](documentation/taskdocs/ideas.md)): hidden statistics, costs, history and tests tabs; concise vs detailed answers; a model on/off toggle.
+- **Planned features** ([`ideas.md`](documentation/taskdocs/ideas.md)): hidden statistics, costs, history and tests tabs; concise versus detailed answers; a language selector; switching models on and off. This branch only contains the seams for them (`ChatResult`, the `EventStore` hook, the `options` object, the provider registries). They are built on separate branches: see the next section.
+
+---
+
+## Beyond the assignment: optional features
+
+After the assignment was complete, the ideas from the [feature list](#features-which-we-can-try-to-implement) were built on separate branches, so that `main` stays exactly the submitted solution. Anyone who wants to continue with the features can start from these branches.
+
+| Branch | Contents |
+|---|---|
+| `main` | The assignment (this README) |
+| `main-features` | The assignment plus the optional features below |
+| `main-mcp` | Everything in `main-features`, plus an MCP server that lets AI assistants such as Claude Desktop and Claude Code use the knowledge base |
+
+`main-features` and `main-mcp` are the stable versions. Development happens on `dev-features` and `dev-mcp`, and changes reach the `main-*` branches once CI passes.
+
+**The optional features:**
+- **Admin area** (hidden, protected by a token): response history with search, filters and CSV export; usage statistics; cost reports with optimisation hints; a Tests tab that runs the benchmarks; and a Settings tab that switches models on and off without a restart.
+- **Chat:** a *More detail* button, an answer-language selector, follow-up questions that keep their context, and choosing the model by typing `/claude` or `/local`.
+- **Operations:** a command-line client, a "Claude only" mode that runs without Ollama, and a start script that moves to free ports when the default ones are busy.
+- **MCP server** (`main-mcp` only): tools, resources and prompts over HTTP and stdio, with a setup script for Claude Desktop.
+
+To try them:
+
+```bash
+git checkout main-features        # or main-mcp
+docker compose up -d --build
+```
+
+Each branch's README describes the assignment first, as here, and then every feature. `documentation/features-guide.md` on those branches explains how to use and test each feature step by step.
 
 ---
 
@@ -321,7 +370,7 @@ A Claude Code hook (`.claude/settings.json` → `scripts/export_ai_logs.py`) reg
 | Tool | Used for |
 |---|---|
 | **Claude Code** (CLI, Claude Opus 5.5 model) | Everything in this repository was built in Claude Code sessions, directed and reviewed by me phase by phase (see the prompts in the logs): the research and decision documents in `documentation/taskdocs/`; the mock knowledge-base articles and evaluation set; all backend and frontend code and tests; the Docker and nginx setup; CI; the evaluation runs; this README; and the log exporter |
-| **Me (the developer)** | The goal, requirements and task documents; approving the plan and each phase; decisions (Claude vs local model, branch and commit workflow, VM CPU change); reviewing results |
+| **Me (the developer)** | The goal, requirements and task documents; approving the plan and each phase; the decisions (Claude versus the local model, the branch and commit workflow, the development machine's CPU configuration); reviewing the results |
 | **Claude API** (`claude-opus-5`) at runtime | Answer generation when the *anthropic* provider is selected. Part of the product, not a development tool |
 
 Also used during development: a throwaway headless Chromium (Playwright) for browser end-to-end checks, which isn't part of the project dependencies.
@@ -368,22 +417,25 @@ We expect and encourage you to use AI assistants (GitHub Copilot, ChatGPT, Claud
 <b>- [x] Choose AI assistant - Claude</b><br />
 <b>- [x] Make sure you log all the communication with the AI Assistant</b> (automatic export to `documentation/ai-logs/`)<br />
 <b>- [x] Create a plan step by step</b><br />
-- [ ] Create a hidden menu with statistics (planned; data is already recorded per turn)<br />
+- [ ] Create a hidden menu with statistics (on `main`: the data is recorded per turn; the menu is built on `main-features`)<br />
 <b>- [x] Create documentation</b> (this README, `documentation/`)<br />
-- [ ] Check if its possible to have hidden menu with casts. Check for a method / AI suggestions how to optimize them (planned; token usage is already recorded per turn)<br />
-<b>- [x] Professional language in the response</b> (enforced by the system prompt; "more detail on request" is planned)<br />
-- [ ] Option to Question / Answer in different language (partly: answers come in the question's language; a language selector is planned)<br />
-- [ ] Add response history (planned)<br />
-<b>- [x] If the client insists to have the answer (if there is no in documentation) choose what to do - like forward to human, or disregard in polite way</b> (polite refusal that points to an Internal SME Request)<br />
+- [ ] Check if it's possible to have a hidden menu with costs. Check for a method / AI suggestions how to optimize them (on `main`: token usage is recorded per turn; the menu is built on `main-features`)<br />
+<b>- [x] Professional language in the response</b> (enforced by the system prompt; "more detail on request" is built on `main-features`)<br />
+- [ ] Option to Question / Answer in different languages (on `main`: answers come in the question's language; a language selector is built on `main-features`)<br />
+- [ ] Add response history (built on `main-features`)<br />
+<b>- [x] If a client insists on an answer that isn't in the documentation, decide what to do: forward to a human, or decline politely</b> (a polite refusal that points to an Internal SME Request)<br />
 <b>- [x] Unit, speed, and performance test</b> (see `documentation/evaluation.md`)<br />
 <b>- [x] Proceed with the plan</b><br />
 
-<h2>Features which we can try to implement</h2>
+<h2 id="features-which-we-can-try-to-implement">Features which we can try to implement</h2>
+
+Not part of the assignment. All of them are built on the `main-features` branch, and the MCP server on `main-mcp` (see [Beyond the assignment](#beyond-the-assignment-optional-features)).
+
 - [ ] Create a hidden menu with statistics about the usage.
-- [ ] Check if its possible to have hidden menu with costs. Check for a method / AI suggestions how to optimize them.
+- [ ] Check if it's possible to have a hidden menu with costs. Check for a method / AI suggestions how to optimize them.
 - [ ] Method to write the response in professional language, clear and accurate. Provide more details only when requested.
 - [ ] Option to Question / Answer in different languages.
 - [ ] Add hidden tab with response history.
 - [ ] Option to enable / disable AI model use. For example, stop using Ollama and work only with Claude.
-- [ ] Check if we can build the hole Chatbot in an MCP server.
+- [ ] Check if we can build the whole chatbot as an MCP server.
 - [ ] Option to use it over CLI.
