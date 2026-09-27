@@ -316,3 +316,11 @@ Every idea on the list is implemented on `dev-features`, in phases 10–18. Each
 - **Checked live:**
   - Browser: `/claude` switched the dropdown, and `/claude <question>` with the local model selected was answered by Claude while the dropdown stayed on local.
   - CLI: `ask "/claude …"`, the `/gpt` error with exit code 1, and `/models`, `/claude`, `/local <question>` in a session.
+
+**MCP follow-up (2026-09-27, `dev-mcp` only): easier questions from Claude Desktop and Claude Code.**
+- **Requested:** an easier way to ask than typing *"Use omnicorp-kb with model ministral-3:3b: …"*.
+- **Prompts:** `ask`, `ask_claude` and `ask_local`, each with one `question` argument. Claude Code shows them as `/mcp__omnicorp-kb__ask …`, Claude Desktop in the **+** menu.
+- **Model names:** `ask_knowledge_base` now accepts `claude`/`local`, the model family and the full model id as well as the provider names (`resolve_model()` in `app/mcp/server.py`, reusing the CLI's short names). An unknown name lists the accepted ones.
+- **Installer:** `scripts/install_claude_desktop_mcp.py` adds the server to Claude Desktop, locally or on another machine over SSH (`--ssh`), keeps the other settings, and checks the result with a real MCP handshake.
+- **Tests:** backend 172 on `dev-mcp` (2 new MCP tests: model names and prompts).
+- **Checked live:** `claude -p "/mcp__omnicorp-kb__ask_local What is the first-response time for a P1 ticket on Enterprise?"` passed the whole question to `ask_knowledge_base` with `model: "ollama"` and answered "15 minutes", citing kb-005. The laptop's Claude Desktop, which starts the server on the VM over SSH, was updated with the installer.

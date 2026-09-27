@@ -287,10 +287,11 @@ The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants
 
 | Name | Kind | What it does |
 |---|---|---|
-| `ask_knowledge_base(question, model?, language?)` | tool | The full pipeline: a cited answer, or `"refused": true` when the documentation has no answer. `model` is `anthropic` or `ollama`; `language` is an ISO code (`de`, `fr`, …) |
+| `ask_knowledge_base(question, model?, language?)` | tool | The full pipeline: a cited answer, or `"refused": true` when the documentation has no answer. `model` is `anthropic`/`claude`, `ollama`/`local`, the model family (`ministral`) or the full id (`ministral-3:3b`); `language` is an ISO code (`de`, `fr`, …) |
 | `search_knowledge_base(query, k?)` | tool | The `k` best-matching sections (document, section, full text, similarity), for the assistant to answer from itself |
 | `kb://documents` | resource | The list of articles |
 | `kb://documents/{doc_id}` | resource | One article in full (Markdown) |
+| `ask(question)` · `ask_claude(question)` · `ask_local(question)` | prompt | Turn a question into a request to use `ask_knowledge_base` with the default model, Claude or the local model, and to show the citations. Clients offer them as commands (see 6.5) |
 
 There are two ways to connect, and both give the same tools.
 
@@ -368,7 +369,32 @@ claude mcp add omnicorp-kb -- uv run --directory /absolute/path/to/repo/backend 
 }
 ```
 
+**Claude Desktop, with the installer** (instead of editing the file by hand). Run it on the computer where Claude Desktop is installed:
+
+```bash
+# the repo is on the same computer
+python3 scripts/install_claude_desktop_mcp.py
+
+# the repo runs on another machine, e.g. a VM: Claude Desktop starts the server there over SSH
+ssh user@vm cat /path/to/repo/scripts/install_claude_desktop_mcp.py \
+  | python3 - --ssh user@vm --backend /path/to/repo/backend
+```
+
+It checks that SSH works without a password prompt (Claude Desktop can't type one), backs up `claude_desktop_config.json` and adds the `omnicorp-kb` entry while keeping your other servers and Desktop's own settings. It then starts the server exactly as Claude Desktop will and lists its tools and prompts. Quit and restart Claude Desktop afterwards. The entry it writes for `--ssh` looks like this:
+
+```json
+"omnicorp-kb": {
+  "command": "/usr/bin/ssh",
+  "args": ["-T", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=30", "user@vm",
+           "PATH=\"$HOME/.local/bin:$HOME/.cargo/bin:$PATH\" uv run --quiet --directory /path/to/repo/backend python -m app.mcp"]
+}
+```
+
+With `--ssh`, the server runs on the VM, so Ollama must be reachable there (the Docker stack on the VM), not on the laptop.
+
 **First start:** it loads the cached index from `backend/data/index/`, or builds it in about 16 s. Its logs go to stderr, because stdout carries the protocol.
+
+**Keep it working when you switch branches:** the MCP code exists only on `dev-mcp`/`main-mcp`. If the same checkout is also used for `dev-features`, point the client at a separate worktree instead: `git worktree add ../ep_kb_rag_chatbot-mcp main-mcp`, then `cd ../ep_kb_rag_chatbot-mcp/backend && uv sync` and link the `.env` (`ln -s ../ep_kb_rag_chatbot/.env ../ep_kb_rag_chatbot-mcp/.env`).
 
 ### 6.4 Test it
 
@@ -378,7 +404,7 @@ claude mcp add omnicorp-kb -- uv run --directory /absolute/path/to/repo/backend 
   cd backend && uv run pytest tests/unit/test_mcp.py -v
   ```
 
-  The 4 tests cover the tools and resources through the SDK's in-process client, the error messages, and the HTTP token check with the endpoint on and off.
+  The 6 tests cover the tools, resources and prompts through the SDK's in-process client, the model names (`local`, `ministral`, `ministral-3:3b`, …), the error messages, and the HTTP token check with the endpoint on and off.
 - **Against the running stack,** a Python client (`MCP_TOKEN` exported):
 
   ```python
@@ -407,8 +433,25 @@ claude mcp add omnicorp-kb -- uv run --directory /absolute/path/to/repo/backend 
 - **Error behaviour:**
   - A wrong token gets 401.
   - An unknown host name gets 421.
-  - `ask_knowledge_base` with `language: "xx"` or an unknown `model` returns a tool error that explains why.
+  - `ask_knowledge_base` with `language: "xx"` or an unknown `model` returns a tool error that explains why; for a model it lists the accepted names.
   - While the index is loading, tools reply that the knowledge base is still loading.
+
+### 6.5 Asking questions from Claude Desktop and Claude Code
+
+- **Just ask.** The server tells the client what it covers, so a plain question such as *"What is the first-response time for a P1 ticket on Enterprise?"* usually makes Claude call `ask_knowledge_base`. Adding *"use omnicorp-kb"* makes it certain, and *"with claude"*, *"with local"* or *"with ministral-3:3b"* picks the model.
+- **Commands (the server's prompts).**
+  - Claude Code and Claude Desktop's local Code sessions show them as slash commands. Type the question after the command:
+
+    ```text
+    /mcp__omnicorp-kb__ask What is the first-response time for a P1 ticket on Enterprise?
+    /mcp__omnicorp-kb__ask_claude How long are backups kept?
+    /mcp__omnicorp-kb__ask_local Which webhook events exist?
+    ```
+
+  - In a regular Claude Desktop chat, they are in the **+** menu under the server's name, and ask for the question in a small form.
+- **Checking that it was used:**
+  - The answer has a collapsible `ask_knowledge_base` step above it, with the question and model sent and the raw reply (`answer`, `citations`, `refused`, `model`).
+  - Each answer is also logged by the server (stderr) as a `chat_turn` line with the model, the cited documents and the timings. In Claude Desktop that log is `~/.config/Claude/logs/mcp-server-omnicorp-kb.log`: `grep chat_turn` it.
 
 ---
 
@@ -416,7 +459,7 @@ claude mcp add omnicorp-kb -- uv run --directory /absolute/path/to/repo/backend 
 
 | What | Command | Needs |
 |---|---|---|
-| Backend unit and API tests (163, including 4 MCP tests) | `cd backend && uv run pytest` | nothing |
+| Backend unit and API tests (172, including 6 MCP tests) | `cd backend && uv run pytest` | nothing |
 | Speed tests | `cd backend && uv run pytest -m perf -s` | nothing |
 | Frontend tests (35) | `cd frontend && npm test` | nothing |
 | Retrieval benchmark | `cd backend && uv run python -m app.evaluation.retrieval --k 6` | Ollama |

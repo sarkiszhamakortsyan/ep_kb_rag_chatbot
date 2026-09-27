@@ -88,6 +88,61 @@ async def test_tools_and_resources(tmp_path: Path) -> None:
         await services.aclose()
 
 
+async def test_model_accepts_chat_and_cli_names(tmp_path: Path) -> None:
+    settings = make_settings(tmp_path)
+    services = await create_services(
+        settings,
+        llm_factories={
+            "ollama": lambda s: FakeLLM("Backups are retained for 35 days [1].", name="ollama",
+                                        model="ministral-3:3b")
+        },
+        embedding_factories={"ollama": lambda s: FakeEmbedder()},
+    )  # fmt: skip
+    try:
+        async with Client(build_mcp_server(lambda: services)) as client:
+            for name in ("ollama", "local", "/local", "Ministral", "ministral-3:3b"):
+                result = await client.call_tool(
+                    "ask_knowledge_base", {"question": "Backups?", "model": name}
+                )
+                assert not result.is_error, name
+                assert payload(result)["model"] == "ministral-3:3b"
+
+            wrong = await client.call_tool("ask_knowledge_base", {"question": "q", "model": "gpt"})
+            text = wrong.content[0].text
+            assert wrong.is_error and "'gpt'" in text and "ministral-3:3b" in text
+            # A known but disabled model gets the pipeline's own explanation.
+            disabled = await client.call_tool(
+                "ask_knowledge_base", {"question": "q", "model": "claude"}
+            )
+            assert disabled.is_error and "anthropic" in disabled.content[0].text
+    finally:
+        await services.aclose()
+
+
+async def test_prompts_turn_a_question_into_a_tool_request(tmp_path: Path) -> None:
+    services = await fake_services(make_settings(tmp_path))
+    try:
+        async with Client(build_mcp_server(lambda: services)) as client:
+            prompts = {p.name: p for p in (await client.list_prompts()).prompts}
+            assert set(prompts) == {"ask", "ask_claude", "ask_local"}
+            assert [a.name for a in prompts["ask"].arguments or []] == ["question"]
+
+            question = "How long are backups kept?"
+            ask = await client.get_prompt("ask", {"question": question})
+            text = ask.messages[0].content.text  # type: ignore[union-attr]
+            assert text.startswith(
+                "Answer this question with the omnicorp-kb tool ask_knowledge_base."
+            )
+            assert text.endswith(f"Question: {question}")
+
+            claude = await client.get_prompt("ask_claude", {"question": question})
+            assert 'model "anthropic"' in claude.messages[0].content.text  # type: ignore[union-attr]
+            local = await client.get_prompt("ask_local", {"question": question})
+            assert 'model "ollama"' in local.messages[0].content.text  # type: ignore[union-attr]
+    finally:
+        await services.aclose()
+
+
 async def test_tools_explain_when_the_index_is_not_ready() -> None:
     def not_ready() -> Services:
         raise RuntimeError("The knowledge base is still loading.")
