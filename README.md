@@ -199,6 +199,8 @@ Errors before streaming starts (validation, unknown provider, index still loadin
 
 Optional features from the [feature list](#features-which-we-can-try-to-implement), built phase by phase on top of the official version. The plan and progress are in [`ideas.md`](documentation/taskdocs/ideas.md#implementation-plan-2026-09-26).
 
+> **How to use and test every feature, step by step:** [`documentation/features-guide.md`](documentation/features-guide.md). It includes a 10-minute demo script and troubleshooting.
+
 ### Admin area and response history
 
 - **What it does:**
