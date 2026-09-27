@@ -9,7 +9,12 @@ A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). 
 
 > The original assignment brief and the progress checklist are at the [end of this file](#assignment-brief).
 
-> **Branches:** `main` is the official submission for the assignment. **`dev-features`** (this branch) builds on it with optional extras from the feature list: see [Extra features](#extra-features-dev-features-branch).
+> **Branches:** three versions of the same project.
+> - `main`: the official submission for the assignment.
+> - `dev-features`: the official task plus optional add-ons from the feature list.
+> - **`dev-mcp`** (this branch): everything in `dev-features` **plus the MCP server**, so AI assistants can use the knowledge base directly.
+>
+> See [Extra features](#extra-features-dev-features-branch) and [MCP server](#mcp-server).
 
 ---
 

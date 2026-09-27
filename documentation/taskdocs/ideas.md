@@ -288,3 +288,9 @@ Every idea on the list is implemented on `dev-features`, in phases 10–18. Each
 - an MCP server
 - a Claude-only mode
 
+### Branch layout (2026-09-27)
+
+- **`dev-mcp`:** the MCP server (phase 16) lives only here, as a separate version of the chatbot. It contains the whole official task, every feature from `dev-features`, and the MCP server.
+- **`dev-features`:** has the other features (phases 10–15 and 17–18) and no MCP code, dependency or docs.
+- **`main`/`dev`:** remain the official submission.
+
