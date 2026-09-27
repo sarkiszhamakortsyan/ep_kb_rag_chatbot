@@ -354,7 +354,7 @@ claude mcp add --transport http omnicorp-kb http://localhost:8080/api/mcp/ --hea
 
   Or let `scripts/install_claude_desktop_mcp.py` write it. With `--ssh user@vm --backend /path/to/repo/backend` it sets Claude Desktop up to start the server on another machine over SSH, then checks the connection and installs the `/kb` skills.
 
-Step-by-step setup, testing and troubleshooting: [features guide, section 6](documentation/features-guide.md#6-mcp-server-dev-mcp-only).
+Step-by-step setup, testing and troubleshooting: [features guide, section 6](documentation/features-guide.md#6-mcp-server-dev-mcp-only). **Claude Desktop** (how it works, setup on the same computer or over SSH, the `/kb` commands, troubleshooting): [`documentation/mcp-claude-desktop.md`](documentation/mcp-claude-desktop.md).
 
 Built with the official MCP Python SDK (v2). The HTTP transport is stateless, and host names are checked against `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
 

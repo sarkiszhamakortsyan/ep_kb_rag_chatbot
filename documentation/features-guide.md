@@ -283,6 +283,8 @@ docker compose -f docker-compose.yml -f docker-compose.claude-only.yml up -d --b
 
 The [Model Context Protocol](https://modelcontextprotocol.io) lets AI assistants such as Claude Code, Claude Desktop or any MCP client use external tools. On `dev-mcp` the knowledge base is such a tool. An assistant can ask it questions and get the same cited, documentation-only answers as the chat, or read the sections and write its own answer.
 
+> **Using it from Claude Desktop:** the full walkthrough (how it works, setup, the `/kb` commands, checking and troubleshooting) is in [`mcp-claude-desktop.md`](mcp-claude-desktop.md).
+
 ### 6.1 What the server offers
 
 | Name | Kind | What it does |
