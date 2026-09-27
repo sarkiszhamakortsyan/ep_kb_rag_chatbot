@@ -65,7 +65,7 @@ Or start both servers with one command, on free ports: `python3 scripts/start.py
 
 ### Ports
 
-`scripts/start.py` (Python standard library only) checks every port before starting. A busy port is replaced by the next free one, and the script prints what it chose:
+`scripts/start.py` (Python standard library only) checks every port before starting. The default ports (or the ones set in `.env`) are always used when they are free; only a busy port is replaced by the next free one. The summary then shows `Ports: … (the configured ports; none was busy)`, or a note for each port that was moved, as here:
 
 ```text
 Port check:

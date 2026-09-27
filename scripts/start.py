@@ -322,11 +322,13 @@ def summary(title: str, lines: list[tuple[str, str]], choices: list[PortChoice])
     print(f"\n{'=' * 72}\n  {title}\n{'-' * 72}")
     for label, value in lines:
         print(f"  {label.ljust(width)}  {value}")
+    print(f"{'-' * 72}")
     moved = [c for c in choices if c.moved]
-    if moved:
-        print(f"{'-' * 72}")
-        for c in moved:
-            print(f"  Note: {c.name} uses port {c.port} because {c.preferred} is already in use.")
+    for c in moved:
+        print(f"  Note: {c.name} uses port {c.port} because {c.preferred} is already in use.")
+    if not moved:
+        ports = ", ".join(f"{c.name} {c.port}" for c in choices)
+        print(f"  Ports: {ports} (the configured ports; none was busy)")
     print("=" * 72, flush=True)
 
 
