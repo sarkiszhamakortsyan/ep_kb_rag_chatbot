@@ -7,6 +7,10 @@ A prototype assistant for OmniCorp Solutions' Customer Success Managers (CSMs). 
 - **LLM:** a local model via **Ollama** (`ministral-3:3b`, embeddings `embeddinggemma`), or **Claude** with your own API key (`claude-opus-5`), selectable per question.
 - **One command:** `docker compose up`.
 
+![The chat answering a question that needs two articles: the answer cites its sources with [n] chips, and the source cards below show the article, section, match level and matching passage](documentation/images/chat-answer.png)
+
+*A question that needs two articles (SSO and support SLAs), answered with Claude. Every statement is cited; source 1 is opened to show the passage it comes from.*
+
 > The original assignment brief and the progress checklist are at the [end of this file](#assignment-brief).
 
 > **Branches.** This branch (`main`) is the submission for the assignment, and everything in this README describes it. Optional extensions built afterwards, such as an admin area, usage statistics, cost reports, a CLI and an MCP server, live on separate branches: see [Beyond the assignment](#beyond-the-assignment-optional-features).
@@ -59,6 +63,10 @@ cd frontend && npm ci && npm run dev                               # :5173, prox
 ---
 
 ## Try it
+
+![The start screen: a question box, the model selector and the index status in the header, and four example questions](documentation/images/chat-start.png)
+
+*The start screen. The header shows whether the knowledge base is ready and which model answers (here the local model; Claude can be chosen per question). The example questions can be clicked.*
 
 These questions come from the evaluation set (`backend/tests/eval/questions.yaml`) and show the main behaviours:
 
@@ -307,6 +315,7 @@ frontend/src/
 documentation/
   taskdocs/         goal, research, storage, ideas, step-by-step plan (with results per phase)
   evaluation.md     test and benchmark results;  eval/  raw JSON summaries
+  images/           screenshots used in this README
   ai-logs/          complete AI assistant conversation logs (Markdown)
 scripts/            export_ai_logs.py (transcript -> Markdown, secrets redacted)
 docker-compose.yml  ollama, ollama-init, backend, frontend (nginx)
